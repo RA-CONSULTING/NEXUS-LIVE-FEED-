@@ -4,7 +4,15 @@ NEXUS Live Feed is an upcoming live event feed (LVE) system from Famous IO. The 
 
 ## Project Status
 
-This repository currently contains only documentation and serves as a placeholder while development is underway. Source code and instructions will be added as the project progresses.
+This repository contains an initial prototype for the data ingestion layer of the NEXUS Live Feed system. The first module ingests live seismic activity from the United States Geological Survey (USGS) feed.
+
+## Usage
+
+To fetch and display recent seismic events, run:
+
+```bash
+python -m ingestion.seismic_adapter
+```
 
 ## Contributing
 

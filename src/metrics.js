@@ -1,3 +1,22 @@
+// Prime number helpers
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}
+
+let lastPrime = 1;
+function nextPrime() {
+  let candidate = lastPrime + 1;
+  while (!isPrime(candidate)) {
+    candidate++;
+  }
+  lastPrime = candidate;
+  return candidate;
+}
+
 const metrics = {
   quantumCoherence: {
     description: 'Relative phase alignment of quantum events.',
@@ -23,6 +42,11 @@ const metrics = {
     description: 'Synthetic metric for collective consciousness shifts.',
     unit: 'psi',
     value: () => Math.random()
+  },
+  primeNumber: {
+    description: 'Sequential prime numbers demonstrating prime number logic.',
+    unit: 'number',
+    value: () => nextPrime()
   }
 };
 

@@ -2,6 +2,10 @@
 
 NEXUS Live Feed is an upcoming live event feed (LVE) system from Famous IO. The project aims to deliver real-time updates and streaming capabilities for events.
 
+## Storm Targeting
+
+The service now exposes a `/storm` endpoint that queries live NOAA weather alerts and returns the most severe active storm. This demonstrates dynamic storm targeting capabilities.
+
 ## Project Status
 
 

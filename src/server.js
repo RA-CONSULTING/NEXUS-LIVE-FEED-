@@ -1,7 +1,8 @@
 const http = require('http');
 const { sampleMetrics } = require('./metrics');
+const { findAndTargetStorm } = require('./stormTargeting');
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   if (req.url === '/stream') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -17,6 +18,15 @@ const server = http.createServer((req, res) => {
     req.on('close', () => {
       clearInterval(interval);
     });
+  } else if (req.url === '/storm') {
+    try {
+      const storm = await findAndTargetStorm();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(storm));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to fetch storm data' }));
+    }
   } else {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sampleMetrics()));

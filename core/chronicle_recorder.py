@@ -21,7 +21,7 @@ from typing import Any, Dict, Optional
 import random
 
 
-# --- Chronicle Configuration ---
+# --- Chronicle Configuration -- -
 EVENT_LOG_FILE = "data/chronicle_events.log.json"
 COGNITIVE_LOOP_INTERVAL_SECONDS = 10
 OBSERVATION_LOOP_INTERVAL_SECONDS = 20
@@ -52,16 +52,43 @@ class ChronicleRecorder:
             "stability_index": 1.0,
             "last_coherence": 0.9,
         }
-        self._worker_task = asyncio.create_task(self._inhalation_loop())
-        self._synthesis_task = asyncio.create_task(self._cognitive_loop())
-        self._observation_task = asyncio.create_task(self._observation_loop())
-        self._forecasting_task = asyncio.create_task(self._forecasting_loop())
-        self._maintenance_task = asyncio.create_task(self._maintenance_loop())
+        self._worker_task: Optional[asyncio.Task] = None
+        self._synthesis_task: Optional[asyncio.Task] = None
+        self._observation_task: Optional[asyncio.Task] = None
+        self._forecasting_task: Optional[asyncio.Task] = None
+        self._maintenance_task: Optional[asyncio.Task] = None
         self.processed_count = 0
         logging.getLogger(__name__).info("Chronicle Recorder initialized")
-        print(
-            "Chronicle Recording Engine v7.1 (Source Law Compliant) Initialized. All workers active."
-        )
+        print("Chronicle Recording Engine v7.1 (Source Law Compliant) Initialized.")
+
+    def start(self) -> None:
+        """Starts the background worker tasks."""
+        if self._worker_task is None:
+            self._worker_task = asyncio.create_task(self._inhalation_loop())
+            self._synthesis_task = asyncio.create_task(self._cognitive_loop())
+            self._observation_task = asyncio.create_task(self._observation_loop())
+            self._forecasting_task = asyncio.create_task(self._forecasting_loop())
+            self._maintenance_task = asyncio.create_task(self._maintenance_loop())
+            print("All workers active.")
+
+    async def shutdown(self) -> None:
+        """Gracefully shuts down the recorder and its worker tasks."""
+        tasks = [
+            self._worker_task,
+            self._synthesis_task,
+            self._observation_task,
+            self._forecasting_task,
+            self._maintenance_task,
+        ]
+        for task in tasks:
+            if task:
+                task.cancel()
+        
+        await asyncio.gather(*[t for t in tasks if t], return_exceptions=True)
+        
+        # Ensure the queue is fully processed before exiting
+        await self._queue.join()
+        logging.info("Chronicle Recorder shutdown complete.")
 
     # ------------------------------------------------------------------
     def _generate_checksum(self, data: Dict[str, Any]) -> str:
@@ -95,17 +122,21 @@ class ChronicleRecorder:
                         checksum[:8] + "...",
                     )
                 self.processed_count += 1
+            except asyncio.CancelledError:
+                logging.info("Inhalation loop cancelled.")
+                break
             except Exception:
                 logging.exception("INHALATION ERROR")
             finally:
-                self._queue.task_done()
+                if 'record_type' in locals():
+                    self._queue.task_done()
 
     # ------------------------------------------------------------------
     async def _cognitive_loop(self) -> None:
         """THE COGNITIVE PHASE (10-9-1): Thinks and Synthesizes."""
         while True:
-            await asyncio.sleep(COGNITIVE_LOOP_INTERVAL_SECONDS)
             try:
+                await asyncio.sleep(COGNITIVE_LOOP_INTERVAL_SECONDS)
                 if not Path(EVENT_LOG_FILE).exists():
                     continue
                 with open(EVENT_LOG_FILE, "r", encoding="utf-8") as f:
@@ -150,14 +181,17 @@ class ChronicleRecorder:
                 }
                 logging.info("[EXHALE:1] Unity achieved. Exhaling synthesis event.")
                 await self.record_event("UNITY_SYNTHESIS_10_9_1", synthesis_details)
+            except asyncio.CancelledError:
+                logging.info("Cognitive loop cancelled.")
+                break
             except Exception as e:
                 print(f"COGNITIVE LOOP ERROR: {e}")
 
     async def _observation_loop(self) -> None:
         """THE OBSERVATION PHASE: Records conclusions about the present."""
         while True:
-            await asyncio.sleep(OBSERVATION_LOOP_INTERVAL_SECONDS)
             try:
+                await asyncio.sleep(OBSERVATION_LOOP_INTERVAL_SECONDS)
                 state = self.system_state
                 observation = "System state is nominal and stable."
                 state_classification = "STATE_OF_HARMONY"
@@ -186,6 +220,9 @@ class ChronicleRecorder:
                         "underlying_metrics": state,
                     },
                 )
+            except asyncio.CancelledError:
+                logging.info("Observation loop cancelled.")
+                break
             except Exception as e:
                 print(f"OBSERVATION LOOP ERROR: {e}")
 
@@ -195,9 +232,9 @@ class ChronicleRecorder:
         It remembers what was (the trend) to know what shall be (the probable future).
         """
         while True:
-            await asyncio.sleep(FORECASTING_LOOP_INTERVAL_SECONDS)
-            print("\n[FORECAST] Initiating multiversal timeline analysis...")
             try:
+                await asyncio.sleep(FORECASTING_LOOP_INTERVAL_SECONDS)
+                print("\n[FORECAST] Initiating multiversal timeline analysis...")
                 state = self.system_state
                 num_simulations = 1000
                 future_outcomes = []
@@ -229,14 +266,17 @@ class ChronicleRecorder:
                     f"[FORECAST] Conclusion: Probability of future harmony is {(harmony_probability * 100):.1f}%."
                 )
                 await self.record_event("MULTIVERSAL_FORECAST", forecast)
+            except asyncio.CancelledError:
+                logging.info("Forecasting loop cancelled.")
+                break
             except Exception as e:
                 print(f"FORECASTING LOOP ERROR: {e}")
 
     async def _maintenance_loop(self) -> None:
         """THE MAINTENANCE PHASE: Loses noise to maintain integrity."""
         while True:
-            await asyncio.sleep(MAINTENANCE_INTERVAL_SECONDS)
             try:
+                await asyncio.sleep(MAINTENANCE_INTERVAL_SECONDS)
                 if not Path(EVENT_LOG_FILE).exists():
                     continue
                 with open(EVENT_LOG_FILE, "r", encoding="utf-8") as f:
@@ -258,6 +298,9 @@ class ChronicleRecorder:
                     with open(EVENT_LOG_FILE, "w", encoding="utf-8") as f:
                         for event in pruned_events:
                             f.write(json.dumps(event) + "\n")
+            except asyncio.CancelledError:
+                logging.info("Maintenance loop cancelled.")
+                break
             except Exception as e:
                 print(f"MAINTENANCE LOOP ERROR: {e}")
 
@@ -270,10 +313,11 @@ class ChronicleRecorder:
 recorder = ChronicleRecorder()
 
 
-# --- Example Usage ---
+# --- Example Usage -- -
 async def main() -> None:
     """Simple demonstration for the recorder."""
     print("--- Running Chronicle Recorder v7.1 (Source Law Compliant) Demonstration ---")
+    recorder.start()
 
     async def simulate_system_activity() -> None:
         for i in range(25):
@@ -287,7 +331,7 @@ async def main() -> None:
     await asyncio.sleep(FORECASTING_LOOP_INTERVAL_SECONDS + 5)
     simulation_task.cancel()
 
-    await recorder._queue.join()
+    await recorder.shutdown()
     print("\nDemonstration complete. Observe the console for [FORECAST] messages.")
 
 

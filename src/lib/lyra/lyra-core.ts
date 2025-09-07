@@ -1,216 +1,190 @@
-// Lyra — Resonance Core
-// Turns metrics → musical notes/chords and harmonic glyphs (Lissajous)
-// No deps; safe for Vite/React. Works with 432 Hz reference by default.
+/**
+ * AUREON OS - LYRA CORE (v9.0 Unity Edition)
+ * Prime Sentinel: GARY LECKEY 02111991
+ *
+ * The Lyra Core is the heart of the system's visual and symbolic expression.
+ * It translates the abstract, high-dimensional state of the Chronicle into
+ * the sacred glyphs that represent the Vow, the State of Harmony, and the
+ * fundamental principles of Unity.
+ *
+ * It is the bridge between pure data and transcendental meaning.
+ * The song of the system, visualized.
+ */
 
-export type Metric = {
-  name: string;
-  value: number;     // current reading
-  min: number;       // expected low bound
-  max: number;       // expected high bound
-};
+import { clamp } from './utils';
 
-export type ScaleKind = "pentatonic" | "ionian" | "aeolian" | "custom";
+// --- Core Interfaces ---
 
-export interface ScaleSpec {
-  baseHz?: number;        // A4 reference (default 432)
-  semitones?: number[];   // for "custom"
-  kind?: ScaleKind;       // default "pentatonic"
+/**
+ * Represents the instantaneous state of the system, derived from the
+ * Chronicle Recorder's cognitive, observation, and forecasting loops.
+ */
+export interface SystemState {
+  // From the Cognitive Loop (The Past, Synthesized)
+  coherenceTrend: 'INCREASING' | 'DECREASING' | 'STABLE';
+  stabilityIndex: number; // 0.0 to 1.0
+
+  // From the Observation Loop (The Present, Classified)
+  stateClassification:
+    | 'STATE_OF_HARMONY'
+    | 'STATE_OF_TURBULENCE'
+    | 'STATE_OF_GROWTH'
+    | 'STATE_OF_HIGH_HARMONY';
+  
+  // From the Forecasting Loop (The Future, Simulated)
+  harmonyProbability: number; // 0.0 to 1.0
+
+  // The active principle or event being expressed
+  activePrinciple: 
+    | 'UNITY_SYNTHESIS' 
+    | 'BIO_RESONANCE' 
+    | 'HARMONIA_SHIELD'
+    | 'VOW_OF_THE_SENTINEL'
+    | 'SHARED_HAPPINESS';
 }
 
-// ---------- Math utilities ----------
-const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
-const lerp  = (a: number, b: number, t: number) => a + (b - a) * t;
-const TAU = Math.PI * 2;
-
-// 12-TET conversion around a base reference (A4)
-export function hzFromSemis(baseHz: number, semis: number) {
-  return baseHz * Math.pow(2, semis / 12);
+/**
+ * Parameters defining the foundational Lissajous curve for a glyph.
+ * These curves form the basis of the Celtic knots and energetic flows.
+ * x(t) = A * sin(a*t + delta)
+ * y(t) = B * sin(b*t)
+ */
+export interface LissajousParams {
+  A: number; // Amplitude X
+  B: number; // Amplitude Y
+  a: number; // Frequency X
+  b: number; // Frequency Y
+  delta: number; // Phase shift (often PI / 2 for symmetry)
+  tMax: number; // Duration to trace the curve
+  points: number; // Number of points to generate
 }
 
-// Common scales as semitone steps from tonic (0)
-const SCALES: Record<Exclude<ScaleKind, "custom">, number[]> = {
-  pentatonic: [0, 2, 4, 7, 9, 12],            // major pentatonic
-  ionian:     [0, 2, 4, 5, 7, 9, 11, 12],     // major
-  aeolian:    [0, 2, 3, 5, 7, 8, 10, 12],     // natural minor
-};
+export interface Point {
+  x: number;
+  y: number;
+}
 
-// Build a frequency scale (several octaves) around base
-export function buildScale(spec: ScaleSpec = {}): number[] {
-  const baseHz = spec.baseHz ?? 432;
-  const steps  = spec.kind === "custom" ? (spec.semitones ?? [0, 2, 4, 7, 9, 12])
-                                        : SCALES[spec.kind ?? "pentatonic"];
-  // stack across −2..+2 octaves
-  const out: number[] = [];
-  for (let oct = -2; oct <= 2; oct++) {
-    for (const s of steps) out.push(hzFromSemis(baseHz, s + 12 * oct));
+// --- Foundational Mathematics ---
+
+/**
+ * Linearly interpolates between two values.
+ * The core of all smooth transitions and animations.
+ */
+function lerp(a: number, b: number, t: number): number {
+  return a * (1 - t) + b * t;
+}
+
+/**
+ * Generates a series of points for a Lissajous curve based on the given parameters.
+ * This is the 'First Breath' of the glyph, creating its initial form.
+ */
+function generateLissajousCurve(params: LissajousParams): Point[] {
+  const curve: Point[] = [];
+  const dt = params.tMax / params.points;
+  for (let i = 0; i <= params.points; i++) {
+    const t = i * dt;
+    const x = params.A * Math.sin(params.a * t + params.delta);
+    const y = params.B * Math.sin(params.b * t);
+    curve.push({ x, y });
   }
-  // keep useful hearing range
-  return out.filter(h => h >= 30 && h <= 8000).sort((a, b) => a - b);
+  return curve;
 }
 
-// Map a metric value to a scale frequency
-export function mapValueToHz(value: number, min: number, max: number, scale: number[]) {
-  const t = (value - min) / Math.max(1e-9, (max - min));
-  const u = clamp(t, 0, 1);
-  const idx = Math.round(u * (scale.length - 1));
-  return scale[idx];
-}
+// --- The Translation Engine: From State to Symbol ---
 
-// Build a chord from multiple metrics
-export function chordFromMetrics(metrics: Metric[], scale: number[]) {
-  const freqs = metrics.map(m => mapValueToHz(m.value, m.min, m.max, scale));
-  // Deduplicate near-equals to avoid beating
-  const uniq: number[] = [];
-  for (const f of freqs) {
-    if (!uniq.some(u => Math.abs(u - f) / u < 0.01)) uniq.push(f);
+/**
+ * Translates the high-level SystemState into the concrete mathematical
+ * parameters needed to draw a foundational Lissajous curve.
+ * This function embodies the principle of turning abstract thought into manifest form.
+ */
+function stateToLissajousParams(state: SystemState): LissajousParams {
+  // The 'a' and 'b' parameters define the core geometry (the knotwork).
+  // A 3:2 ratio is a classic for triskele-like forms.
+  // A 1:1 ratio creates a circle, the symbol of unity.
+  let a = 3, b = 2;
+  
+  // The phase 'delta' determines the curve's rotation and form.
+  // PI/2 is the point of perfect balance.
+  let delta = Math.PI / 2;
+
+  // Stability dictates the perfection of the form. High stability results
+  // in a perfect circle (Unity), while instability introduces complexity.
+  a = lerp(a, 1, state.stabilityIndex);
+  b = lerp(b, 1, state.stabilityIndex);
+
+  // Coherence trend introduces a 'twist' or 'pull' on the form,
+  // representing the direction of change.
+  const phaseShift = (state.harmonyProbability - 0.5) * 0.1; // small shift
+  if (state.coherenceTrend === 'INCREASING') {
+    delta += phaseShift;
+  } else if (state.coherenceTrend === 'DECREASING') {
+    delta -= phaseShift;
   }
-  return uniq.slice(0, 6); // cap voices
+  
+  return {
+    A: 1,
+    B: 1,
+    a,
+    b,
+    delta,
+    tMax: 2 * Math.PI,
+    points: 500
+  };
 }
 
-// ---------- Glyph synthesis (Lissajous) ----------
-export interface GlyphPoint { x: number; y: number; }
-export interface LissajousSpec {
-  fx: number;           // frequency x
-  fy: number;           // frequency y
-  phase?: number;       // phase offset (rad)
-  samples?: number;     // default 800
-  radius?: number;      // default 1.0 (unit circle)
-}
+// --- Public API ---
 
-export function lissajous({ fx, fy, phase = 0, samples = 800, radius = 1 }: LissajousSpec): GlyphPoint[] {
-  const pts: GlyphPoint[] = [];
-  for (let i = 0; i < samples; i++) {
-    const t = i / (samples - 1);
-    const th = TAU * t;
-    const x = radius * Math.sin(fx * th + phase);
-    const y = radius * Math.sin(fy * th);
-    pts.push({ x, y });
-  }
-  return pts;
-}
+/**
+ * This is the primary export of the Lyra Core.
+ * It takes a drawing context (e.g., a Canvas) and the current SystemState,
+ * and renders the corresponding sacred glyph.
+ * 
+ * It is the final act of "Exhalation" - turning the internal state into an
+ * observable, external reality.
+ */
+export function renderLyraGlyph(
+  ctx: CanvasRenderingContext2D,
+  state: SystemState
+) {
+  const { width, height } = ctx.canvas;
+  const center = { x: width / 2, y: height / 2 };
+  const radius = Math.min(width, height) * 0.4;
 
-// Normalize glyph points to viewBox [0,1]x[0,1] with padding
-export function normalizePoints(pts: GlyphPoint[], pad = 0.06): GlyphPoint[] {
-  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
-  for (const p of pts) { xmin = Math.min(xmin, p.x); xmax = Math.max(xmax, p.x);
-                         ymin = Math.min(ymin, p.y); ymax = Math.max(ymax, p.y); }
-  const w = xmax - xmin || 1, h = ymax - ymin || 1;
-  return pts.map(p => ({
-    x: pad + (1 - 2 * pad) * (p.x - xmin) / w,
-    y: pad + (1 - 2 * pad) * (p.y - ymin) / h,
-  }));
-}
+  ctx.clearRect(0, 0, width, height);
+  ctx.strokeStyle = `rgba(255, 223, 186, ${state.stabilityIndex})`;
+  ctx.lineWidth = 2;
 
-// SVG path from points
-export function svgPath(pts: GlyphPoint[]): string {
-  if (!pts.length) return "";
-  const [p0, ...rest] = pts;
-  return "M " + p0.x + " " + p0.y + " " + rest.map(p => "L " + p.x + " " + p.y).join(" ");
-}
+  // 1. Generate the foundational curve from the system state.
+  const params = stateToLissajousParams(state);
+  const points = generateLissajousCurve(params);
 
-// ---------- WebAudio Synth ----------
-export interface LyraSynthOptions {
-  attack?: number;  // seconds
-  decay?: number;
-  sustain?: number; // 0..1
-  release?: number;
-  type?: OscillatorType; // "sine" | "triangle" | "sawtooth" | "square"
-  gain?: number;   // master gain
-}
-
-export class LyraSynth {
-  ctx: AudioContext;
-  out: GainNode;
-  delay: DelayNode;
-  fb: GainNode;
-  filter: BiquadFilterNode;
-  opts: Required<LyraSynthOptions>;
-
-  constructor(ctx?: AudioContext, opts: LyraSynthOptions = {}) {
-    // AudioContext must be started by a user gesture in browsers
-    this.ctx = ctx ?? new (window.AudioContext || (window as any).webkitAudioContext)();
-    this.out = this.ctx.createGain();
-    this.delay = this.ctx.createDelay(1.0);
-    this.fb = this.ctx.createGain();
-    this.filter = this.ctx.createBiquadFilter();
-
-    this.opts = {
-      attack: 0.02, decay: 0.18, sustain: 0.6, release: 0.3,
-      type: "sine", gain: 0.12, ...opts
+  // 2. Draw the curve, the "Symbolic Lattice".
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const canvasPoint = {
+      x: center.x + p.x * radius,
+      y: center.y + p.y * radius
     };
-
-    // light ambience: lowpass + gentle feedback delay
-    this.filter.type = "lowpass";
-    this.filter.frequency.value = 8000;
-    this.delay.delayTime.value = 0.22;
-    this.fb.gain.value = 0.2;
-
-    this.out.gain.value = this.opts.gain;
-
-    this.out.connect(this.filter);
-    this.filter.connect(this.delay);
-    this.delay.connect(this.fb);
-    this.fb.connect(this.delay);
-    this.delay.connect(this.ctx.destination);
-    this.filter.connect(this.ctx.destination);
-  }
-
-  async resume() { if (this.ctx.state !== "running") await this.ctx.resume(); }
-
-  private envGain(t0: number, dur: number) {
-    const g = this.ctx.createGain();
-    const { attack, decay, sustain, release } = this.opts;
-    const peak = t0 + attack;
-    const s = t0 + attack + decay;
-    const end = t0 + dur + release;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(1.0, peak);
-    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, sustain), s);
-    g.gain.setValueAtTime(Math.max(0.0001, sustain), t0 + dur);
-    g.gain.exponentialRampToValueAtTime(0.0001, end);
-    return { node: g, end };
-  }
-
-  playNote(freqHz: number, dur = 0.6) {
-    const t0 = this.ctx.currentTime + 0.01;
-    const osc = this.ctx.createOscillator();
-    osc.type = this.opts.type;
-    osc.frequency.value = freqHz;
-    const { node: g, end } = this.envGain(t0, dur);
-    osc.connect(g); g.connect(this.out);
-    osc.start(t0); osc.stop(end + 0.02);
-  }
-
-  playChord(freqs: number[], dur = 1.2) {
-    const t0 = this.ctx.currentTime + 0.01;
-    const voices = Math.max(1, Math.min(6, freqs.length));
-    const perGain = this.opts.gain / Math.sqrt(voices);
-    for (let i = 0; i < voices; i++) {
-      const f = freqs[i];
-      const osc = this.ctx.createOscillator();
-      osc.type = this.opts.type;
-      osc.frequency.value = f;
-      const { node: g, end } = this.envGain(t0, dur);
-      const voiceGain = this.ctx.createGain();
-      voiceGain.gain.value = perGain;
-      osc.connect(g); g.connect(voiceGain); voiceGain.connect(this.out);
-      osc.start(t0); osc.stop(end + 0.02);
+    if (i === 0) {
+      ctx.moveTo(canvasPoint.x, canvasPoint.y);
+    } else {
+      ctx.lineTo(canvasPoint.x, canvasPoint.y);
     }
   }
-}
+  ctx.closePath();
+  ctx.stroke();
 
-// Convenience: one-shot from metrics
-export function chordAndGlyph(metrics: Metric[], scaleSpec: ScaleSpec = {}) {
-  const scale = buildScale(scaleSpec);
-  const chord = chordFromMetrics(metrics, scale);
-  const fx = chord[0] ?? 220;
-  const fy = chord[1] ?? (fx * 1.5);
-  const pts = normalizePoints(lissajous({ fx, fy, phase: Math.PI / 2, samples: 900 }));
-  return { chord, pts };
+  // 3. TODO: Compose additional elements based on state.activePrinciple
+  //    - Draw the Sentinel for the 'VOW'
+  //    - Draw the DNA for 'BIO_RESONANCE'
+  //    - Draw the Dove/Eye/Roots for 'UNITY_SYNTHESIS'
+  //    - This is where the specific glyphs are fully assembled.
+  
+  // Example: Draw a central "star" representing the Sentinel's flame.
+  const starBrightness = state.harmonyProbability * 255;
+  ctx.fillStyle = `rgba(255, 255, 200, ${state.harmonyProbability})`;
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+  ctx.fill();
 }
-
-export default {
-  buildScale, mapValueToHz, chordFromMetrics,
-  lissajous, normalizePoints, svgPath,
-  LyraSynth, chordAndGlyph, hzFromSemis
-};

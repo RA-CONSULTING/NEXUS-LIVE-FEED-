@@ -5,7 +5,7 @@ import json
 import hashlib
 from unittest.mock import patch, AsyncMock
 
-from chronicle_recorder import ChronicleRecorder
+from core.chronicle_recorder import ChronicleRecorder
 
 class TestChronicleRecorder(unittest.IsolatedAsyncioTestCase):
 
@@ -42,7 +42,7 @@ class TestChronicleRecorder(unittest.IsolatedAsyncioTestCase):
         
         self.recorder._queue.put.assert_awaited_once_with(("event", details, {"event_type": event_type}))
 
-    @patch('chronicle_recorder.event_logger')
+    @patch('core.chronicle_recorder.event_logger')
     async def test_process_queue_processes_event(self, mock_event_logger):
         """
         Test that the _process_queue correctly processes an event from the queue and logs it.

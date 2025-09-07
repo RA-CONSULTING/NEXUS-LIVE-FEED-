@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { sampleMetrics } = require('./metrics');
-const { findAndTargetStorm } = require('./stormTargeting');
+const { findAndNeutralizeImbalance } = require('./latticeHarmonizer');
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/stream') {
@@ -22,30 +22,20 @@ const server = http.createServer(async (req, res) => {
     req.on('close', () => {
       clearInterval(interval);
     });
-  } else if (req.url === '/storm') {
+  } else if (req.url === '/harmonize') { // Endpoint refactored from /storm to /harmonize
     try {
-      const storm = await findAndTargetStorm();
+      // Logic refactored to call the new Lattice Harmonization Manifold
+      const imbalance = await findAndNeutralizeImbalance();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(storm));
+      res.end(JSON.stringify(imbalance));
 
-      if (storm) {
-        const pythonExecutable = 'python';
-        const scriptPath = './record_threat.py';
-        const stormJson = JSON.stringify(storm);
+      // The legacy python script 'record_threat.py' is no longer relevant.
+      // The new harmonizer module handles its own logging.
+      // A dedicated chronicle recording event will be implemented separately.
 
-        const process = spawn(pythonExecutable, [scriptPath, stormJson]);
-
-        process.stdout.on('data', (data) => {
-          console.log(`stdout: ${data}`);
-        });
-
-        process.stderr.on('data', (data) => {
-          console.error(`stderr: ${data}`);
-        });
-      }
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Failed to fetch storm data' }));
+      res.end(JSON.stringify({ error: 'Failed to identify energetic imbalance' }));
     }
   } else if (req.url === '/celestial-chart') {
     const pythonExecutable = 'python';

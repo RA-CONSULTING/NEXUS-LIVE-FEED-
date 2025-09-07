@@ -1,10 +1,11 @@
 
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { sampleMetrics } = require('./metrics');
 const { findAndNeutralizeImbalance } = require('./latticeHarmonizer');
+const { generateContent } = require('./geminiClient'); // Import the new Gemini client
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/stream') {
@@ -22,17 +23,11 @@ const server = http.createServer(async (req, res) => {
     req.on('close', () => {
       clearInterval(interval);
     });
-  } else if (req.url === '/harmonize') { // Endpoint refactored from /storm to /harmonize
+  } else if (req.url === '/harmonize') {
     try {
-      // Logic refactored to call the new Lattice Harmonization Manifold
       const imbalance = await findAndNeutralizeImbalance();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(imbalance));
-
-      // The legacy python script 'record_threat.py' is no longer relevant.
-      // The new harmonizer module handles its own logging.
-      // A dedicated chronicle recording event will be implemented separately.
-
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Failed to identify energetic imbalance' }));
@@ -52,6 +47,49 @@ const server = http.createServer(async (req, res) => {
       } else {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Failed to generate celestial chart' }));
+      }
+    });
+  } else if (req.url === '/generate-narrative' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', async () => {
+      try {
+        const { prompt } = JSON.parse(body);
+        if (!prompt) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          return res.end(JSON.stringify({ error: 'Prompt is required' }));
+        }
+
+        const result = await generateContent(prompt);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        console.error(err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Failed to generate narrative' }));
+      }
+    });
+  } else if (req.url === '/generate-threat-assessment' && req.method === 'GET') {
+    exec('git diff --shortstat', async (err, stdout, stderr) => {
+      if (err) {
+        console.error(`exec error: ${err}`);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: 'Failed to execute git diff' }));
+      }
+
+      const prompt = `Analyze the following git diff summary and generate a threat assessment: ${stdout}`;
+
+      try {
+        const result = await generateContent(prompt);
+        const assessment = result.candidates[0].content.parts[0].text;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ assessment }));
+      } catch (e) {
+        console.error(e);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Failed to generate threat assessment' }));
       }
     });
   } else {

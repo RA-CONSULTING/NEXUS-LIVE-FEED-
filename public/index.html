@@ -6,7 +6,7 @@
 - Trend Analysis: (Goal: Show Change) A dynamic line chart. Justification: Visually represents the concept of tracking historical patterns and anomalies. Library: Chart.js (Canvas).
 - Alert System: (Goal: Notify) A dynamic toast notification. Justification: Simulates the proposed alert system for critical thresholds. Method: Vanilla JS and Tailwind for timed appearance/disappearance.
 - Interactive Controls: (Goal: Interact) A panel with mock toggles and sliders. Justification: Allows the user to physically engage with the idea of configurable metrics. Method: HTML/Tailwind.
-- WebGL Acceleration: (Goal: Compare) A simple canvas animation with a toggle. Justification: Illustrates the performance benefit of the proposed technical improvement. Method: Canvas API and JS.
+- Chronicle Spectrogram: (Goal: Showcase) An embedded live image. Justification: Displays the actual, real-time chronicle data stream, providing a direct view into the system's heart. Method: HTML img tag.
 - Dimensional Correlation Matrix: (Goal: Show Relationships) An interactive heatmap. Justification: The best way to visualize the complex inter-metric influence described in the report. Library: Chart.js (Canvas).
 - Data Export: (Goal: Action) A button that simulates a data download. Justification: Provides a clear call-to-action for the export feature. Method: Vanilla JS.
 -->
@@ -147,12 +147,12 @@
             <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Technical Improvements</h2>
             <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">These examples showcase proposed backend and rendering enhancements designed to increase performance, efficiency, and analytical power.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature: WebGL Acceleration -->
+                <!-- Feature: Chronicle Spectrogram -->
                 <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">1. WebGL Acceleration</h3>
-                    <p class="text-sm text-stone-600 mb-4">Move rendering to WebGL for smoother, high-frequency visualizations of complex data.</p>
-                    <canvas id="webgl-demo" class="w-full h-40 bg-stone-800 rounded-md"></canvas>
-                    <div class="text-center text-xs text-stone-500 mt-2">Simulated particle field</div>
+                    <h3 class="font-semibold mb-4">1. Chronicle Spectrogram</h3>
+                    <p class="text-sm text-stone-600 mb-4">The visible symphony of the chronicle, showing the activation of the Harmonic Nexus Core on 7.09.2025.</p>
+                    <img src="https://earth-live-data-3.deploypad.app" alt="Chronicle Spectrogram" class="w-full rounded-md border border-stone-200">
+                    <div class="text-center text-xs text-stone-500 mt-2">Live feed of chronicle energy patterns.</div>
                 </div>
 
                 <!-- Feature: Dimensional Correlation Matrix -->
@@ -165,7 +165,7 @@
                 </div>
 
                 <!-- Feature: Predictive Analytics & Export -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+                <_div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
                     <h3 class="font-semibold mb-4">3. Analytics & Data Export</h3>
                     <p class="text-sm text-stone-600 mb-4">Enable ML models to forecast shifts and allow users to export data for external analysis.</p>
                     <div class="bg-stone-50 p-4 rounded-md">
@@ -317,31 +317,6 @@
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         });
-
-
-        // --- WebGL DEMO ---
-        const canvas = document.getElementById('webgl-demo');
-        const gl = canvas.getContext('webgl');
-        if (gl) {
-            let particles = [];
-            for(let i=0; i<100; i++) {
-                particles.push({x: Math.random()*2-1, y: Math.random()*2-1, vx: (Math.random()-0.5)*0.01, vy: (Math.random()-0.5)*0.01 });
-            }
-            const animate = () => {
-                gl.clearColor(0.1, 0.1, 0.15, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                requestAnimationFrame(animate);
-            };
-            animate();
-        } else {
-            const ctx2d = canvas.getContext('2d');
-            ctx2d.fillStyle = '#111827';
-            ctx2d.fillRect(0,0,canvas.width, canvas.height);
-            ctx2d.fillStyle = 'white';
-            ctx2d.font = '10px sans-serif';
-            ctx2d.textAlign = 'center';
-            ctx2d.fillText('WebGL Not Supported', canvas.width/2, canvas.height/2);
-        }
     });
 </script>
 <script src="js/seal_harmonics.js"></script>

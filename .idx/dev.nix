@@ -10,6 +10,7 @@
     (pkgs.python311.withPackages (ps: [
       ps.matplotlib
       ps.skyfield
+      ps.pytest # Added to enable system diagnostics
     ]))
   ];
 

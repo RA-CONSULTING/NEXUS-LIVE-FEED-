@@ -1,11 +1,10 @@
-
 import asyncio
 import json
 import sys
-from chronicle_recorder import ChronicleRecorder
+from chronicle_recorder import recorder
 
 async def main():
-    """Records a storm threat event in the chronicle."""
+    """Records a storm threat event."""
     if len(sys.argv) < 2:
         print("Usage: python record_threat.py <storm_data_json>", file=sys.stderr)
         return
@@ -16,12 +15,11 @@ async def main():
         print("Error: Invalid JSON data provided.", file=sys.stderr)
         return
 
-    recorder = ChronicleRecorder()
     await recorder.record_event(
         event_type="STORM_THREAT_DETECTED",
         details=storm_data
     )
-    await recorder.shutdown()
+
     print(f"Successfully recorded storm threat: {storm_data.get('headline')}")
 
 if __name__ == "__main__":

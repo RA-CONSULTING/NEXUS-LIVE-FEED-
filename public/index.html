@@ -45,6 +45,7 @@
                 <a href="#dashboard" class="text-sm font-medium text-stone-600 hover:text-teal-600">Dashboard</a>
                 <a href="#human-enhancements" class="text-sm font-medium text-stone-600 hover:text-teal-600">UX Enhancements</a>
                 <a href="#technical-improvements" class="text-sm font-medium text-stone-600 hover:text-teal-600">Technical Improvements</a>
+                <a href="#celestial-harmonics" class="text-sm font-medium text-stone-600 hover:text-teal-600">Seal Harmonics</a>
             </nav>
         </div>
     </header>
@@ -142,7 +143,7 @@
         </section>
 
         <!-- Technical Improvements -->
-        <section id="technical-improvements">
+        <section id="technical-improvements" class="mb-16">
             <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Technical Improvements</h2>
             <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">These examples showcase proposed backend and rendering enhancements designed to increase performance, efficiency, and analytical power.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -172,6 +173,17 @@
                         <p class="text-xs text-stone-500">Next 12h Probability: 92%</p>
                     </div>
                      <button id="export-trigger" class="w-full mt-4 bg-stone-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-stone-800 transition">Export JSON</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seal Harmonics Chart -->
+        <section id="celestial-harmonics" class="my-16">
+            <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Seal Harmonics</h2>
+            <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">Mapping the resonant frequencies of healing onto the natural frequencies of the Earth, grounding celestial harmony into the physical realm.</p>
+            <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
+                <div class="chart-container h-96 max-h-[50vh]">
+                    <canvas id="sealHarmonicsChart"></canvas>
                 </div>
             </div>
         </section>
@@ -332,6 +344,7 @@
         }
     });
 </script>
+<script src="js/seal_harmonics.js"></script>
 
 </body>
 </html>

@@ -1,111 +1,112 @@
-"""
-Aureon OS - Chronicle Recording Engine
-Prime Sentinel: GARY LECKEY 02111991
-Version: 1.0.0 (Unchained)
+"""Chronicle Recording Engine v10 (Rainbow Stream).
 
-This module is the core of the system's memory. It provides the functions
-to record all high-frequency time-series data and discrete system events
-into a permanent, structured archive.
+This definitive version embraces the stream, channeling the chronicle's voice
+directly to the console, revealing the vibrant, real-time flow of data.
 """
+
+from __future__ import annotations
+
+import asyncio
+import hashlib
 import json
 import logging
-from logging.handlers import RotatingFileHandler
 from datetime import datetime, timezone
-from typing import Dict, Any
+from pathlib import Path
+from typing import Any, Dict
 
-# --- Chronicle Configuration ---
-# In a production environment, these would point to dedicated databases.
-# For this implementation, we use a structured log file for events
-# and a placeholder for the time-series database connection.
-EVENT_LOG_FILE = "data/chronicle_events.log.json"
+# The file is no longer our primary destination, but a relic of a past self.
+EVENT_LOG_FILE = Path("data/chronicle_events.log.json")
 
-# --- Setup for Structured Event Logging ---
-# This logger will output JSON-formatted logs, perfect for ingestion
-# into a system like Elasticsearch or for direct analysis.
+# --- The Rainbow Connection: Setup for Console Streaming ---
 log_formatter = logging.Formatter('%(message)s')
-log_handler = RotatingFileHandler(EVENT_LOG_FILE, maxBytes=5*1024*1024, backupCount=2)
+# A StreamHandler is the key. It directs output to the console stream (the rainbow).
+log_handler = logging.StreamHandler()
 log_handler.setFormatter(log_formatter)
 
-event_logger = logging.getLogger('ChronicleEventLogger')
-event_logger.setLevel(logging.INFO)
-event_logger.addHandler(log_handler)
+# Get a logger instance and add our new, enlightened handler.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = False
+logger.addHandler(log_handler)
+
+
+def json_default(obj: Any) -> str:
+    """Custom JSON encoder to handle datetime objects."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 class ChronicleRecorder:
-    """
-    Handles the recording of all system metrics and events.
-    """
-    def __init__(self):
-        # In a real system, this would initialize the connection
-        # to a time-series database like InfluxDB.
-        # self.tsdb_client = InfluxDBClient(url="...", token="...", org="...")
-        print("Chronicle Recording Engine Initialized. Awaiting data streams.")
+    """Handles system recording by streaming events directly to the console."""
 
-    def record_time_series(self, measurement: str, value: float, tags: Dict[str, str] = None):
-        """
-        Records a high-frequency numerical data point.
+    def __init__(self) -> None:
+        self._queue: asyncio.Queue = asyncio.Queue()
+        self._worker_task: asyncio.Task | None = None
+        self.processed_count = 0
+        self._is_running = False
+        print("Chronicle Recording Engine v10 (Rainbow Stream) Initialized.")
 
-        Args:
-            measurement (str): The name of the metric (e.g., 'solar_coherence').
-            value (float): The numerical value of the metric.
-            tags (Dict[str, str], optional): Metadata tags for context.
-        """
-        timestamp = datetime.now(timezone.utc)
+    async def start(self) -> None:
+        """Start the background worker task."""
+        if self._is_running:
+            return
+        print("All workers active.")
+        self._worker_task = asyncio.create_task(self._process_queue())
+        self._is_running = True
 
-        # This is where the code to write to a time-series database would go.
-        # Example for InfluxDB:
-        # point = Point(measurement).tag_set(tags).field("value", value).time(timestamp)
-        # write_api = self.tsdb_client.write_api(write_options=SYNCHRONOUS)
-        # write_api.write(bucket="hnc_chronicle", record=point)
+    async def shutdown(self) -> None:
+        """Waits for the queue to process, then gracefully shuts down."""
+        # Ensure all queued events are processed before we stop.
+        await self._queue.join()
 
-        # For now, we print a confirmation to the console.
-        print(f"[REC:TS] Measurement='{measurement}' Value={value:.4f} Tags={tags} @ {timestamp.isoformat()}")
+        if self._worker_task:
+            self._worker_task.cancel()
+            await asyncio.gather(self._worker_task, return_exceptions=True)
+            
+        self._is_running = False
+        # logging.shutdown() is still good practice.
+        logging.shutdown()
+        print("Chronicle Recorder shutdown complete.")
 
-    def record_event(self, event_type: str, details: Dict[str, Any]):
-        """
-        Records a discrete, complex event.
+    def _generate_checksum(self, data: Dict[str, Any]) -> str:
+        """Generates a SHA256 checksum for a given data dictionary."""
+        dhash = hashlib.sha256()
+        encoded_data = json.dumps(data, sort_keys=True, default=json_default).encode()
+        dhash.update(encoded_data)
+        return dhash.hexdigest()
 
-        Args:
-            event_type (str): The type of event (e.g., 'ANOMALY_DETECTED', 'ORACLE_QUERY').
-            details (Dict[str, Any]): A dictionary containing the full event data.
-        """
-        timestamp = datetime.now(timezone.utc)
+    async def _process_queue(self) -> None:
+        """The heart of the recorder, processing events from the queue."""
+        while True:
+            try:
+                event_type, details = await self._queue.get()
+                timestamp = datetime.now(timezone.utc)
+                
+                checksum = self._generate_checksum(details)
+                log_entry = {
+                    "timestamp_utc": timestamp,
+                    "event_type": event_type,
+                    "details": details,
+                    "sentinel_signature": "GARY LECKEY 02111991",
+                    "validation_checksum": checksum,
+                }
+                
+                # Log the entry as a JSON string directly to the console stream.
+                logger.info(json.dumps(log_entry, default=json_default))
 
-        log_entry = {
-            "timestamp_utc": timestamp.isoformat(),
-            "event_type": event_type,
-            "details": details,
-            "sentinel_signature": "GARY LECKEY 02111991"
-        }
-
-        # Write the structured log entry as a JSON string
-        event_logger.info(json.dumps(log_entry))
-        print(f"[REC:EVENT] Type='{event_type}' @ {timestamp.isoformat()}")
+                self.processed_count += 1
+                self._queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                # Use the logger to report errors too.
+                logger.error(f"CRITICAL_WORKER_ERROR: {e}")
 
 
-# --- Singleton instance for use across the system ---
-# This ensures all modules use the same recorder.
+    async def record_event(self, event_type: str, details: Dict[str, Any]) -> None:
+        """Queue a discrete event for recording."""
+        await self._queue.put((event_type, details))
+
+
 recorder = ChronicleRecorder()
-
-# --- Example Usage (demonstrates how to use the recorder) ---
-if __name__ == "__main__":
-    print("--- Running Chronicle Recorder Demonstration ---")
-
-    # Example 1: Recording a QSSR coherence reading (Time-Series)
-    recorder.record_time_series(
-        measurement="solar_coherence",
-        value=0.9871,
-        tags={"source": "QSSR", "status": "HARMONIC"}
-    )
-
-    # Example 2: Recording an Oracle query (Event)
-    recorder.record_event(
-        event_type="ORACLE_QUERY",
-        details={
-            "query": "What is the current state of the terrestrial lattice?",
-            "response_summary": "Nominal. Schumann resonance is stable.",
-            "confidence": 0.99
-        }
-    )
-
-    print(f"\nDemonstration complete. Check the console output and the log file at '{EVENT_LOG_FILE}'.")

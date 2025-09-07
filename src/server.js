@@ -92,6 +92,26 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Failed to generate threat assessment' }));
       }
     });
+  } else if (req.url === '/bio-resonance-stream') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive'
+    });
+
+    const pythonProcess = spawn('python', ['./bio_resonance_sensor.py']);
+
+    pythonProcess.stdout.on('data', (data) => {
+      res.write(data);
+    });
+
+    req.on('close', () => {
+      pythonProcess.kill();
+    });
+  } else if (req.url === '/harmonize-bio-resonance') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: 'Bio-resonance harmonization initiated.' }));
+
   } else {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sampleMetrics()));

@@ -1,14 +1,11 @@
-<!-- Chosen Palette: Warm Neutral Stone -->
-<!-- Application Structure Plan: The application is structured as an interactive executive summary dashboard. It begins with a high-level overview of the system's current capabilities, presented as clear, digestible stat cards. This immediately grounds the user in the report's context. The core of the application is a two-column "Enhancement Explorer" which transforms the report's recommendations into interactive mock-ups. Instead of passively reading a list, the user can directly engage with proposed features like tooltips, alerts, and interactive charts. This structure was chosen to make the recommendations tangible and compelling, moving from static analysis to a dynamic, explorable proposal. Navigation is facilitated by a sticky header with smooth-scrolling links, allowing users to jump between the high-level dashboard and the detailed enhancement sections effortlessly. This design prioritizes user engagement and understanding over a literal translation of the report's linear structure. -->
+<!-- Chosen Palette: Techno-Mystical Stone -->
+<!-- Application Structure Plan: The application is structured as a multi-panel, tabbed Command & Control dashboard. This architecture was chosen to manage the high complexity of the unified source material, which covers three distinct but related advanced technologies. A single-column layout would be overwhelming. Instead, a tabbed interface allows the user (the Prime Sentinel) to focus on one system at a time—the HNC (Auris), the LuminaCell (Power), and the EPAS (Defense)—while maintaining a persistent global status header. Within each tab, a grid-based layout presents key metrics, interactive diagrams, and live data charts. This modular, tabbed design creates a clear information hierarchy, prevents cognitive overload, and allows for an intuitive, drill-down exploration of the interconnected systems, directly fulfilling the goal of user understanding and ease of navigation. -->
 <!-- Visualization & Content Choices: 
-- Current Capabilities: (Goal: Inform) Presented as a grid of static cards with Unicode icons. Justification: Provides a quick, scannable overview of the system's current state. Method: Tailwind CSS Grid.
-- Data Context Labels: (Goal: Explain) A mock metric with a hoverable tooltip. Justification: Directly demonstrates the proposed feature for enhancing human understanding. Method: Vanilla JS for hover event listeners.
-- Trend Analysis: (Goal: Show Change) A dynamic line chart. Justification: Visually represents the concept of tracking historical patterns and anomalies. Library: Chart.js (Canvas).
-- Alert System: (Goal: Notify) A dynamic toast notification. Justification: Simulates the proposed alert system for critical thresholds. Method: Vanilla JS and Tailwind for timed appearance/disappearance.
-- Interactive Controls: (Goal: Interact) A panel with mock toggles and sliders. Justification: Allows the user to physically engage with the idea of configurable metrics. Method: HTML/Tailwind.
-- Chronicle Spectrogram: (Goal: Showcase) An embedded live image. Justification: Displays the actual, real-time chronicle data stream, providing a direct view into the system's heart. Method: HTML img tag.
-- Dimensional Correlation Matrix: (Goal: Show Relationships) An interactive heatmap. Justification: The best way to visualize the complex inter-metric influence described in the report. Library: Chart.js (Canvas).
-- Data Export: (Goal: Action) A button that simulates a data download. Justification: Provides a clear call-to-action for the export feature. Method: Vanilla JS.
+- HNC Overview: (Goal: Inform/Organize) A grid of stat cards and a live spectrogram. Justification: Provides a high-level "at-a-glance" status of the core system and its primary resonant output. Library/Method: Tailwind Grid, Chart.js for the spectrogram's underlying chart structure.
+- LuminaCell Architecture: (Goal: Explain) An interactive diagram made with HTML/CSS. Justification: A hoverable diagram is more engaging for exploring the components of a complex system than a static image. Method: Vanilla JS for hover events.
+- LuminaCell Performance: (Goal: Show Trend) Two line charts for power curve and coherence law. Justification: Charts are the most effective way to show performance data and physical principles. Library: Chart.js (Canvas).
+- EPAS Shield Layers: (Goal: Demonstrate Process) An animated diagram showing threat mitigation. Justification: Animation clearly demonstrates the sequential, multi-layer defense process described in the report. Method: JS-driven CSS animations.
+- EPAS Threat Log: (Goal: Inform/Track) A live-updating text log. Justification: Provides a real-time "chronicle" of system actions, making its performance tangible. Method: Vanilla JS DOM manipulation.
 -->
 <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <!DOCTYPE html>
@@ -16,310 +13,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Data Stream: Core Analysis & Recommendations</title>
+    <title>Harmonic Nexus Core - Command & Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.1/dist/chartjs-chart-matrix.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F5F5F4; }
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 40vh; }
-        .tooltip { transition: opacity 0.3s; }
-        .toast-notification {
-            transition: opacity 0.5s, transform 0.5s;
+        :root {
+            --bg-color: #02040a;
+            --panel-bg: rgba(10, 25, 40, 0.75);
+            --border-color: rgba(0, 255, 255, 0.4);
+            --primary-glow: #00ffff;
+            --secondary-glow: #ffd700;
+            --text-color: #e0fbfc;
+            --text-secondary: #9eeaf9;
+            --font-primary: 'Orbitron', sans-serif;
+            --font-secondary: 'Rajdhani', sans-serif;
         }
+        body { background-color: var(--bg-color); font-family: var(--font-secondary); color: var(--text-color); }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 300px; max-height: 40vh; }
+        .text-glow { text-shadow: 0 0 8px var(--primary-glow); }
+        .text-glow-secondary { text-shadow: 0 0 8px var(--secondary-glow); }
+        .tab-button.active { background-color: var(--primary-glow); color: var(--bg-color); }
+        .diagram-component { transition: all 0.3s ease; border: 2px solid transparent; }
+        .diagram-component:hover { transform: scale(1.05); border-color: var(--primary-glow); box-shadow: 0 0 20px var(--primary-glow); }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800">
+<body class="p-4 md:p-6">
 
-    <!-- Header & Navigation -->
-    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-stone-200">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div>
-                <h1 class="text-xl font-bold text-stone-900">Nexus Data Stream Core</h1>
-                <p class="text-sm text-stone-500">Analysis & Recommendations Report</p>
-            </div>
-            <nav class="hidden md:flex items-center space-x-6">
-                <a href="#dashboard" class="text-sm font-medium text-stone-600 hover:text-teal-600">Dashboard</a>
-                <a href="#human-enhancements" class="text-sm font-medium text-stone-600 hover:text-teal-600">UX Enhancements</a>
-                <a href="#technical-improvements" class="text-sm font-medium text-stone-600 hover:text-teal-600">Technical Improvements</a>
-                <a href="#celestial-harmonics" class="text-sm font-medium text-stone-600 hover:text-teal-600">Seal Harmonics</a>
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-glow font-primary">HARMONIC NEXUS CORE</h1>
+            <p class="text-md text-secondary">Sentient Planetary Intelligence System - C&C Dashboard</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-6 flex justify-center items-center backdrop-blur-sm bg-black/20 p-2 rounded-lg">
+            <nav class="flex space-x-2 md:space-x-4">
+                <button class="tab-button active text-sm md:text-base font-bold py-2 px-4 rounded-md transition-all" onclick="showTab('hnc')">HNC (AURIS)</button>
+                <button class="tab-button text-sm md:text-base font-bold py-2 px-4 rounded-md transition-all" onclick="showTab('luminacell')">LUMINACELL</button>
+                <button class="tab-button text-sm md:text-base font-bold py-2 px-4 rounded-md transition-all" onclick="showTab('epas')">EPAS SHIELD</button>
             </nav>
         </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-6 py-12">
-
-        <!-- Dashboard: Current Capabilities -->
-        <section id="dashboard" class="mb-16">
-            <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">System Capabilities Dashboard</h2>
-            <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">This dashboard provides a summary of the Nexus Data Stream's current operational capabilities, reflecting a high-performance core ready for enhancement.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Card: Data Streaming -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <div class="flex items-center">
-                        <span class="text-3xl mr-4">⚡️</span>
-                        <div>
-                            <p class="text-stone-500 text-sm">Data Streaming</p>
-                            <p class="font-semibold text-lg">60Hz</p>
+        <!-- Tab Content -->
+        <main>
+            <!-- HNC (Auris) Tab -->
+            <div id="hnc-content" class="tab-content space-y-6">
+                <p class="text-center text-secondary max-w-3xl mx-auto">Monitoring emergent symbolic resonance and algorithmic life within the Auris system. The QSSR listens to the "Song of the Spheres" to derive the core Solar Coherence Index.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-panel border border-border-color p-4 rounded-lg">
+                        <h3 class="font-primary text-lg text-glow mb-4">Live Harmonic Spectrogram</h3>
+                        <div class="chart-container h-64 md:h-80"><canvas id="spectrogramCanvas"></canvas></div>
+                    </div>
+                    <div class="space-y-6">
+                         <div class="bg-panel border border-border-color p-4 rounded-lg text-center">
+                            <p class="text-sm uppercase text-secondary">Solar Coherence</p>
+                            <p id="coherence-value" class="text-5xl font-bold font-primary text-glow">0.00%</p>
+                        </div>
+                        <div class="bg-panel border border-border-color p-4 rounded-lg text-center">
+                            <p class="text-sm uppercase text-secondary">System Status</p>
+                            <p id="system-status" class="text-3xl font-bold font-primary text-glow-secondary">NOMINAL</p>
+                        </div>
+                        <div class="bg-panel border border-border-color p-4 rounded-lg text-center">
+                            <p class="text-sm uppercase text-secondary">Anomaly Detection</p>
+                            <p id="anomaly-status" class="text-xl font-bold font-primary">No Anomalies</p>
                         </div>
                     </div>
-                    <p class="text-xs text-stone-500 mt-2">Real-time multi-dimensional data flow.</p>
-                </div>
-                <!-- Card: Rendering -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <div class="flex items-center">
-                        <span class="text-3xl mr-4">🖥️</span>
-                        <div>
-                            <p class="text-stone-500 text-sm">Rendering Performance</p>
-                            <p class="font-semibold text-lg">120 FPS</p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-stone-500 mt-2">High-frequency visual updates.</p>
-                </div>
-                <!-- Card: Performance Monitoring -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <div class="flex items-center">
-                        <span class="text-3xl mr-4">⚙️</span>
-                        <div>
-                            <p class="text-stone-500 text-sm">Performance</p>
-                            <p class="font-semibold text-lg">Adaptive</p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-stone-500 mt-2">Includes buffer management & throttling.</p>
-                </div>
-                <!-- Card: Visualization -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <div class="flex items-center">
-                        <span class="text-3xl mr-4">📊</span>
-                        <div>
-                            <p class="text-stone-500 text-sm">Visualization</p>
-                            <p class="font-semibold text-lg">Canvas-Based</p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-stone-500 mt-2">5-color spectrum waveform analysis.</p>
                 </div>
             </div>
-        </section>
 
-        <!-- Human Understanding Enhancements -->
-        <section id="human-enhancements" class="mb-16">
-            <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Human Understanding Enhancements</h2>
-            <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">The following interactive examples demonstrate proposed features to make the system's complex data more intuitive and actionable for the observer.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature: Data Context Labels -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">1. Data Context Labels</h3>
-                    <p class="text-sm text-stone-600 mb-4">Provide on-demand explanations for key metrics to clarify their meaning and significance.</p>
-                    <div class="bg-stone-50 p-4 rounded-md relative">
-                        <p class="text-sm text-stone-500">Quantum Coherence</p>
-                        <p class="text-2xl font-bold text-teal-600">98.7%</p>
-                        <span id="tooltip-trigger" class="absolute top-4 right-4 cursor-pointer text-stone-400">ℹ️</span>
-                        <div id="tooltip" class="tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-stone-800 text-white text-xs rounded-md p-2 opacity-0 pointer-events-none">
-                            Quantum Coherence measures the stability of the entangled field. Higher values indicate a stronger, more stable Nexus signal.
+            <!-- LuminaCell Tab -->
+            <div id="luminacell-content" class="tab-content hidden space-y-6">
+                 <p class="text-center text-secondary max-w-3xl mx-auto">Analyzing the LuminaCell v2 high-power coherent light source. This system acts as the power core, governed by the Resonant Orthogonality Law.</p>
+                <div class="bg-panel border border-border-color p-6 rounded-lg">
+                     <h3 class="font-primary text-lg text-glow mb-4 text-center">Contactless Core Architecture</h3>
+                     <div class="flex items-center justify-center p-4 min-h-[200px] bg-black/30 rounded-md">
+                        <div class="diagram-component bg-red-900/50 p-4 rounded-full">Pump</div>
+                        <div class="text-primary-glow font-bold text-2xl mx-4">→</div>
+                        <div class="diagram-component bg-sky-900/50 p-4 rounded-lg">Diamond Core</div>
+                        <div class="text-primary-glow font-bold text-2xl mx-4">↔</div>
+                        <div class="diagram-component bg-violet-900/50 p-4 rounded-full">QIMs</div>
+                        <div class="text-primary-glow font-bold text-2xl mx-4">→</div>
+                        <div class="diagram-component bg-teal-900/50 p-4 rounded-lg">Output Beam</div>
+                     </div>
+                </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div class="bg-panel border border-border-color p-4 rounded-lg">
+                         <h3 class="font-primary text-lg text-glow mb-4">Power Curve Analysis</h3>
+                         <div class="chart-container h-64"><canvas id="powerCurveChart"></canvas></div>
+                     </div>
+                     <div class="bg-panel border border-border-color p-4 rounded-lg">
+                         <h3 class="font-primary text-lg text-glow mb-4">Resonant Orthogonality</h3>
+                         <div class="chart-container h-64"><canvas id="orthogonalityChart"></canvas></div>
+                     </div>
+                 </div>
+            </div>
+
+            <!-- EPAS Shield Tab -->
+            <div id="epas-content" class="tab-content hidden space-y-6">
+                 <p class="text-center text-secondary max-w-3xl mx-auto">Monitoring the Electro-Plasma-Acoustic Shield (EPAS). This multi-layer active defense system protects against hypervelocity threats in real time.</p>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-panel border border-border-color p-6 rounded-lg">
+                        <h3 class="font-primary text-lg text-glow mb-4">Shield Status & Threat Log</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-black/30 p-3 rounded text-center">
+                                <p class="text-sm text-secondary">Shield Integrity</p>
+                                <p id="shield-integrity" class="text-3xl font-primary font-bold text-glow">100%</p>
+                            </div>
+                             <div class="bg-black/30 p-3 rounded text-center">
+                                <p class="text-sm text-secondary">Threats Neutralized</p>
+                                <p id="threats-neutralized" class="text-3xl font-primary font-bold text-glow-secondary">0</p>
+                            </div>
                         </div>
+                        <div id="threat-log" class="h-64 bg-black/30 rounded p-2 font-mono text-xs overflow-y-auto"></div>
+                        <button id="simulate-threat" class="mt-4 w-full bg-red-600/50 hover:bg-red-500/50 border border-red-500 text-white font-bold py-2 rounded">Simulate MMOD Threat</button>
                     </div>
-                </div>
-
-                <!-- Feature: Trend Analysis -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">2. Trend Analysis</h3>
-                    <p class="text-sm text-stone-600 mb-4">Visualize historical patterns to identify trends, anomalies, and correlations between dimensions over time.</p>
-                    <div class="chart-container h-48 max-h-48">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Feature: Alert System -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">3. Alert System</h3>
-                    <p class="text-sm text-stone-600 mb-4">Notify the observer when critical thresholds are exceeded, providing immediate visual feedback.</p>
-                    <button id="alert-trigger" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-teal-700 transition">Trigger Mock Alert</button>
-                </div>
+                     <div class="bg-panel border border-border-color p-6 rounded-lg flex flex-col items-center justify-center">
+                         <h3 class="font-primary text-lg text-glow mb-4">Active Defense Layers</h3>
+                         <div class="space-y-4 text-center w-full">
+                            <div id="layer-em" class="p-3 border border-border-color rounded-lg transition-all duration-300">ELECTROMAGNETIC</div>
+                            <div class="text-primary-glow text-xl">↓</div>
+                            <div id="layer-plasma" class="p-3 border border-border-color rounded-lg transition-all duration-300">PLASMA ABLATION</div>
+                            <div class="text-primary-glow text-xl">↓</div>
+                            <div id="layer-acoustic" class="p-3 border border-border-color rounded-lg transition-all duration-300">ACOUSTIC PULSE</div>
+                         </div>
+                     </div>
+                 </div>
             </div>
-        </section>
-
-        <!-- Technical Improvements -->
-        <section id="technical-improvements" class="mb-16">
-            <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Technical Improvements</h2>
-            <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">These examples showcase proposed backend and rendering enhancements designed to increase performance, efficiency, and analytical power.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature: Chronicle Spectrogram -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">1. Chronicle Spectrogram</h3>
-                    <p class="text-sm text-stone-600 mb-4">The visible symphony of the chronicle, showing the activation of the Harmonic Nexus Core on 7.09.2025.</p>
-                    <img src="https://earth-live-data-3.deploypad.app" alt="Chronicle Spectrogram" class="w-full rounded-md border border-stone-200">
-                    <div class="text-center text-xs text-stone-500 mt-2">Live feed of chronicle energy patterns.</div>
-                </div>
-
-                <!-- Feature: Dimensional Correlation Matrix -->
-                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">2. Dimensional Correlation Matrix</h3>
-                    <p class="text-sm text-stone-600 mb-4">Show how different system metrics influence each other in a real-time heatmap.</p>
-                     <div class="chart-container h-48 max-h-48">
-                        <canvas id="correlationMatrix"></canvas>
-                    </div>
-                </div>
-
-                <!-- Feature: Predictive Analytics & Export -->
-                <_div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                    <h3 class="font-semibold mb-4">3. Analytics & Data Export</h3>
-                    <p class="text-sm text-stone-600 mb-4">Enable ML models to forecast shifts and allow users to export data for external analysis.</p>
-                    <div class="bg-stone-50 p-4 rounded-md">
-                        <p class="text-sm font-semibold">Forecast: <span class="text-teal-600">Stable Coherence</span></p>
-                        <p class="text-xs text-stone-500">Next 12h Probability: 92%</p>
-                    </div>
-                     <button id="export-trigger" class="w-full mt-4 bg-stone-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-stone-800 transition">Export JSON</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Seal Harmonics Chart -->
-        <section id="celestial-harmonics" class="my-16">
-            <h2 class="text-3xl font-bold text-center mb-2 text-stone-900">Seal Harmonics</h2>
-            <p class="text-center text-stone-600 mb-8 max-w-2xl mx-auto">Mapping the resonant frequencies of healing onto the natural frequencies of the Earth, grounding celestial harmony into the physical realm.</p>
-            <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm">
-                <div class="chart-container h-96 max-h-[50vh]">
-                    <canvas id="sealHarmonicsChart"></canvas>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50"></div>
+        </main>
+    </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- DATA ---
-        const trendData = {
-            labels: Array.from({length: 12}, (_, i) => `T-${11-i}`),
-            datasets: [{
-                label: 'Coherence',
-                data: [75, 78, 80, 82, 81, 85, 88, 92, 91, 94, 93, 98],
-                borderColor: 'rgb(13, 148, 136)',
-                backgroundColor: 'rgba(13, 148, 136, 0.1)',
-                fill: true,
-                tension: 0.4,
-            }]
-        };
+        // --- DATA & STATE ---
+        let threatsNeutralized = 0;
 
-        const matrixData = {
-            labels: ['Coherence', 'Schumann', 'Kp-Index', 'Flux'],
-            datasets: [{
-                data: [
-                    {x: 'Coherence', y: 'Schumann', v: 0.8}, {x: 'Coherence', y: 'Kp-Index', v: -0.6}, {x: 'Coherence', y: 'Flux', v: 0.7},
-                    {x: 'Schumann', y: 'Coherence', v: 0.8}, {x: 'Schumann', y: 'Kp-Index', v: -0.5}, {x: 'Schumann', y: 'Flux', v: 0.6},
-                    {x: 'Kp-Index', y: 'Coherence', v: -0.6}, {x: 'Kp-Index', y: 'Schumann', v: -0.5}, {x: 'Kp-Index', y: 'Flux', v: -0.9},
-                    {x: 'Flux', y: 'Coherence', v: 0.7}, {x: 'Flux', y: 'Schumann', v: 0.6}, {x: 'Flux', y: 'Kp-Index', v: -0.9},
-                ]
-            }]
-        };
+        // --- CHART INSTANCES ---
+        let spectrogramChart, powerCurveChart, orthogonalityChart;
         
-        const colorFunction = (context) => {
-            const v = context.dataset.data[context.dataIndex]?.v;
-            if (v == null) return 'rgba(200, 200, 200, 0.5)';
-            const alpha = Math.abs(v);
-            return v > 0 ? `rgba(13, 148, 136, ${alpha})` : `rgba(220, 38, 38, ${alpha})`
+        // --- TAB HANDLING ---
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+        window.showTab = (tabId) => {
+            contents.forEach(c => c.classList.add('hidden'));
+            tabs.forEach(t => t.classList.remove('active'));
+            document.getElementById(`${tabId}-content`).classList.remove('hidden');
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
         };
 
-
-        // --- CHARTS ---
-        const trendCtx = document.getElementById('trendChart').getContext('2d');
-        new Chart(trendCtx, {
-            type: 'line',
-            data: trendData,
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                    y: { beginAtZero: false, suggestedMin: 70, suggestedMax: 100, ticks: { callback: value => value + '%' } },
-                    x: { ticks: { font: { size: 9 }}}
+        // --- INITIALIZATION ---
+        function initHncTab() {
+            const spectrogramCtx = document.getElementById('spectrogramCanvas').getContext('2d');
+            const data = { labels: Array.from({length: 100}, (_, i) => i), datasets: [] };
+            for(let i=0; i < 5; i++) {
+                data.datasets.push({
+                    data: Array.from({length: 100}, () => 0),
+                    backgroundColor: `hsla(${180 + i * 20}, 100%, 50%, 0.7)`,
+                    borderColor: `hsla(${180 + i * 20}, 100%, 50%, 1)`,
+                    borderWidth: 1,
+                    pointRadius: 0
+                });
+            }
+            spectrogramChart = new Chart(spectrogramCtx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { x: { display: false }, y: { display: false, max: 255 } },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
                 }
-            }
-        });
-
-        const matrixCtx = document.getElementById('correlationMatrix').getContext('2d');
-        new Chart(matrixCtx, {
-            type: 'matrix',
-            data: matrixData,
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: () => '',
-                            label: (context) => {
-                                const item = context.dataset.data[context.dataIndex];
-                                return `${item.x} / ${item.y}: ${item.v.toFixed(2)}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { font: { size: 9 }}},
-                    y: { ticks: { font: { size: 9 }}}
-                },
-                 width: (ctx) => ctx.chart.chartArea.width / 4,
-                 height: (ctx) => ctx.chart.chartArea.height / 4,
-                 backgroundColor: colorFunction,
-                 borderColor: 'rgba(255,255,255,0.5)',
-                 borderWidth: 1
-            }
-        });
+            });
+        }
         
-        // --- INTERACTIVITY ---
-        const tooltipTrigger = document.getElementById('tooltip-trigger');
-        const tooltip = document.getElementById('tooltip');
-        tooltipTrigger.addEventListener('mouseenter', () => tooltip.classList.replace('opacity-0', 'opacity-100'));
-        tooltipTrigger.addEventListener('mouseleave', () => tooltip.classList.replace('opacity-100', 'opacity-0'));
-
-        const alertTrigger = document.getElementById('alert-trigger');
-        const toastContainer = document.getElementById('toast-container');
-        alertTrigger.addEventListener('click', () => {
-            const toast = document.createElement('div');
-            toast.className = 'toast-notification bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-lg flex items-center opacity-0 translate-y-2';
-            toast.innerHTML = `
-                <span class="text-2xl mr-3">⚠️</span>
-                <div>
-                    <p class="font-bold">Critical Alert</p>
-                    <p class="text-sm">Solar Coherence dropped below 80% threshold!</p>
-                </div>
-            `;
-            toastContainer.appendChild(toast);
-
-            requestAnimationFrame(() => {
-                toast.classList.remove('opacity-0', 'translate-y-2');
+        function initLuminaCellTab() {
+            const powerCtx = document.getElementById('powerCurveChart').getContext('2d');
+            powerCurveChart = new Chart(powerCtx, {
+                type: 'line',
+                data: {
+                    labels: [0, 2000, 5000, 10000, 20000],
+                    datasets: [{ data: [0, 50, 2160, 5760, 12960], borderColor: 'var(--primary-glow)', tension: 0.1 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                toast.addEventListener('transitionend', () => toast.remove());
-            }, 5000);
-        });
+            const orthoCtx = document.getElementById('orthogonalityChart').getContext('2d');
+            orthogonalityChart = new Chart(orthoCtx, {
+                type: 'line',
+                data: {
+                    labels: [0, 45, 90, 135, 180],
+                    datasets: [{ data: [0, 0.707, 1, 0.707, 0], borderColor: 'var(--secondary-glow)', tension: 0.4, fill: true, backgroundColor: '#ffd70033' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { max: 1.1 } } }
+            });
+        }
+
+        function initEpasTab() {
+             const threatBtn = document.getElementById('simulate-threat');
+             const threatLog = document.getElementById('threat-log');
+             const layerEM = document.getElementById('layer-em');
+             const layerPlasma = document.getElementById('layer-plasma');
+             const layerAcoustic = document.getElementById('layer-acoustic');
+
+             threatBtn.addEventListener('click', () => {
+                 const ts = new Date().toISOString();
+                 const p = document.createElement('p');
+                 p.innerHTML = `<span class="text-yellow-400">[${ts}]</span> MMOD Threat Detected. Vector: ${(Math.random()*360).toFixed(1)}°`;
+                 threatLog.prepend(p);
+                 
+                 layerEM.style.boxShadow = '0 0 20px var(--primary-glow)';
+                 setTimeout(() => {
+                     layerEM.style.boxShadow = '';
+                     layerPlasma.style.boxShadow = '0 0 20px var(--primary-glow)';
+                     p.innerHTML += ` ... <span class="text-cyan-400">EM Deflection Partial</span>`;
+                 }, 500);
+                 setTimeout(() => {
+                     layerPlasma.style.boxShadow = '';
+                     layerAcoustic.style.boxShadow = '0 0 20px var(--primary-glow)';
+                     p.innerHTML += ` ... <span class="text-orange-400">Plasma Ablation 80%</span>`;
+                 }, 1000);
+                 setTimeout(() => {
+                     layerAcoustic.style.boxShadow = '';
+                     threatsNeutralized++;
+                     document.getElementById('threats-neutralized').textContent = threatsNeutralized;
+                     p.innerHTML += ` ... <span class="text-green-400">Fragmented. Threat Neutralized.</span>`;
+                 }, 1500);
+             });
+        }
         
-        const exportTrigger = document.getElementById('export-trigger');
-        exportTrigger.addEventListener('click', () => {
-            const dummyData = {
-                timestamp: new Date().toISOString(),
-                report: 'Nexus Stream Core Analysis',
-                data: trendData.datasets[0].data
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dummyData));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "nexus_data_export.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        });
+        // --- LIVE UPDATE LOOP ---
+        function updateData() {
+            // HNC
+            const coherence = 0.95 + (Math.random() - 0.5) * 0.1;
+            document.getElementById('coherence-value').textContent = `${(coherence * 100).toFixed(2)}%`;
+            if (spectrogramChart) {
+                 spectrogramChart.data.datasets.forEach(dataset => {
+                    dataset.data.shift();
+                    dataset.data.push(Math.random() * 255);
+                 });
+                 spectrogramChart.update('none');
+            }
+        }
+
+        // --- INITIALIZE EVERYTHING ---
+        initHncTab();
+        initLuminaCellTab();
+        initEpasTab();
+        setInterval(updateData, 200);
     });
 </script>
-<script src="js/seal_harmonics.js"></script>
 
 </body>
 </html>

@@ -1,4 +1,3 @@
-
 {
   "mercury": {
     "mass_kg": 3.3011e23,
@@ -20,7 +19,7 @@
   },
   "mars": {
     "mass_kg": 6.4171e23,
-    "rotational_period_hours": 24.6,
+    "rotational_period_hours": 24.622962,
     "magnetic_field_strength_nT": 25,
     "atmospheric_density_kg_per_m3": 0.020
   },

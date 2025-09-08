@@ -48,22 +48,6 @@ const nowISO = () => new Date().toISOString();
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-// ---------- Source Law (10-9-1) ----------
-/**
- * Ten vectors (what), Nine axes (how), One prime timeline (why).
- * We encode them as gate weights for a composite score.
- */
-const VECTORS = [
-  "Truth", "Protection", "Teaching", "Repair", "Design",
-  "Stewardship", "Sanctuary", "Courage", "BeautyAsOrder", "JoyAsSignal",
-] as const;
-
-const AXES = [
-  "Presence","Clarity","Compassion","Discipline","Humility",
-  "Sovereignty","Reciprocity","Creativity","Patience"
-] as const;
-
-const PRIME = "CoherenceWithoutDomination";
 
 // ---------- Configurable thresholds ----------
 export const SeroConfig = {
@@ -122,7 +106,6 @@ function gateSubsystemSpecific(req: ActuationRequest): GateVerdict {
   const p = req.params || {};
   switch (req.subsystem) {
     case "SourceConduit":
-      // require freq + phase within ranges
       if (typeof p.tx_freq_Hz !== "number" || p.tx_freq_Hz <= 0) {
         return { pass: false, code: "SC_FREQ", message: "SourceConduit requires tx_freq_Hz>0." };
       }

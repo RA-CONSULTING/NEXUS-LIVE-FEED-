@@ -1,15 +1,15 @@
-const fetch = global.fetch;
-const dotenv = require('dotenv');
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 dotenv.config();
 
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
   throw new Error('GEMINI_API_KEY is not set in the environment');
 }
 
-async function generateContent(prompt) {
+export async function generateContent(prompt) {
   const payload = {
     contents: [
       {
@@ -34,5 +34,3 @@ async function generateContent(prompt) {
 
   return res.json();
 }
-
-module.exports = { generateContent };

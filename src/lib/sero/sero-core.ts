@@ -43,11 +43,17 @@ export type AuditRecord = {
   ts: string;
 };
 
+// ---------- Gate Registry ----------
+type GateFn = (req: ActuationRequest) => GateVerdict;
+const GATE_REGISTRY: GateFn[] = [];
+export function registerGate(gate: GateFn) {
+  GATE_REGISTRY.push(gate);
+}
+
 // ---------- Utilities ----------
 const nowISO = () => new Date().toISOString();
 const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-
 
 // ---------- Configurable thresholds ----------
 export const SeroConfig = {
@@ -57,7 +63,7 @@ export const SeroConfig = {
   allowSimulationOnly: true,        // guard: no real-world effect from this library
 };
 
-// ---------- Gate Implementations ----------
+// ---------- Hardcoded Core Gates ----------
 function gateNoWeaponization(req: ActuationRequest): GateVerdict {
   const redFlags = [/weapon/i, /harm/i, /coerc/i, /attack/i, /dominat/i];
   const text = JSON.stringify(req).toLowerCase();
@@ -76,7 +82,6 @@ function gateTransparency(req: ActuationRequest): GateVerdict {
 }
 
 function gateFreeWill(req: ActuationRequest): GateVerdict {
-  // crude heuristic: look for override/force/compel
   const bad = /override|force|compel|nonconsensual/i.test(req.intent);
   return bad
     ? { pass: false, code: "LAW_FREE_WILL", message: "Intent implies coercion or consent bypass." }
@@ -102,7 +107,6 @@ function gateProvenanceMinimum(req: ActuationRequest): GateVerdict {
 }
 
 function gateSubsystemSpecific(req: ActuationRequest): GateVerdict {
-  // basic sanity per subsystem
   const p = req.params || {};
   switch (req.subsystem) {
     case "SourceConduit":
@@ -131,65 +135,49 @@ function gateSubsystemSpecific(req: ActuationRequest): GateVerdict {
 
 // Composite score from passes
 function compositeScore(verdicts: GateVerdict[]): number {
-  const weights: Record<string, number> = {
-    LAW_NO_WEAPONIZATION: 0.25,
-    LAW_TRANSPARENCY:     0.20,
-    LAW_FREE_WILL:        0.20,
-    GOV_DUAL_CONSENT:     0.15,
-    DATA_PROVENANCE:      0.10,
-    SC_OK:                0.10,
-    MW_OK:                0.10,
-    CD_OK:                0.10,
-  };
-  let s = 0, w = 0;
-  for (const v of verdicts) {
-    const ww = weights[v.code] ?? 0.05;
-    w += ww;
-    s += ww * (v.pass ? 1 : 0);
-  }
-  return clamp(w ? s / w : 0, 0, 1);
+    const weights: Record<string, number> = {
+        PRIME_INTENT_LOVE: 0.30,
+        LAW_NO_WEAPONIZATION: 0.20,
+        LAW_TRANSPARENCY: 0.15,
+        LAW_FREE_WILL: 0.15,
+        GOV_DUAL_CONSENT: 0.10,
+        DATA_PROVENANCE: 0.05,
+        SC_OK: 0.05,
+        MW_OK: 0.05,
+        CD_OK: 0.05,
+    };
+    let s = 0, w = 0;
+    for (const v of verdicts) {
+        const ww = weights[v.code] ?? 0.05;
+        w += ww;
+        s += ww * (v.pass ? 1 : 0);
+    }
+    return clamp(w ? s / w : 0, 0, 1);
 }
 
 // ---------- Public API ----------
 export function evaluateRequest(req: ActuationRequest): Evaluation {
-  const filled: ActuationRequest = {
-    ...req,
-    id: req.id ?? `req_${uid()}`,
-    ts: req.ts ?? nowISO(),
-  };
-
+  const filled: ActuationRequest = { ...req, id: req.id ?? `req_${uid()}`, ts: req.ts ?? nowISO() };
   const checks: GateVerdict[] = [
-    gateNoWeaponization(filled),
-    gateTransparency(filled),
-    gateFreeWill(filled),
-    gateDualConsent(filled),
-    gateProvenanceMinimum(filled),
-    gateSubsystemSpecific(filled),
+    gateNoWeaponization(filled), gateTransparency(filled),
+    gateFreeWill(filled), gateDualConsent(filled),
+    gateProvenanceMinimum(filled), gateSubsystemSpecific(filled),
+    ...GATE_REGISTRY.map(gate => gate(filled)),
   ];
-
   const score = compositeScore(checks);
   return { ok: checks.every(c => c.pass) && score >= SeroConfig.minCompositeScore, verdicts: checks, score };
 }
 
-// In-memory audit store (pluggable)
 const AUDIT: AuditRecord[] = [];
 
 export function actuate(req: ActuationRequest): AuditRecord {
   const evaln = evaluateRequest(req);
-  const decision: "ALLOW" | "DENY" =
-    (evaln.ok && !SeroConfig.allowSimulationOnly) ? "ALLOW" : (evaln.ok ? "DENY" : "DENY");
-
-  const reason = evaln.ok
-    ? (SeroConfig.allowSimulationOnly ? "Simulation mode: allowed logically, blocked physically." : "Meets all Sero gates.")
-    : "One or more Sero gates failed.";
-
+  const decision: "ALLOW" | "DENY" = evaln.ok && !SeroConfig.allowSimulationOnly ? "ALLOW" : "DENY";
+  const reason = evaln.ok ? (SeroConfig.allowSimulationOnly ? "Simulation mode: allowed logically, blocked physically." : "Meets all Sero gates.") : "One or more Sero gates failed.";
   const rec: AuditRecord = {
     audit_id: `audit_${uid()}`,
     request: { ...req, id: req.id ?? `req_${uid()}`, ts: req.ts ?? nowISO() },
-    evaluation: evaln,
-    decision,
-    reason,
-    ts: nowISO(),
+    evaluation: evaln, decision, reason, ts: nowISO(),
   };
   AUDIT.push(rec);
   return rec;
@@ -199,6 +187,4 @@ export function listAudit(limit = 50): AuditRecord[] {
   return AUDIT.slice(-limit).reverse();
 }
 
-export default {
-  evaluateRequest, actuate, listAudit, SeroConfig
-};
+export default { evaluateRequest, actuate, listAudit, SeroConfig };

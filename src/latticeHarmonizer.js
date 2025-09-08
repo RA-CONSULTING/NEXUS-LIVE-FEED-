@@ -21,7 +21,7 @@ const terrestrialLatticeState = {
  *
  * @returns {Promise<Object|null>} An object containing the location and nature of the most critical imbalance, or null if the lattice is stable.
  */
-async function findAndNeutralizeImbalance() {
+export async function findAndNeutralizeImbalance() {
     let mostSignificantImbalance = null;
     let maxImbalance = 0.0;
 
@@ -46,5 +46,3 @@ async function findAndNeutralizeImbalance() {
 
     return mostSignificantImbalance;
 }
-
-module.exports = { findAndNeutralizeImbalance };

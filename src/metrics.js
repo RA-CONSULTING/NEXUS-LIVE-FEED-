@@ -1,4 +1,4 @@
-const metrics = {
+export const metrics = {
   quantumCoherence: {
     description: 'Relative phase alignment of quantum events.',
     unit: 'qbits',
@@ -26,7 +26,7 @@ const metrics = {
   }
 };
 
-function sampleMetrics() {
+export function sampleMetrics() {
   const timestamp = Date.now();
   const data = {};
   for (const [key, meta] of Object.entries(metrics)) {
@@ -38,5 +38,3 @@ function sampleMetrics() {
   }
   return { timestamp, metrics: data };
 }
-
-module.exports = { metrics, sampleMetrics };

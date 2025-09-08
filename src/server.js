@@ -1,11 +1,10 @@
-
-const http = require('http');
-const { spawn, exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const { sampleMetrics } = require('./metrics');
-const { findAndNeutralizeImbalance } = require('./latticeHarmonizer');
-const { generateContent } = require('./geminiClient'); // Import the new Gemini client
+import http from 'http';
+import { spawn, exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { sampleMetrics } from './metrics.js';
+import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
+import { generateContent } from './geminiClient.js'; // Import the new Gemini client
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/stream') {
@@ -40,7 +39,7 @@ const server = http.createServer(async (req, res) => {
 
     process.on('close', (code) => {
       if (code === 0) {
-        const chartPath = path.join(__dirname, '..', 'public', 'celestial_chart.png');
+        const chartPath = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'public', 'celestial_chart.png');
         const fileStream = fs.createReadStream(chartPath);
         res.writeHead(200, { 'Content-Type': 'image/png' });
         fileStream.pipe(res);

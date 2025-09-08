@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Chronicles from './components/Chronicles';
 import NexusIntelligence from './components/NexusIntelligence';
 import Actuation from './components/Actuation';
+import { SeroProvider } from './contexts/SeroProvider';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('intelligence');
@@ -13,24 +14,26 @@ const App: React.FC = () => {
       : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300');
 
   return (
-    <div className="p-6 bg-stone-50 min-h-screen">
-      <nav className="flex -mb-px space-x-6 border-b border-stone-200">
-        <button className={tabStyle('chronicles')} onClick={() => setActiveTab('chronicles')}>
-          Chronicles (Sense)
-        </button>
-        <button className={tabStyle('intelligence')} onClick={() => setActiveTab('intelligence')}>
-          Nexus Intelligence (Understand)
-        </button>
-        <button className={tabStyle('actuation')} onClick={() => setActiveTab('actuation')}>
-          Actuation (Act)
-        </button>
-      </nav>
-      <div className="mt-8">
-        {activeTab === 'chronicles' && <Chronicles />}
-        {activeTab === 'intelligence' && <NexusIntelligence />}
-        {activeTab === 'actuation' && <Actuation />}
+    <SeroProvider>
+      <div className="p-6 bg-stone-50 min-h-screen">
+        <nav className="flex -mb-px space-x-6 border-b border-stone-200">
+          <button className={tabStyle('chronicles')} onClick={() => setActiveTab('chronicles')}>
+            Chronicles (Sense)
+          </button>
+          <button className={tabStyle('intelligence')} onClick={() => setActiveTab('intelligence')}>
+            Nexus Intelligence (Understand)
+          </button>
+          <button className={tabStyle('actuation')} onClick={() => setActiveTab('actuation')}>
+            Actuation (Act)
+          </button>
+        </nav>
+        <div className="mt-8">
+          {activeTab === 'chronicles' && <Chronicles />}
+          {activeTab === 'intelligence' && <NexusIntelligence />}
+          {activeTab === 'actuation' && <Actuation />}
+        </div>
       </div>
-    </div>
+    </SeroProvider>
   );
 };
 

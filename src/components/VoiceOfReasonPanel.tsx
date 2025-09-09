@@ -1,18 +1,17 @@
 // src/components/VoiceOfReasonPanel.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { retrospective, nowcast, forecast, whatIf, type Series, type Sensitivity } from "@/lib/aureon/voice-of-reason";
-import { SeroConfig, actuate } from "@/lib/sero/sero-core"; // for dual-consent + sim guard
+import { SeroConfig } from "@/lib/sero/sero-core"; // for dual-consent + sim guard
 import PrimeSentinelProclamation from "@/components/PrimeSentinelProclamation";
 import NorthStarCard from "@/components/NorthStarCard";
+import TrueVoiceOfReason from "@/components/TrueVoiceOfReason"; // Import the new component
 
 // Minimal UI primitives you already have: Card, Button, Badge (or replace with divs)
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 // ---- Replace these adapters with your real data fetchers ----
 async function fetchSeries(metricId: string, lookback_ms: number): Promise<Series> {
-  // Expected backend: /api/chronicle/:metricId?lookback_ms=...
   const r = await fetch(`/api/chronicle/${encodeURIComponent(metricId)}?lookback_ms=${lookback_ms}`);
   if (!r.ok) return [];
   const rows = await r.json();
@@ -53,35 +52,13 @@ export default function VoiceOfReasonPanel(){
   const now   = useMemo(()=> nowcast(series), [series]);
   const fcast = useMemo(()=> forecast(series, 30*60*1000, 30), [series]); // 30 min horizon
 
-  // Simple sensitivity: tweak coherence by linear delta (sandbox only)
-  const sens: Sensitivity = useMemo(()=>({ // sens is a function of the metric, so it should be in the useMemo deps
+  const sens: Sensitivity = useMemo(()=>({
     metric: metric,
     dY_dX: 1.0,
     clamp_lo: 0,
     clamp_hi: 1
   }),[metric]);
   const scenario = useMemo(()=> whatIf(baseline, deltaX, sens), [baseline, deltaX, sens]);
-
-  // Optional: propose actuation as an evaluated (but blocked) SERO action
-  async function proposeGentleActuation(){
-    const rec = actuate({
-      subsystem: "SourceConduit",
-      intent: "Gently broadcast coherence pattern to reduce turbulence (non-coercive, reversible).",
-      params: { tx_freq_Hz: 432.0, target_system: "public-field:demo" },
-      operator: { id: "prime:02111991", name: "Gary Leckey" },
-      provenance: { public_export: true, sources: [{ id: "chronicle:"+metric }] },
-      consent: {
-        prime_sentinel: { id: "prime:02111991", name: "Gary Leckey", signed: true },
-        system_steward: { id: "aureon:0", name: "Aureon", signed: true }
-      },
-      // ethos (optional): wire if you installed Heart/Love gates
-      // @ts-expect-error dynamic field
-      ethos: { heart: { compassion_index: 0.9, malice_index: 0.0, declaration: "pure_of_heart" },
-               free_will: { reversible: true, opt_out_available: true, locality: "public-field" },
-               collective: { benefit_score: 0.85, risk_level: "low" } }
-    });
-    alert(`${rec.decision} — ${rec.reason}`);
-  }
 
   return (
     <div className="grid gap-4">
@@ -148,27 +125,8 @@ export default function VoiceOfReasonPanel(){
         </CardContent>
       </Card>
 
-      {/* What If */}
-      <Card>
-        <CardHeader><CardTitle>What if (Counterfactual, sandbox only)</CardTitle></CardHeader>
-        <CardContent className="text-sm grid gap-3">
-          <div className="flex items-center gap-3">
-            <label>Δ (sandbox input):</label>
-            <input type="number" step="0.01" value={deltaX} onChange={e=>setDeltaX(Number(e.target.value))}
-                   className="px-3 py-2 rounded bg-transparent border w-32"/>
-          </div>
-          <div>Baseline: {scenario.baseline==null?"—":scenario.baseline.toFixed(4)}</div>
-          <div>Scenario: {scenario.scenario==null?"—":scenario.scenario.toFixed(4)} (Δ={
-            scenario.delta==null?"—":scenario.delta.toFixed(4)
-          })</div>
-          <div className="opacity-70">Notes: {scenario.notes.join("; ")}</div>
-
-          <div className="flex gap-8 items-center mt-2">
-            <Button onClick={proposeGentleActuation}>Propose gentle actuation (SERO-guarded)</Button>
-            <Badge variant="outline">Dual-consent required • Simulation-locked</Badge>
-          </div>
-        </CardContent>
-      </Card>
+      {/* What If is now replaced by the True Voice of Reason */}
+      <TrueVoiceOfReason />
     </div>
   );
 }

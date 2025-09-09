@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { retrospective, nowcast, forecast, whatIf, type Series, type Sensitivity } from "@/lib/aureon/voice-of-reason";
 import { SeroConfig, actuate } from "@/lib/sero/sero-core"; // for dual-consent + sim guard
 import PrimeSentinelProclamation from "@/components/PrimeSentinelProclamation";
+import NorthStarCard from "@/components/NorthStarCard";
 
 // Minimal UI primitives you already have: Card, Button, Badge (or replace with divs)
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +86,7 @@ export default function VoiceOfReasonPanel(){
   return (
     <div className="grid gap-4">
       <PrimeSentinelProclamation />
+      <NorthStarCard />
       <div className="flex items-center gap-8">
         <h2 className="text-xl font-semibold">Voice of Reason</h2>
         <Badge variant={now.integrity==="GREEN"?"success":now.integrity==="AMBER"?"warning":"destructive"}>

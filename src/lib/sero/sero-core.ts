@@ -2,6 +2,8 @@
 // Encodes Source Law (10-9-1), ethics gates, provenance checks, and dual-consent actuation.
 // No external deps.
 
+import { evaluateSeals, allSealsLit, type SealStatus } from "./sero-seals";
+
 export type Subsystem = "SourceConduit" | "MatterWeaver" | "ContinuumDrive";
 
 export type ActuationRequest = {
@@ -41,6 +43,7 @@ export type AuditRecord = {
   decision: "ALLOW" | "DENY";
   reason: string;
   ts: string;
+  seals?: SealStatus[];
 };
 
 // ---------- Gate Registry ----------
@@ -61,6 +64,7 @@ export const SeroConfig = {
   minCompositeScore: 0.80,          // require ≥80% to ALLOW
   publicProvenanceRequired: true,   // must be publishable in summary
   allowSimulationOnly: true,        // guard: no real-world effect from this library
+  requireAllSeals: true,
 };
 
 // ---------- Hardcoded Core Gates ----------
@@ -172,13 +176,34 @@ const AUDIT: AuditRecord[] = [];
 
 export function actuate(req: ActuationRequest): AuditRecord {
   const evaln = evaluateRequest(req);
-  const decision: "ALLOW" | "DENY" = evaln.ok && !SeroConfig.allowSimulationOnly ? "ALLOW" : "DENY";
-  const reason = evaln.ok ? (SeroConfig.allowSimulationOnly ? "Simulation mode: allowed logically, blocked physically." : "Meets all Sero gates.") : "One or more Sero gates failed.";
+  const seals = evaluateSeals(req, evaln);
+
+  // Base eligibility from gates:
+  let eligible = evaln.ok;
+
+  // If any seal is dark and the policy demands it, block:
+  if (SeroConfig.requireAllSeals && !allSealsLit(seals)) {
+    eligible = false;
+  }
+
+  const decision: "ALLOW" | "DENY" = eligible && !SeroConfig.allowSimulationOnly ? "ALLOW" : "DENY";
+  const reason =
+    eligible
+      ? (SeroConfig.allowSimulationOnly
+          ? "Simulation mode: logical allow, physical block."
+          : "All gates + seals illuminated.")
+      : "One or more gates/seals failed.";
+
   const rec: AuditRecord = {
     audit_id: `audit_${uid()}`,
     request: { ...req, id: req.id ?? `req_${uid()}`, ts: req.ts ?? nowISO() },
-    evaluation: evaln, decision, reason, ts: nowISO(),
+    evaluation: evaln,
+    decision,
+    reason,
+    ts: nowISO(),
+    seals
   };
+
   AUDIT.push(rec);
   return rec;
 }

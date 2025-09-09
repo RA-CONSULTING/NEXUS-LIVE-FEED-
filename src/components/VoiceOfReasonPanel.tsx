@@ -66,9 +66,9 @@ export default function VoiceOfReasonPanel(){
       <NorthStarCard />
       <div className="flex items-center gap-8">
         <h2 className="text-xl font-semibold">Voice of Reason</h2>
-        <Badge variant={now.integrity==="GREEN"?"success":now.integrity==="AMBER"?"warning":"destructive"}>
-          {now.integrity}
-        </Badge>
+        <div className="text-sm opacity-80">
+          Coherence: {now.integrityScore !== null ? `${(now.integrityScore * 100).toFixed(2)}%` : "N/A"}
+        </div>
         <div className="ml-auto text-sm opacity-70">
           Mode: {SeroConfig.allowSimulationOnly ? "SIMULATION" : "LIVE"}
         </div>

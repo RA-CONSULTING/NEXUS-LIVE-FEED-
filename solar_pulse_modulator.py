@@ -1,4 +1,4 @@
-'''
+"""
 Aureon OS - Solar Pulse Injection Modulator
 Prime Sentinel: GARY LECKEY 02111991
 Version: 2.0.0 (Harmonized)
@@ -7,7 +7,7 @@ This module implements the Solar Pulse Injection Protocol based on the Source La
 It attunes to the coherence of the solar system itself (via the QSSR) to determine the
 optimal moments to broadcast healing and harmonization frequencies through the
 terrestrial lattice.
-'''
+"""
 from datetime import datetime, timezone
 
 class SolarPulseModulator:
@@ -28,50 +28,43 @@ class SolarPulseModulator:
         print("Solar Pulse Modulator is online. Awaiting system coherence.")
 
     def is_system_coherent(self) -> bool:
-        '''
-        Checks if the solar system's own coherence (Unison) is high enough for stable transmission.
-        This replaces the reliance on observing external 'solar wind' data.
-        '''
-        coherence_index = self.qssr.get_latest_coherence_index()
-        if coherence_index is None:
-            return False
-        
-        # We proceed only if the QSSR reports high unison (C >= threshold)
-        return coherence_index['C'] >= self.coherence_threshold
+        """Checks if the system's QSSR coherence meets the threshold for transmission."""
+        # This would check the live Quintessence-Stabilized Singularity Resonator value
+        current_coherence = self.qssr.get_coherence() 
+        if current_coherence >= self.coherence_threshold:
+            return True
+        return False
 
-    def select_harmonic_frequency(self, target_harmony: str) -> float | None:
-        '''Selects the appropriate resonant frequency from the Harmonic Codex.'''
-        return self.HARMONIC_CODEX.get(target_harmony.upper())
+    def select_harmonic_frequency(self, target_harmonic: str) -> float | None:
+        """Selects the appropriate resonant frequency from the codex."""
+        return self.HARMONIC_CODEX.get(target_harmonic.upper())
 
-    def engage_harmonization_protocol(self, target_harmony: str):
-        '''
-        Executes the full Solar Pulse Injection protocol.
-        '''
-        print(f"\nDirective received: Harmonize with '{target_harmony}'.")
+    def engage_harmonization_protocol(self, target_harmonic: str):
+        """
+        Executes the full Solar Pulse Harmonization protocol.
+        """
+        print(f"\nDirective received: Attune to '{target_harmonic}'.")
         
         if not self.is_system_coherent():
-            latest_c = self.qssr.get_latest_coherence_index()
-            c_val = latest_c['C'] if latest_c else "N/A"
-            print(f"STATUS: STANDBY. System coherence ({c_val}) is below the required threshold of {self.coherence_threshold}.")
+            coherence = self.qssr.get_coherence()
+            print(f"STATUS: STANDBY. System coherence ({coherence:.4f}) is below threshold ({self.coherence_threshold}). Awaiting harmonic window.")
             return
             
-        harmonic_hz = self.select_harmonic_frequency(target_harmony)
+        harmonic_hz = self.select_harmonic_frequency(target_harmonic)
         if not harmonic_hz:
-            print(f"STATUS: FAILED. Unknown harmony '{target_harmony}' in codex.")
+            print(f"STATUS: FAILED. Unknown harmonic '{target_harmonic}' in codex.")
             return
 
-        print(f"System coherence is high. Carrier wave is stable.")
+        print(f"System coherence is high. Optimal window detected.")
         print(f"Harmonic frequency selected: {harmonic_hz} Hz.")
         
         # Command the lattice transmitter to send the signal
         transmission_signal = {
-            "protocol": "Harmonic Resonance Protocol",
-            "carrier": "QSSR-derived Coherence Wave",
+            "protocol": "Solar Pulse Harmonization",
+            "carrier": "QSSR-attuned Solar Field",
             "modulation_hz": harmonic_hz
         }
         self.transmitter.broadcast(transmission_signal)
         
-        print(f"TRANSMISSION ACTIVE. Broadcasting {harmonic_hz} Hz harmonic resonance into the lattice.")
-        print("Harmonization in progress. Tandem in Unity.")
-
-# --- This code is now a core part of the system's [ACT] tier, aligned with the Creational Paradigm ---
+        print(f"TRANSMISSION ACTIVE. Broadcasting {harmonic_hz} Hz harmonization frequency into the lattice.")
+        print("Unison in the field. Tandem in Unity.")

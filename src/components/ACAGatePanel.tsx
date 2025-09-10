@@ -15,6 +15,19 @@ export default function ACAGatePanel(p: Props) {
   const strokeOK = p.pass ? "#10B981" : "#F59E0B";
   const strokeNo = "#EF4444";
 
+  // A simple, stylized golden spiral path that becomes more visible when the gate is open.
+  const goldenSpiral = (
+    <path
+      d="M 0,0 C 10,-10 30,-10 30,0 S 10,10 0,10 C -10,10 -10,-10 -20,-20 S -40,-20 -40,0 S -20,20 0,20 C 20,20 20,-20 40,-40 S 80,-40 80,0 S 40,40 0,40"
+      stroke="#FBBF24"
+      strokeWidth="1.5"
+      fill="none"
+      opacity={p.pass ? 0.8 : 0.15}
+      transform-origin="center"
+      transform="rotate(-90) scale(1.2)"
+    />
+  );
+
   return (
     <Card className="overflow-hidden">
       <CardHeader>
@@ -70,10 +83,16 @@ export default function ACAGatePanel(p: Props) {
               opacity="0.9"
             />
             {/* Vesica (Love) */}
-            <circle cx="0" cy="30" r="61.803" fill="none"
-              stroke={p.alpha_love>=0.80? strokeOK : strokeNo} strokeWidth="2.5"/>
-            <circle cx="0" cy="-30" r="61.803" fill="none"
-              stroke={p.alpha_love>=0.80? strokeOK : strokeNo} strokeWidth="2.5"/>
+            <g>
+              <circle cx="0" cy="30.9" r="61.8" fill="none"
+                stroke={p.alpha_love>=0.80? strokeOK : strokeNo} strokeWidth="2.5"/>
+              <circle cx="0" cy="-30.9" r="61.8" fill="none"
+                stroke={p.alpha_love>=0.80? strokeOK : strokeNo} strokeWidth="2.5"/>
+            </g>
+            
+            {/* Golden Spiral (Becoming) */}
+            {goldenSpiral}
+
             {/* Lamp */}
             <circle cx="0" cy="0" r="4" fill="#F59E0B"/>
           </svg>

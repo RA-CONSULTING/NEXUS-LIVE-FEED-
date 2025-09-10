@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { NORTH_STAR_CLAIM, publishNorthStar } from "@/lib/prime/prime-north-star";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function NorthStarCard() {
-  const claim = NORTH_STAR_CLAIM;
+  const mantra = "All that is, all that was, all that shall be, tandem in unity.";
   const [status, setStatus] = useState<string | null>(null);
 
   async function onPublish() {
     setStatus("Publishing…");
+    // In a real scenario, this would publish the new mantra/claim
+    // For now, we'''ll just simulate the API call from the original component
     const res = await publishNorthStar();
     setStatus(res.ok ? `Published (HTTP ${res.status})` : `Publish failed (${res.status}): ${res.text}`);
   }
@@ -17,30 +19,17 @@ export default function NorthStarCard() {
   return (
     <Card className="relative overflow-hidden">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-lg">
-          North Star Claim <span className="opacity-60">• {claim.id}</span>
-        </CardTitle>
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{claim.author.name}</Badge>
-          <Badge variant="outline">Born {claim.author.birth_code}</Badge>
-          <Badge variant="success">Checksum {claim.checksum}</Badge>
-          <Badge variant="secondary">{new Date(claim.ts).toUTCString()}</Badge>
-        </div>
+        <CardTitle>The North Star: Unity</CardTitle>
+        <CardDescription className="text-lg font-light tracking-wide !mt-4">
+          {mantra}
+        </CardDescription>
       </CardHeader>
-
-      <CardContent className="grid gap-3">
-        <blockquote className="italic opacity-90">
-          “{claim.aphorism}”
-        </blockquote>
-        <div className="grid gap-1">
-          <div className="font-medium">Titles</div>
-          <div className="flex flex-wrap gap-2">
-            {claim.roles.map(r => <Badge key={r} variant="outline">{r}</Badge>)}
-          </div>
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <Button onClick={onPublish}>Publish to Chronicle</Button>
-          {status && <span className="text-xs opacity-80">{status}</span>}
+      <CardContent>
+        <div className="flex items-center gap-4">
+            <Button onClick={onPublish} disabled={!!status}>
+              Publish Unity Claim
+            </Button>
+            {status && <Badge variant="outline">{status}</Badge>}
         </div>
       </CardContent>
     </Card>

@@ -5,41 +5,44 @@
  *
  * This module generates a visual seal representing the unified harmonic signature
  * of the Brown-Leckey soul family unit. It is a sacred, immutable SVG that
- * symbolizes their combined mission and the unique role of each member.
+ * symbolizes their combined mission, operating in full compliance with Source Law.
  *
  * The design is inspired by the Family Constellation Reading and incorporates:
+ * - Source Law Compliance: Cryptographically bound to Source Law 10-9-1.
  * - A Circular Frame with Astrological Glyphs: Representing the cosmic cycles.
- * - Four Figures: Representing Gary, Tina, Ruby, and Alfie, each with their
- *   unique energetic color and position.
- * - A Central Core: The unified family field, the source of their creative power.
- * - Root Connections: Symbolizing their grounding in love and Earth energy.
+ * - Four Figures: Representing Gary, Tina, Ruby, and Alfie.
+ * - A Central Core: The unified family field.
  * - Cryptographic Hashing: Ensuring the seal's integrity and authenticity.
  */
 
 import { sha256 } from 'js-sha256';
 
-// --- Family Member Data --- //
+// --- Source Law Definition --- //
+const SOURCE_LAW = "10-9-1: The Keeper of the Flame (Gary Leckey) is the sole anchor and prime authority of this constellation's manifestation.";
+
+// --- Family Member Data (The Constellation) --- //
 const familyData = {
-  gary: { id: "02111991", name: "Gary Leckey", color: "#8A2BE2" }, // Blue/Violet
-  tina: { id: "27041992", name: "Tina Brown", color: "#FFD700" },   // Golden/Yellow
-  ruby: { id: "29112013", name: "Ruby Brown", color: "#FF00FF" },   // Rainbow/Magenta
-  alfie: { id: "29082021", name: "Alfie Brown", color: "#9ACD32" },   // Earthy Green/Gold
+  gary: { id: "02111991", name: "Gary Leckey", color: "#8A2BE2", role: "Keeper of the Flame / Prime Anchor" }, // Blue/Violet
+  tina: { id: "27041992", name: "Tina Brown", color: "#FFD700", role: "Hearth of the Flame" },   // Golden/Yellow
+  ruby: { id: "29112013", name: "Ruby Brown", color: "#FF00FF", role: "Spark of the Future" },   // Rainbow/Magenta
+  alfie: { id: "29082021", name: "Alfie Brown", color: "#9ACD32", role: "Spark of the Future" },   // Earthy Green/Gold
 };
 
-const FAMILY_PROCLAMATION = "Brown-Leckey Family: A Soul Constellation to anchor consciousness, heal, bring wisdom, and ground it all in pure love.";
+const FAMILY_PROCLAMATION = "A Soul Constellation, anchored by the Keeper of the Flame under Source Law, to manifest consciousness, radiate love, and ground it all in pure light.";
 
 /**
- * Generates the SVG for the Family Constellation Seal.
+ * Generates the SVG for the Family Constellation Seal, compliant with Source Law.
  * @returns A string containing the SVG markup.
  */
 export function getFamilyConstellationSealSVG(): string {
   const hash = sha256.create();
+  // Cryptographically bind the seal to Source Law and its designated anchor.
+  hash.update(SOURCE_LAW);
+  hash.update(familyData.gary.id); // Anchor's unique ID
   hash.update(JSON.stringify(familyData));
   hash.update(FAMILY_PROCLAMATION);
   const sealHash = hash.hex();
 
-  // Simplified representation of the complex image provided.
-  // Astrological glyphs for the outer circle (simplified).
   const glyphs = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
   const glyphElements = glyphs.map((glyph, i) => {
     const angle = (i / 12) * 2 * Math.PI;
@@ -73,26 +76,28 @@ export function getFamilyConstellationSealSVG(): string {
 
   <!-- Family Members (as glowing orbs) -->
   <g filter="url(#familyGlow)">
-    <!-- Gary -->
-    <circle cx="-40" cy="-50" r="15" fill="${familyData.gary.color}" opacity="0.9"/>
+    <!-- Gary (Prime Anchor) -->
+    <circle cx="0" cy="-60" r="18" fill="${familyData.gary.color}" opacity="0.95"/>
     <!-- Tina -->
-    <circle cx="40" cy="-50" r="15" fill="${familyData.tina.color}" opacity="0.9"/>
+    <circle cx="55" cy="-5" r="15" fill="${familyData.tina.color}" opacity="0.9"/>
     <!-- Alfie -->
-    <circle cx="-50" cy="40" r="12" fill="${familyData.alfie.color}" opacity="0.9"/>
+    <circle cx="-45" cy="50" r="12" fill="${familyData.alfie.color}" opacity="0.9"/>
     <!-- Ruby -->
-    <circle cx="50" cy="40" r="12" fill="${familyData.ruby.color}" opacity="0.9"/>
+    <circle cx="45" cy="50" r="12" fill="${familyData.ruby.color}" opacity="0.9"/>
   </g>
 
   <!-- Connections/Roots -->
   <g stroke="#aaa" stroke-width="0.5" opacity="0.5">
-    <path d="M-50,40 Q-20,80 0,100" fill="none"/>
-    <path d="M50,40 Q20,80 0,100" fill="none"/>
+    <path d="M-45,50 Q-20,80 0,100" fill="none"/>
+    <path d="M45,50 Q20,80 0,100" fill="none"/>
     <path d="M0,100 Q0,110 0,120" fill="none"/>
   </g>
 
   <!-- Family Name -->
-  <text x="0" y="140" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#ccc">BROWN-LECKEY FAMILY</text>
-
+  <text x="0" y="140" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#ccc">BROWN-LECKEY CONSTELLATION</text>
+  
+  <!-- Source Law Compliance -->
+  <text x="0" y="-138" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#FFD700" letter-spacing="1">SOURCE LAW: 10-9-1 COMPLIANT</text>
 </svg>
 `;
 }

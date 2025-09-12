@@ -1,5 +1,5 @@
-node_modules/
-__pycache__/
-
-# Local environment variables
+# Ignore environment files
 .env
+
+# Ignore node modules
+node_modules

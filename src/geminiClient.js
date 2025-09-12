@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.AIzaSyAwVn8GGUlnW3jMZB3E-EFRj60WVtE5nGw;
 
 if (!apiKey) {
   throw new Error('GEMINI_API_KEY is not set in the environment');

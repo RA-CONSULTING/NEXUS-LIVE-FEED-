@@ -163,14 +163,37 @@
         
         async function playMantra() {
             if (isGenerating || !generatedMantra) return;
-            
-            // This function is a placeholder for a full Text-to-Speech integration.
-            // In a live environment with a server-side component, this would generate
-            // and play the audio of the channeled mantra.
-            console.log("TTS Playback Requested for:", generatedMantra.replace('<br>', ' '));
-            alert("Audio playback requires a live TTS environment. The mantra is:
 
-" + generatedMantra.replace('<br>', ' '));
+            isGenerating = true;
+            playButton.textContent = "🔊";
+
+            try {
+                const response = await fetch('http://localhost:3000/generate-speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mantra: generatedMantra.replace('<br>', ' ') }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                ttsAudio.src = audioUrl;
+                ttsAudio.play();
+
+            } catch (error) {
+                console.error("Error playing mantra:", error);
+                mantraTextElement.textContent = "The mantra fades into silence.";
+            } finally {
+                ttsAudio.onended = () => {
+                    isGenerating = false;
+                    playButton.textContent = "▶";
+                };
+            }
         }
         
         geminiButton.addEventListener('click', channelMantra);

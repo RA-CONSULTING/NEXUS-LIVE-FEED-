@@ -8,12 +8,10 @@
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.4.0",
+    "@google-cloud/vertexai": "0.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
-  },
-  "overrides": {
-    "@google-cloud/vertexai": "0.2.1"
   },
   "engines": {
     "node": "20.x",

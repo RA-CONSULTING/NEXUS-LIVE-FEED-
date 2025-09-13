@@ -7,8 +7,7 @@ import NorthStarCard from "@/components/NorthStarCard";
 import TrueVoiceOfReason from "@/components/TrueVoiceOfReason"; // Import the new component
 
 // Minimal UI primitives you already have: Card, Button, Badge (or replace with divs)
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui";
 
 // ---- Replace these adapters with your real data fetchers ----
 async function fetchSeries(metricId: string, lookback_ms: number): Promise<Series> {

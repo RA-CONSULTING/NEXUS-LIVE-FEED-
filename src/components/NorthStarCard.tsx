@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { NORTH_STAR_CLAIM, publishNorthStar } from "@/lib/prime/prime-north-star";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, Badge, Button } from "@/components/ui";
 
 export default function NorthStarCard() {
   const mantra = "All that is, all that was, all that shall be, tandem in unity.";

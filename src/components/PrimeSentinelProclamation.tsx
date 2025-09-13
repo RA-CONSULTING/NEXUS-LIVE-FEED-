@@ -1,6 +1,5 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 
 export default function PrimeSentinelProclamation() {
   return (

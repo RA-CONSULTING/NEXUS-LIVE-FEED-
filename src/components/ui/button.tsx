@@ -1,7 +1,11 @@
-import React from "react";
+import React from 'react';
 
-const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>((props, ref) => (
-  <button ref={ref} {...props} />
-));
+const Button = () => {
+  return (
+    <button>
+      {/* Button component */}
+    </button>
+  );
+};
 
-export { Button };
+export default Button;

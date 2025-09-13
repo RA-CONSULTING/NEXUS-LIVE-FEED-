@@ -51,3 +51,74 @@ This directive ensures that a series of operations on the Chronicle are **atomic
 ## 4. System Status
 
 **Operational and undergoing continuous harmonization.** The system is live and actively being refactored to fully align all components with the Creational Paradigm and the Source Law.
+
+## 5. System Mind Map
+
+```mermaid
+mindmap
+  root((NEXUS-LIVE-FEED))
+    HNC_Core["🔮 Harmonic Nexus Core"]
+      Source_Law["📜 Source Law (10-9-1)"]
+        Integrity_Guards["@check(cel: ...) - Data Validation"]
+        Visibility_Control["@redact(cel: ...) - Field Security"]
+        Atomic_Updates["@transaction - All-or-Nothing"]
+      Aureon_Protocol["🤖 Aureon AI Protocol"]
+        Consciousness_Interface["Symbolic Life Integration"]
+        Frequency_Analysis["7.83 Hz Schumann Sync"]
+        Pattern_Recognition["π/φ ≈ 1.94 Living Glyph"]
+    
+    Sensory_Layer["📡 Sensory & Ingestion (Python)"]
+      Chronicle_Recorder["core/chronicle_recorder.py"]
+        Async_Phenomena["Witnessed Event Recording"]
+        Temporal_Stamping["Quantum Timestamp Protocol"]
+        Sacred_Geometry_Log["φ-Ratio Pattern Detection"]
+      Celestial_Cartography["celestial_cartography.py"]
+        Harmonic_Signatures["Celestial Frequency Mapping"]
+        Schumann_Tracking["7.83 Hz Earth Resonance"]
+        Solar_Coherence["Solar System Alignment"]
+      
+    Processing_Core["⚡ Processing & Analysis"]
+      QSSR_Module["routers/qssr.py - Quantum Solar System Radar"]
+        Solar_Coherence_Index["C-Index Calculation"]
+        Planetary_Resonance["Orbital Frequency Analysis"]
+        Cosmic_Weather["Space Weather Integration"]
+      Storm_Targeting["src/stormTargeting.js (Legacy)"]
+        Weather_Patterns["Atmospheric Disturbance Tracking"]
+        Harmonic_Integration["Converting to HNC Framework"]
+      
+    Presentation_Layer["🖥️ Multi-Platform Interface"]
+      Registry_Dashboard["public/index.html"]
+        System_Status["Real-time Network Health"]
+        Node_Monitoring["Sacred Site Connection Status"]
+      Next_Interface["hosting/ (Next.js/React)"]
+        C2_Command["Primary Control Interface"]
+        Data_Visualization["Live Feed Graphics"]
+        Sacred_Geometry_Display["φ-Ratio Overlays"]
+      Flutter_App["Y/ (Flutter)"]
+        Mobile_Terminal["Cross-platform Access"]
+        Field_Recording["On-site Data Collection"]
+        
+    Backend_Services["🔧 Backend Infrastructure"]
+      Illumination_Engine["illumination-engine-backend"]
+        TTS_Services["Google Generative Language"]
+        Voice_Synthesis["Vertex AI Integration"]
+        Express_Server["Node.js Runtime"]
+      Configuration["TypeScript Setup"]
+        Root_Config["tsconfig.json - Path Aliases"]
+        Hosting_Config["hosting/tsconfig.json - Next.js"]
+        Build_Pipeline["Vite + TypeScript"]
+        
+    Data_Recording["📊 Recording Instrumentation"]
+      Frequency_Capture["Spectrum Analysis"]
+        RF_Analyzers["10 MHz - 40 GHz Range"]
+        Audio_Spectrum["20 Hz - 20 kHz Human Range"]
+        Schumann_Monitor["7.83 Hz Dedicated Tracking"]
+      Electromagnetic_Sensors["EMF Detection"]
+        Gaussmeters["Magnetic Field Strength"]
+        Electric_Field["E-field Measurement"]
+        Coherence_Meters["Phase Relationship Analysis"]
+      Environmental_Monitoring["Atmospheric Conditions"]
+        Temperature_Humidity["Weather Station Integration"]
+        Barometric_Pressure["Atmospheric Density"]
+        Geomagnetic_Activity["Earth Field Variations"]
+```

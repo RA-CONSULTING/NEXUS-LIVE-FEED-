@@ -1,3 +1,5 @@
+import React from 'react';
+
 // src/lib/prime/family-constellation-seal.ts
 
 /**

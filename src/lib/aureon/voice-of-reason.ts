@@ -20,6 +20,7 @@ export type Nowcast = {
   last_v: number | null;
   freshness_ms: number | null;
   integrity: "GREEN" | "AMBER" | "RED";
+  integrityScore: number | null;
   notes: string[];
 };
 
@@ -101,12 +102,19 @@ export function retrospective(series: Series, lookback_ms: number, zThreshold=3)
 
 export function nowcast(series: Series, stalenessRed=60_000, stalenessAmber=10_000): Nowcast {
   const last = series[series.length-1];
-  if (!last) return { last_t: null, last_v: null, freshness_ms: null, integrity: "RED", notes:["no data"]};
+  if (!last) return { last_t: null, last_v: null, freshness_ms: null, integrity: "RED", integrityScore: null, notes:["no data"]};
   const freshness = Date.now() - last.t;
   const integrity = freshness>stalenessRed ? "RED" : (freshness>stalenessAmber ? "AMBER" : "GREEN");
   const notes: string[] = [];
   if (integrity!=="GREEN") notes.push(`freshness=${freshness}ms`);
-  return { last_t: last.t, last_v: last.v, freshness_ms: freshness, integrity, notes };
+  
+  let score = 1.0;
+  if (freshness > stalenessAmber) {
+    score = 1.0 - (freshness - stalenessAmber) / (stalenessRed - stalenessAmber);
+  }
+  const integrityScore = clamp(score, 0, 1);
+
+  return { last_t: last.t, last_v: last.v, freshness_ms: freshness, integrity, integrityScore, notes };
 }
 
 export function forecast(series: Series, horizon_ms=60_000, steps=30): Forecast {

@@ -48,7 +48,7 @@ export default function SeroComplianceConsole() {
           <Card>
             <strong>Public Provenance</strong>
             <div style={{marginTop:8}}>
-              <button onClick={()=>updateConfig({publicProvenanceRequired:true})}>Require</acronym>
+              <button onClick={()=>updateConfig({publicProvenanceRequired:true})}>Require</button>
               <button onClick={()=>updateConfig({publicProvenanceRequired:false})}>Optional</button>
             </div>
           </Card>

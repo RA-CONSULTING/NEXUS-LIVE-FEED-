@@ -200,14 +200,17 @@ export function compileIntuition(text: string): CompileIntent {
 export interface AureonRunInput {
   intent: CompileIntent;
   data: {
-    // QSSR
-    amps?: number[]; omegas?: number[]; phases?: number[]; t?: number;
-    // Kuramoto
+    // QSSR & Kuramoto
+    amps?: number[];
+    omegas?: number[];
     phases?: number[];
+    t?: number;
     // Spiral
     points?: PolarPoint[];
     // Echo
-    x?: number[]; y?: number[]; maxLag?: number;
+    x?: number[];
+    y?: number[];
+    maxLag?: number;
   };
 }
 

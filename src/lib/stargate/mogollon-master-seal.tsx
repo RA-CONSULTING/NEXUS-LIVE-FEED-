@@ -1,3 +1,5 @@
+import React from 'react';
+
 // src/lib/stargate/mogollon-master-seal.ts
 
 /**

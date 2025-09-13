@@ -4,17 +4,31 @@
   "description": "Server-side voice for the Illumination Engine, handling TTS requests.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "tsc && vite build"
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.4.0",
     "@google-cloud/vertexai": "0.2.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "js-sha256": "^0.11.1",
+    "lucide-react": "^0.544.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.3.1"
   },
   "engines": {
     "node": "20.x",
     "npm": "10.x"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
   }
 }

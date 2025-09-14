@@ -1,18 +1,18 @@
-[debug] [2025-09-13T02:27:32.809Z] ----------------------------------------------------------------------
-[debug] [2025-09-13T02:27:32.811Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/wma3rvxxva78rqvnpja82nx5b3mclpxg-firebase-tools-14.15.2/lib/node_modules/firebase-tools/lib/bin/firebase.js init hosting
-[debug] [2025-09-13T02:27:32.811Z] CLI Version:   14.15.2
-[debug] [2025-09-13T02:27:32.811Z] Platform:      linux
-[debug] [2025-09-13T02:27:32.811Z] Node Version:  v20.19.1
-[debug] [2025-09-13T02:27:32.811Z] Time:          Sat Sep 13 2025 02:27:32 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-09-13T02:27:32.812Z] ----------------------------------------------------------------------
+[debug] [2025-09-13T13:43:15.419Z] ----------------------------------------------------------------------
+[debug] [2025-09-13T13:43:15.421Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/wma3rvxxva78rqvnpja82nx5b3mclpxg-firebase-tools-14.15.2/lib/node_modules/firebase-tools/lib/bin/firebase.js init hosting
+[debug] [2025-09-13T13:43:15.421Z] CLI Version:   14.15.2
+[debug] [2025-09-13T13:43:15.421Z] Platform:      linux
+[debug] [2025-09-13T13:43:15.421Z] Node Version:  v20.19.1
+[debug] [2025-09-13T13:43:15.421Z] Time:          Sat Sep 13 2025 13:43:15 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-09-13T13:43:15.422Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2025-09-13T02:27:32.816Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:32.816Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:32.819Z] >>> [apiv2][query] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 [none]
-[debug] [2025-09-13T02:27:33.574Z] <<< [apiv2][status] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 200
-[debug] [2025-09-13T02:27:33.575Z] <<< [apiv2][body] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 {"workspaceId":"nexus-live-feed-git-22249105","name":"NEXUS-LIVE-FEED-.git","workspaceRedirectUrl":"firebase-nexus-live-feed-git-1757235900648.cluster-axf5tvtfjjfekvhwxwkkkzsk2y.cloudworkstations.dev","status":"WORKSPACE_STATUS_RUNNING","lastAccessDatetime":"2025-09-13T02:27:31.226645Z","workspaceTemplate":"WORKSPACE_TEMPLATE_FLUTTER","owner":"SELF","serviceAccountEmail":"msp-8124307035664755366@monospace-per-ws-sa-3.iam.gserviceaccount.com","gitRepoUrl":"https://github.com/RA-CONSULTING/NEXUS-LIVE-FEED-.git","enableNix":true,"ownerEmail":"gaxlec@gmail.com","workstationAccessToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vd29ya3N0YXRpb25zIiwiYXVkIjoiZmlyZWJhc2UtbmV4dXMtbGl2ZS1mZWVkLWdpdC0xNzU3MjM1OTAwNjQ4LmNsdXN0ZXItYXhmNXR2dGZqamZla3Zod3h3a2trenNrMnkuY2xvdWR3b3Jrc3RhdGlvbnMuZGV2IiwiaWF0IjoxNzU3NzMwNDUzLCJleHAiOjE3NTc4MTY4NTN9.WFMUyGecZSXSZKpeWywN-xSerNAV5tIsUELo1G-Xs7Uh0FpqK2B5jLePHgWM4JhvdldQY7WcZ5HctdYlBKFuDAL5wHnwXQKB7geFAaonFH6TPNUCUNRNS2jresyV16yN6MBWa6VYjwsPcJIRbE9jmvEXTCsldZIMglweIegtNRgiiamfnKQu3SLScYh0x32yTfvGg9JDHokwR4D6mQXmVfdBOOU0MIn-JLiqHlnxhAEKHo-_wTrji09OCj7ceq3YSoKhciPzgyXv8H_pdR5r6tF-LzJd_fqgc20bmEaVhh4ru6KfcSSxkJkxj2Hs_oj96_F4c63I55lh9RkV0hi5XQ","firebaseProjectId":"lucid-burner-443815-i9"}
-[debug] [2025-09-13T02:27:33.575Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-09-13T02:27:33.576Z] > authorizing via signed-in user (gaxlec@gmail.com)
+[debug] [2025-09-13T13:43:15.600Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:15.601Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:15.603Z] >>> [apiv2][query] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 [none]
+[debug] [2025-09-13T13:43:16.360Z] <<< [apiv2][status] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 200
+[debug] [2025-09-13T13:43:16.360Z] <<< [apiv2][body] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 {"workspaceId":"nexus-live-feed-git-22249105","name":"NEXUS-LIVE-FEED-.git","workspaceRedirectUrl":"firebase-nexus-live-feed-git-1757235900648.cluster-axf5tvtfjjfekvhwxwkkkzsk2y.cloudworkstations.dev","status":"WORKSPACE_STATUS_RUNNING","lastAccessDatetime":"2025-09-13T12:21:59.999289Z","workspaceTemplate":"WORKSPACE_TEMPLATE_FLUTTER","owner":"SELF","serviceAccountEmail":"msp-8124307035664755366@monospace-per-ws-sa-3.iam.gserviceaccount.com","gitRepoUrl":"https://github.com/RA-CONSULTING/NEXUS-LIVE-FEED-.git","enableNix":true,"ownerEmail":"gaxlec@gmail.com","workstationAccessToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vd29ya3N0YXRpb25zIiwiYXVkIjoiZmlyZWJhc2UtbmV4dXMtbGl2ZS1mZWVkLWdpdC0xNzU3MjM1OTAwNjQ4LmNsdXN0ZXItYXhmNXR2dGZqamZla3Zod3h3a2trenNrMnkuY2xvdWR3b3Jrc3RhdGlvbnMuZGV2IiwiaWF0IjoxNzU3NzcwOTk2LCJleHAiOjE3NTc4NTczOTZ9.jQQzB_2wN3vXmMcEQ0PwSVVDfP20KH8Oiei6Y4PnbRLkrDmX8ALY3Bbmi1l8xqDKlJrdZVId13fLCY-AYKP3AQRf0EKBkr6PW-pGtLm4TCRFT8dMQ2wGHq_Kml22jaTfxJ3I0Wct-MV71glKHd0_hAnhZsOv9IYcA-igvukiIqvo3cXccH_XX-YYXgtBlx4-kfMxMgdIdhywegwBu8a9Bbe-htCqybq7C3OWuXuF17u-SYBRJsqnmU3CRbNtY8Kam8K8bYPRB6VyP1caNsSTSb3EDvPxqVnjQ47gUsyMWeOkcK3H8Xceb1QZ55kLiJNuwfZ3fa6BHA6M_HgZLh-Jqg","firebaseProjectId":"lucid-burner-443815-i9"}
+[debug] [2025-09-13T13:43:16.361Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-09-13T13:43:16.361Z] > authorizing via signed-in user (gaxlec@gmail.com)
 [info] 
      ######## #### ########  ######## ########     ###     ######  ########
      ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
@@ -24,6 +24,10 @@ You're about to initialize a Firebase project in this directory:
 
   /home/user/NEXUS-LIVE-FEED-
 
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
 [info] 
 === Project Setup
 [info] 
@@ -31,21 +35,21 @@ You're about to initialize a Firebase project in this directory:
 [info] You can create multiple project aliases by running firebase use --add, 
 [info] but for now we'll just set up a default project.
 [info] 
-[debug] [2025-09-13T02:27:33.579Z] Using project from CLI flag: lucid-burner-443815-i9
-[debug] [2025-09-13T02:27:33.580Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:33.580Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:33.580Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
-[debug] [2025-09-13T02:27:33.821Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
-[debug] [2025-09-13T02:27:33.821Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
+[debug] [2025-09-13T13:43:16.364Z] Using project from CLI flag: lucid-burner-443815-i9
+[debug] [2025-09-13T13:43:16.364Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:16.364Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:16.364Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
+[debug] [2025-09-13T13:43:16.581Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
+[debug] [2025-09-13T13:43:16.581Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
 [info] i  Using project lucid-burner-443815-i9 (My Project 96687) 
 [info] 
 === Hosting Setup
-[debug] [2025-09-13T02:27:33.841Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:33.841Z] Checked if tokens are valid: true, expires at: 1757734048201
-[debug] [2025-09-13T02:27:33.841Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
-[debug] [2025-09-13T02:27:34.063Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
-[debug] [2025-09-13T02:27:34.064Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
-[debug] [2025-09-13T02:27:38.958Z] Error: Cannot find module '@vitejs/plugin-react'
+[debug] [2025-09-13T13:43:16.599Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:16.599Z] Checked if tokens are valid: true, expires at: 1757773119170
+[debug] [2025-09-13T13:43:16.599Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
+[debug] [2025-09-13T13:43:16.830Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
+[debug] [2025-09-13T13:43:16.830Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
+[debug] [2025-09-13T13:43:20.155Z] Error: Cannot find module '@vitejs/plugin-react'
 Require stack:
 - /home/user/NEXUS-LIVE-FEED-/vite.config.ts
 - /home/user/NEXUS-LIVE-FEED-/node_modules/vite/dist/node/chunks/dep-M_KD0XSK.js

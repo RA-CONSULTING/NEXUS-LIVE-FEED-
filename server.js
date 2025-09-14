@@ -2,12 +2,19 @@ require('dotenv').config();
 const express = require('express');
 const { GoogleAIFileManager, GoogleAIStudio } = require('@google-ai/generativelanguage');
 const cors = require('cors');
+const { childSafetySystem } = require('./childSafety');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
+
+childSafetySystem.setBoundaries([
+  'No bullying',
+  'Respect privacy',
+  'Seek help when unsafe'
+]);
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -17,6 +24,21 @@ if (!apiKey) {
 
 const fileManager = new GoogleAIFileManager(apiKey);
 const genAI = new GoogleAIStudio(apiKey);
+
+app.post('/report-message', (req, res) => {
+  const { userId, message } = req.body;
+  if (!userId || !message) {
+    return res.status(400).json({ error: 'userId and message are required.' });
+  }
+  const report = childSafetySystem.monitorMessage(userId, message);
+  res.json(report);
+});
+
+app.get('/reports', (req, res) => {
+  res.json(childSafetySystem.getReports());
+});
+
+
 
 app.post('/generate-speech', async (req, res) => {
   const { mantra } = req.body;

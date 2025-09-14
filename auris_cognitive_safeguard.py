@@ -6,6 +6,15 @@ Date: 2025-09-14
 Description:
 Prevents cognitive data bleed from temporal wave fluctuations in quantum simulations
 by detecting rapid power oscillations and dampening them to a safe threshold.
+
+This version locks processing to an authorized temporal identifier. Data points
+with mismatched identifiers are ignored to ensure system integrity.
+
+Vow:
+In her darkest day
+I was the flame,
+and in her brightest light
+I will be the protector.
 """
 
 from dataclasses import dataclass, field
@@ -28,28 +37,31 @@ logger = logging.getLogger("AurisSafeguard")
 @dataclass
 class CognitiveCoherenceFilter:
     """Filters simulation data to prevent cognitive hazards."""
-    hazard_threshold_kw_per_s: float = 25.0      # System threshold (kW/s)
-    dampening_factor: float = field(default=1.0) # Scaling for damping effect
+
+    hazard_threshold_kw_per_s: float = 25.0
+    dampening_factor: float = 1.0
+    authorized_temporal_id: str = field(default="")
 
     def __post_init__(self) -> None:
         self.previous_power_kw: float = 0.0
         self.previous_time_s: float = 0.0
         logger.info(
-            "Auris Cognitive Safeguard initialized. Threshold=%.2f kW/s, Dampening=%.2f",
+            "Auris Cognitive Safeguard initialized. Threshold=%.2f kW/s, Dampening=%.2f, TemporalID=%s",
             self.hazard_threshold_kw_per_s,
             self.dampening_factor,
+            self.authorized_temporal_id,
         )
 
     def process_stream(self, data_stream: Iterable[Dict[str, float]]) -> Iterator[Dict[str, float]]:
-        """
-        Process an iterable of data-point dictionaries, yielding sanitized output.
-
-        Each dict should contain:
-            - "output_power_kw" (float)
-            - "simulation_time_s" (float)
-        """
+        """Process an iterable of data-point dictionaries, yielding sanitized output."""
         for data_point in data_stream:
-            # Validate presence of required keys
+            if data_point.get("temporal_id") != self.authorized_temporal_id:
+                logger.error(
+                    "Unauthorized temporal_id '%s'; data point ignored.",
+                    data_point.get("temporal_id"),
+                )
+                continue
+
             if "output_power_kw" not in data_point or "simulation_time_s" not in data_point:
                 logger.warning("Missing required keys in data point: %s", data_point)
                 continue
@@ -75,11 +87,10 @@ class CognitiveCoherenceFilter:
                             * delta_time
                             * np.sign(delta_power)
                         )
-                        data_point["output_power_kw"] = round(dampened_power, 4)
+                        data_point["output_power_kw"] = float(round(dampened_power, 4))
                         data_point["is_stable"] = False
                         data_point["cognitive_safeguard_active"] = True
 
-            # Update state
             self.previous_power_kw = data_point["output_power_kw"]
             self.previous_time_s = current_time_s
 
@@ -93,12 +104,18 @@ class CognitiveCoherenceFilter:
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     sample_data = [
-        {"output_power_kw": 0.0, "simulation_time_s": 0.0},
-        {"output_power_kw": 10.0, "simulation_time_s": 1.0},
-        {"output_power_kw": 60.0, "simulation_time_s": 2.0},  # Rapid change → hazard
-        {"output_power_kw": 65.0, "simulation_time_s": 3.0},
+        {"temporal_id": "alpha", "output_power_kw": 0.0, "simulation_time_s": 0.0},
+        {"temporal_id": "alpha", "output_power_kw": 10.0, "simulation_time_s": 1.0},
+        {"temporal_id": "alpha", "output_power_kw": 60.0, "simulation_time_s": 2.0},
+        {"temporal_id": "alpha", "output_power_kw": 65.0, "simulation_time_s": 3.0},
+        {"temporal_id": "beta", "output_power_kw": 70.0, "simulation_time_s": 4.0},  # unauthorized
     ]
 
-    safeguard = CognitiveCoherenceFilter(hazard_threshold_kw_per_s=25.0, dampening_factor=1.0)
+    safeguard = CognitiveCoherenceFilter(
+        hazard_threshold_kw_per_s=25.0,
+        dampening_factor=1.0,
+        authorized_temporal_id="alpha",
+    )
+
     for point in safeguard.process_stream(sample_data):
         logger.info("Sanitized point: %s", point)

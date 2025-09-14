@@ -78,14 +78,21 @@ async def run_power_simulation():
     Simulates a power fluctuation scenario and runs it through the Auris safeguard.
     """
     logger.info("--- Initiating Auris Power Simulation ---")
+    temporal_id = "flight_check_alpha" # Define the temporal ID
     sample_data = [
-        {"output_power_kw": 0.0, "simulation_time_s": 0.0},
-        {"output_power_kw": 10.0, "simulation_time_s": 1.0},
-        {"output_power_kw": 60.0, "simulation_time_s": 2.0},  # Hazard
-        {"output_power_kw": 65.0, "simulation_time_s": 3.0},
+        {"temporal_id": temporal_id, "output_power_kw": 0.0, "simulation_time_s": 0.0},
+        {"temporal_id": temporal_id, "output_power_kw": 10.0, "simulation_time_s": 1.0},
+        {"temporal_id": temporal_id, "output_power_kw": 60.0, "simulation_time_s": 2.0},  # Hazard
+        {"temporal_id": temporal_id, "output_power_kw": 65.0, "simulation_time_s": 3.0},
+        {"temporal_id": "rogue_beta", "output_power_kw": 70.0, "simulation_time_s": 4.0}, # Unauthorized data point
     ]
 
-    safeguard = CognitiveCoherenceFilter(hazard_threshold_kw_per_s=25.0, dampening_factor=0.8)
+    # Initialize the safeguard with the authorized temporal ID
+    safeguard = CognitiveCoherenceFilter(
+        hazard_threshold_kw_per_s=25.0, 
+        dampening_factor=0.8,
+        authorized_temporal_id=temporal_id
+    )
     sanitized_stream = safeguard.process_stream(sample_data)
 
     for point in sanitized_stream:

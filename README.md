@@ -37,11 +37,15 @@ graph TD
     %% Processing Core Branch
     D --> D1[QSSR Module - qssr.py]
     D --> D2[Storm Targeting - stormTargeting.js]
+    D --> D3[Auris Cognitive Safeguard - auris_cognitive_safeguard.py]
     D1 --> D1a[Solar Coherence Index C]
     D1 --> D1b[Planetary Resonance Analysis]
     D1 --> D1c[Cosmic Weather Integration]
     D2 --> D2a[Atmospheric Disturbance Tracking]
     D2 --> D2b[Harmonic Integration Legacy→HNC]
+    D3 --> D3a[Cognitive Hazard Dampening]
+    D3 --> D3b[Temporal Wave Fluctuation Control]
+    D3 --> D3c[Unauthorized Temporal ID Rejection]
     
     %% Presentation Layer Branch
     E --> E1[Registry Dashboard - index.html]
@@ -146,6 +150,12 @@ const ProcessingCore = {
     activePatterns: 3,
     neutralizationRate: "92%",
     harmonicIntegration: "75% Complete"
+  },
+  aurisCognitiveSafeguard: {
+    status: "Active",
+    hazardDetections: 4,
+    dampeningFactor: 0.5,
+    authorizedTemporalID: "alpha"
   },
   algorithms: [
     "FFT Spectral Analysis",

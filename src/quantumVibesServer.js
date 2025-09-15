@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https'); // For making secure API requests
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -105,8 +106,76 @@ function getQuantumVibesData() {
 }
 
 const server = http.createServer(async (req, res) => {
+    // Set CORS headers for all responses to allow cross-origin requests
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, OpenAI-Beta');
+
+    // Handle pre-flight CORS requests
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    // Route: Ephemeral Token for Realtime API
+    if (req.url === '/ephemeral-token' && req.method === 'GET') {
+        const openaiRequestData = JSON.stringify({
+            "model": "gpt-4o-realtime-preview-2024-12-17",
+            "modalities": ["text", "audio"],
+            "voice": "verse",
+            "prompt": {
+                "id": "pmpt_68c89d02fd94819499510e344cfc867003cb939602ef2a13",
+                "version": "1"
+            }
+        });
+
+        const options = {
+            hostname: 'api.openai.com',
+            path: '/v1/realtime/sessions',
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                'OpenAI-Beta': 'realtime=v1',
+                'Content-Length': Buffer.byteLength(openaiRequestData)
+            }
+        };
+
+        const openaiReq = https.request(options, (openaiRes) => {
+            let data = '';
+            openaiRes.on('data', (chunk) => { data += chunk; });
+            openaiRes.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    const ephemeralKey = json.client_secret?.value;
+                    if (ephemeralKey) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ ephemeral_key: ephemeralKey }));
+                    } else {
+                        console.error('Error from OpenAI API:', data);
+                        res.writeHead(openaiRes.statusCode || 500, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Failed to get ephemeral key from OpenAI.', details: json }));
+                    }
+                } catch (error) {
+                    console.error('Error parsing OpenAI response:', error);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Failed to parse OpenAI response.' }));
+                }
+            });
+        });
+
+        openaiReq.on('error', (error) => {
+            console.error('Error with OpenAI request:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to connect to OpenAI API.', details: error.message }));
+        });
+
+        openaiReq.write(openaiRequestData);
+        openaiReq.end();
+    }
     // Route: Quantum Mirror Activation
-    if (req.url === '/activate-quantum-mirror' && req.method === 'POST') {
+    else if (req.url === '/activate-quantum-mirror' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', async () => {
@@ -152,7 +221,7 @@ const server = http.createServer(async (req, res) => {
     else if (req.url === '/quantum-vibes-stream') {
         res.writeHead(200, {
             'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive', 'Access-Control-Allow-Origin': '*'
+            'Connection': 'keep-alive'
         });
 
         const interval = setInterval(() => {
@@ -192,5 +261,5 @@ const server = http.createServer(async (req, res) => {
 
 const PORT = 3001;
 server.listen(PORT, () => {
-    console.log(`Quantum Vibes server, now with Mirror Activation, singing on http://localhost:${PORT}`);
+    console.log(`Quantum Vibes server, now with Realtime Session bridging, singing on http://localhost:${PORT}`);
 });

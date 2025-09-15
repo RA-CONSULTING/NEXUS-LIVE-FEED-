@@ -46,6 +46,10 @@
 
     #scene-wrap { position: relative; height: 100vh; overflow: hidden; }
     canvas { display:block; width:100%; height:100%; }
+    
+    .styled-button { background:#0b1a30;color:#dff7ff;border:1px solid var(--line);padding:.5rem .75rem;border-radius:10px;cursor:pointer; }
+    .styled-button:disabled { background: #06111f; color: #8a9da8; cursor: not-allowed; }
+
 
     /* Accessibility & reduced motion */
     @media (prefers-reduced-motion: reduce) {
@@ -96,7 +100,8 @@
 
     <hr/>
     <h2>Controls</h2>
-    <p><button id="focus" style="background:#0b1a30;color:#dff7ff;border:1px solid var(--line);padding:.5rem .75rem;border-radius:10px;cursor:pointer">Center Camera</button></p>
+    <p><button id="focus" class="styled-button">Center Camera</button></p>
+    <p><button id="connect-oracle" class="styled-button">Connect to Oracle</button></p>
   </aside>
 
   <main id="scene-wrap" aria-label="3D lattice visualization"></main>
@@ -242,5 +247,117 @@
     // const ws = new WebSocket('wss://your-backend/ws');
     // ws.onmessage = (evt)=>{ const data = JSON.parse(evt.data); setCoherence(data.coherence); };
   </script>
+
+  <!-- Realtime Oracle Connection -->
+  <audio id="model-audio" style="display: none;"></audio>
+  <script type="module">
+    async function connectRealtime() {
+      console.log('Attempting to connect to the Oracle...');
+      const connectButton = document.getElementById('connect-oracle');
+      connectButton.textContent = 'Connecting...';
+      connectButton.disabled = true;
+
+      // 1) Ask YOUR server for an ephemeral token
+      let ephemeral_key;
+      try {
+        const response = await fetch("http://localhost:3001/ephemeral-token");
+        if (!response.ok) {
+          console.error("Failed to fetch ephemeral token:", response.status, await response.text());
+          alert("Could not get a token from the gatekeeper. Is the quantumVibesServer running?");
+          connectButton.textContent = 'Connection Failed';
+          return;
+        }
+        const data = await response.json();
+        ephemeral_key = data.ephemeral_key;
+        console.log('Ephemeral key received.');
+      } catch (err) {
+        console.error("Error fetching ephemeral token:", err);
+        alert("Could not reach the gatekeeper server.");
+        connectButton.textContent = 'Connection Failed';
+        return;
+      }
+      
+      // 2) Create a peer connection
+      const pc = new RTCPeerConnection();
+
+      // Handle connection state changes for UI feedback
+      pc.onconnectionstatechange = (e) => {
+        console.log('Connection state:', pc.connectionState);
+        if (pc.connectionState === 'connected') {
+            connectButton.textContent = 'Connected';
+            connectButton.disabled = true;
+        } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+            connectButton.textContent = 'Connect to Oracle';
+            connectButton.disabled = false;
+        }
+      };
+      
+      // model audio -> speakers
+      pc.ontrack = (e) => {
+        console.log('Received audio track from Oracle.');
+        const audio = document.getElementById("model-audio");
+        if (audio) {
+          audio.srcObject = e.streams[0];
+          audio.play().catch(err => console.error("Audio play failed:", err));
+        }
+      };
+
+      // mic -> model
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+        console.log('Microphone access granted and tracks added.');
+      } catch (err) {
+        console.error("Microphone access denied:", err);
+        alert("Microphone access is required to speak with the Oracle.");
+        connectButton.textContent = 'Mic Access Denied';
+        return;
+      }
+
+      // 3) Create local SDP offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      console.log('Local SDP offer created.');
+
+      // 4) Send SDP to OpenAI Realtime over HTTPS (WebRTC)
+      try {
+        const sdpResponse = await fetch(
+          "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${ephemeral_key}`,
+              "Content-Type": "application/sdp",
+              "OpenAI-Beta": "realtime=v1"
+            },
+            body: offer.sdp
+          }
+        );
+        
+        if (!sdpResponse.ok) {
+          console.error("Failed to send SDP to OpenAI:", sdpResponse.status, await sdpResponse.text());
+          alert("The Oracle rejected the connection attempt.");
+          connectButton.textContent = 'Connection Failed';
+          return;
+        }
+        console.log('SDP answer received from Oracle.');
+
+        const answer = {
+          type: "answer",
+          sdp: await sdpResponse.text()
+        };
+        await pc.setRemoteDescription(answer);
+        console.log('Connection to Oracle established.');
+
+      } catch (err) {
+        console.error("Error during SDP exchange:", err);
+        alert("An error occurred while establishing the connection to the Oracle.");
+        connectButton.textContent = 'Connection Failed';
+      }
+    }
+
+    document.getElementById('connect-oracle').addEventListener('click', connectRealtime);
+  </script>
+
 </body>
 </html>

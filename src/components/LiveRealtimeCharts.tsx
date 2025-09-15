@@ -108,7 +108,7 @@ const RealtimeLineChart = ({
   );
 };
 
-function LiveRealtimeCharts() {
+export default function LiveRealtimeCharts() {
   const { charts } = useLiveNexusData();
 
   return (
@@ -140,4 +140,3 @@ function LiveRealtimeCharts() {
 }
 
 export { LiveRealtimeCharts };
-export default LiveRealtimeCharts;

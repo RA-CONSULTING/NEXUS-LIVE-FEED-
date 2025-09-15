@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Chronicles from './components/Chronicles';
 import NexusIntelligence from './components/NexusIntelligence';
 import Actuation from './components/Actuation';
+import MetaQuestLink from './components/MetaQuestLink';
 import { SeroProvider } from './contexts/SeroProvider';
 
 const App: React.FC = () => {
@@ -26,11 +27,15 @@ const App: React.FC = () => {
           <button className={tabStyle('actuation')} onClick={() => setActiveTab('actuation')}>
             Actuation (Act)
           </button>
+          <button className={tabStyle('vr')} onClick={() => setActiveTab('vr')}>
+            Meta Quest VR
+          </button>
         </nav>
         <div className="mt-8">
           {activeTab === 'chronicles' && <Chronicles />}
           {activeTab === 'intelligence' && <NexusIntelligence />}
           {activeTab === 'actuation' && <Actuation />}
+          {activeTab === 'vr' && <MetaQuestLink />}
         </div>
       </div>
     </SeroProvider>

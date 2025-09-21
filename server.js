@@ -34,6 +34,15 @@ if (!apiKey) {
 app.locals.nexusFileManager = nexusFileManager;
 app.locals.nexusStudio = nexusStudio;
 
+app.get('/api/keys-status', (req, res) => {
+  const KEYS = ["SUPABASE_URL","SUPABASE_ANON_KEY","NOAA_CDO_TOKEN","NASA_API_KEY","USGS_API_KEY"];
+  const mask = (v) => v ? `${v.slice(0,4)}…${v.slice(-4)} (len=${v.length})` : "(missing)";
+  const body = Object.fromEntries(
+    KEYS.map(k => [k, { present: !!process.env[k], masked: mask(process.env[k]||"") }])
+  );
+  res.json(body);
+});
+
 app.post('/report-message', (req, res) => {
   const { userId, message } = req.body;
   if (!userId || !message) {

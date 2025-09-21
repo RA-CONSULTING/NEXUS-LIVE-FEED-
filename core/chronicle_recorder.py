@@ -9,16 +9,16 @@ with the 10-9-1 principle and the Multiversal Prime Logic.
 """
 
 import asyncio
+import hashlib
 import json
 import logging
-import hashlib
-import numpy as np
-from logging.handlers import RotatingFileHandler
+import math
+import random
+import statistics
 from datetime import datetime, timezone
-from typing import Dict, Any
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional
-import random
 
 
 # --- Chronicle Configuration -- -
@@ -61,15 +61,18 @@ class ChronicleRecorder:
         logging.getLogger(__name__).info("Chronicle Recorder initialized")
         print("Chronicle Recording Engine v7.1 (Source Law Compliant) Initialized.")
 
-    def start(self) -> None:
+    async def start(self) -> None:
         """Starts the background worker tasks."""
-        if self._worker_task is None:
-            self._worker_task = asyncio.create_task(self._inhalation_loop())
-            self._synthesis_task = asyncio.create_task(self._cognitive_loop())
-            self._observation_task = asyncio.create_task(self._observation_loop())
-            self._forecasting_task = asyncio.create_task(self._forecasting_loop())
-            self._maintenance_task = asyncio.create_task(self._maintenance_loop())
-            print("All workers active.")
+        if self._worker_task and not self._worker_task.done():
+            return
+
+        loop = asyncio.get_running_loop()
+        self._worker_task = loop.create_task(self._inhalation_loop())
+        self._synthesis_task = loop.create_task(self._cognitive_loop())
+        self._observation_task = loop.create_task(self._observation_loop())
+        self._forecasting_task = loop.create_task(self._forecasting_loop())
+        self._maintenance_task = loop.create_task(self._maintenance_loop())
+        print("All workers active.")
 
     async def shutdown(self) -> None:
         """Gracefully shuts down the recorder and its worker tasks."""
@@ -85,10 +88,16 @@ class ChronicleRecorder:
                 task.cancel()
         
         await asyncio.gather(*[t for t in tasks if t], return_exceptions=True)
-        
+
         # Ensure the queue is fully processed before exiting
         await self._queue.join()
         logging.info("Chronicle Recorder shutdown complete.")
+
+        self._worker_task = None
+        self._synthesis_task = None
+        self._observation_task = None
+        self._forecasting_task = None
+        self._maintenance_task = None
 
     # ------------------------------------------------------------------
     def _generate_checksum(self, data: Dict[str, Any]) -> str:
@@ -97,6 +106,21 @@ class ChronicleRecorder:
         encoded = json.dumps(data, sort_keys=True).encode()
         dhash.update(encoded)
         return dhash.hexdigest()
+
+    @staticmethod
+    def _calculate_trend(values: list[float]) -> float:
+        """Compute the slope of a simple linear regression for the given values."""
+        if len(values) < 2:
+            return 0.0
+
+        x_values = list(range(len(values)))
+        mean_x = statistics.fmean(x_values)
+        mean_y = statistics.fmean(values)
+        numerator = sum((x - mean_x) * (y - mean_y) for x, y in zip(x_values, values))
+        denominator = sum((x - mean_x) ** 2 for x in x_values)
+        if denominator == 0:
+            return 0.0
+        return numerator / denominator
 
     # ------------------------------------------------------------------
     async def _inhalation_loop(self) -> None:
@@ -160,12 +184,12 @@ class ChronicleRecorder:
                 trend = "STABLE"
                 stability = 1.0
                 if len(coherence_points) >= 2:
-                    trend_val = np.polyfit(range(len(coherence_points)), coherence_points, 1)[0]
+                    trend_val = self._calculate_trend(coherence_points)
                     if trend_val > 0.005:
                         trend = "INCREASING"
                     elif trend_val < -0.005:
                         trend = "DECREASING"
-                    stability = 1.0 - np.std(coherence_points)
+                    stability = max(0.0, 1.0 - statistics.pstdev(coherence_points))
 
                 self.system_state = {
                     "coherence_trend": trend,
@@ -247,13 +271,18 @@ class ChronicleRecorder:
                     current_coherence = state["last_coherence"]
                     for _ in range(60):
                         current_coherence += drift + (random.random() - 0.5) * volatility
-                        current_coherence = float(np.clip(current_coherence, 0, 1))
+                        current_coherence = max(0.0, min(1.0, current_coherence))
                     future_outcomes.append(current_coherence)
 
-                avg_future_coherence = float(np.mean(future_outcomes))
-                harmony_probability = float(
-                    np.sum(np.array(future_outcomes) > 0.8) / num_simulations
-                )
+                if future_outcomes:
+                    avg_future_coherence = statistics.fmean(future_outcomes)
+                    harmony_probability = (
+                        sum(1 for value in future_outcomes if value > 0.8)
+                        / len(future_outcomes)
+                    )
+                else:
+                    avg_future_coherence = state["last_coherence"]
+                    harmony_probability = 0.0
 
                 forecast = {
                     "principle": "Unity as Source Forecasting",
@@ -306,7 +335,22 @@ class ChronicleRecorder:
 
     async def record_event(self, event_type: str, details: Dict[str, Any]) -> None:
         """PING: Sends a discrete event for inhalation."""
+        await self.start()
         await self._queue.put(("event", details, {"event_type": event_type}))
+
+    async def record_time_series(
+        self,
+        measurement: str,
+        value: float,
+        tags: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record a time-series data point in the chronicle."""
+        payload = {
+            "measurement": measurement,
+            "value": value,
+            "tags": tags or {},
+        }
+        await self.record_event(f"TIME_SERIES::{measurement}", payload)
 
 
 # --- Singleton instance ---
@@ -317,7 +361,7 @@ recorder = ChronicleRecorder()
 async def main() -> None:
     """Simple demonstration for the recorder."""
     print("--- Running Chronicle Recorder v7.1 (Source Law Compliant) Demonstration ---")
-    recorder.start()
+    await recorder.start()
 
     async def simulate_system_activity() -> None:
         for i in range(25):

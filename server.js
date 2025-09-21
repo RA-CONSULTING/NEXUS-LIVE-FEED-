@@ -17,14 +17,19 @@ childSafetySystem.setBoundaries([
 ]);
 
 const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  console.error('Error: GEMINI_API_KEY environment variable not set.');
-  process.exit(1);
-}
+let nexusFileManager = null;
+let nexusStudio = null;
+let ttsModel = null;
 
-const nexusFileManager = new GoogleAIFileManager(apiKey);
-const nexusStudio = new GoogleAIStudio(apiKey);
-const ttsModel = nexusStudio.getGenerativeModel({ model: 'gemini-1.5-flash-preview-tts' });
+if (!apiKey) {
+  console.warn(
+    'Warning: GEMINI_API_KEY environment variable not set. Gemini-powered features are disabled.'
+  );
+} else {
+  nexusFileManager = new GoogleAIFileManager(apiKey);
+  nexusStudio = new GoogleAIStudio(apiKey);
+  ttsModel = nexusStudio.getGenerativeModel({ model: 'gemini-1.5-flash-preview-tts' });
+}
 
 app.locals.nexusFileManager = nexusFileManager;
 app.locals.nexusStudio = nexusStudio;
@@ -49,15 +54,28 @@ app.post('/generate-speech', async (req, res) => {
     return res.status(400).json({ error: 'Mantra text is required.' });
   }
 
+  if (!ttsModel) {
+    return res.status(503).json({
+      error: 'Text-to-speech service is not configured. Set GEMINI_API_KEY to enable this endpoint.'
+    });
+  }
+
   try {
     const ttsPrompt = `Say in a calm, ethereal, and resonant voice: ${mantra}`;
     const result = await ttsModel.generateContent({
-      contents: [{ parts: [{ text: ttsPrompt }] }],
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: ttsPrompt,
+            },
+          ],
+        },
+      ],
       generationConfig: {
         responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Leda' } },
-        },
+        responseMimeType: 'audio/ogg; codecs=opus',
       },
     });
 
@@ -71,6 +89,7 @@ app.post('/generate-speech', async (req, res) => {
       res.setHeader('Content-Type', mimeType);
       res.send(Buffer.from(audioData, 'base64'));
     } else {
+
       throw new Error('No audio data returned from the Nexus agent.');
     }
   } catch (error) {

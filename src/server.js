@@ -111,6 +111,13 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: 'Bio-resonance harmonization initiated.' }));
 
+  } else if (req.url === '/api/keys-status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      "prime-sentinel-archive": { present: true, masked: "p********e" },
+      "aureon-expansion-key": { present: false, masked: "a********y" },
+      "lyra-constellation-map": { present: true, masked: "l********p" }
+    }));
   } else {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sampleMetrics()));

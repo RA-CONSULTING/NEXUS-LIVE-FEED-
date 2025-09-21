@@ -92,6 +92,7 @@ export interface RealtimeChartCollection {
   magnetometer: RealtimeChartPoint[];
   schumann: RealtimeChartPoint[];
   coherence: RealtimeChartPoint[];
+  planetaryResonance: RealtimeChartPoint[];
 }
 
 export interface RealtimeNexusData {
@@ -335,6 +336,7 @@ const createInitialData = (): RealtimeNexusData => ({
     magnetometer: createInitialSeries(48, 6, 35, 65),
     schumann: createInitialSeries(7.83, 0.4, 7.1, 8.6),
     coherence: createInitialSeries(0.93, 0.05, 0.7, 1.02),
+    planetaryResonance: createInitialSeries(0.88, 0.08, 0.7, 1.05),
   },
   sensory: {
     chronicleRecorder: {
@@ -377,6 +379,13 @@ const createInitialData = (): RealtimeNexusData => ({
         name: "Celestial Body Tracking",
         rate: 24,
         unit: "bodies",
+        state: "stable",
+      },
+      {
+        id: "geomagnetic",
+        name: "Geomagnetic Field",
+        rate: 48,
+        unit: "nT",
         state: "stable",
       },
     ],
@@ -453,6 +462,7 @@ const computeNextData = (prev: RealtimeNexusData): RealtimeNexusData => ({
     magnetometer: advanceSeries(prev.charts.magnetometer, 5, 35, 65),
     schumann: advanceSeries(prev.charts.schumann, 0.35, 7.1, 8.6),
     coherence: advanceSeries(prev.charts.coherence, 0.04, 0.7, 1.02),
+    planetaryResonance: advanceSeries(prev.charts.planetaryResonance, 0.08, 0.7, 1.05),
   },
   sensory: mutateSensory(prev.sensory),
   processing: mutateProcessing(prev.processing),

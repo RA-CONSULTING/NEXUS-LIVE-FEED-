@@ -33,6 +33,12 @@ const chartConfigs: Array<{
     unit: "",
     accent: "text-amber-500",
   },
+  {
+    key: "planetaryResonance",
+    label: "Planetary Resonance",
+    unit: "",
+    accent: "text-rose-500",
+  },
 ];
 
 const formatDelta = (delta: number, unit: string) => {
@@ -112,7 +118,7 @@ const LiveRealtimeCharts = () => {
   const { charts } = useLiveNexusData();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="grid gap-4 lg:grid-cols-4">
       {chartConfigs.map(({ key, label, unit, accent }) => {
         const points = charts[key];
         const delta =

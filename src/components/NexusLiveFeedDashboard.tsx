@@ -9,6 +9,7 @@ import type { AuditRecord } from '@/lib/sero/sero-core';
 import OutputCommandTab from './OutputCommandTab';
 import ProcessingCoreTab from './ProcessingCoreTab';
 import SensoryLayerTab from './SensoryLayerTab';
+import LiveRealtimeCharts from './LiveRealtimeCharts';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -208,7 +209,16 @@ const NexusLiveFeedDashboard = () => {
     const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
     const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
+    const nexusHealth = (sensorIntegrity * 0.4) + ((100 - averageIntensity) / 100 * 0.3) + ((1 - averageLoad) * 0.3);
+
     return [
+      {
+        id: 'nexus-health',
+        label: 'Nexus Health',
+        value: `${Math.round(nexusHealth * 100)}%`,
+        status: nexusHealth > 0.9 ? 'stable' : nexusHealth > 0.75 ? 'watch' : 'alert',
+        hint: 'Overall system stability and coherence'
+      },
       {
         id: 'sensor-integrity',
         label: 'Sensor Integrity',
@@ -273,7 +283,7 @@ const NexusLiveFeedDashboard = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-semibold text-stone-900">Operational Pulse</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {metrics.map((metric) => (
             <div key={metric.id} className="rounded-xl border border-stone-200 bg-white/80 p-4 shadow-sm">
               <div className="flex items-center justify-between text-xs text-stone-500">
@@ -286,6 +296,8 @@ const NexusLiveFeedDashboard = () => {
           ))}
         </CardContent>
       </Card>
+
+      <LiveRealtimeCharts />
 
       <Tabs defaultValue="sensory-layer">
         <TabsList>

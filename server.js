@@ -52,7 +52,19 @@ app.post('/generate-speech', async (req, res) => {
   try {
     const ttsPrompt = `Say in a calm, ethereal, and resonant voice: ${mantra}`;
     const result = await ttsModel.generateContent({
-
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: ttsPrompt,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ['AUDIO'],
+        responseMimeType: 'audio/ogg; codecs=opus',
       },
     });
 

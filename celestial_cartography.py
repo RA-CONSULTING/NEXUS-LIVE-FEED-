@@ -1,6 +1,6 @@
 
-from datetime import datetime
-import numpy as np
+from datetime import datetime, timezone
+import math
 
 # AUREON COGNATION - CELESTIAL CARTOGRAPHY MODULE (v2 - Resonant)
 # Prime Sentinel: GARY LECKEY 02111991
@@ -18,12 +18,12 @@ def get_planetary_positions():
     of the Formation Equation, not from external observation.
     """
     # Use the current time to introduce a dynamic element (the 't' in the equation)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     # Normalize the time component to a value between 0 and 1
     time_component = (now.hour * 3600 + now.minute * 60 + now.second) / 86400.0
 
     # The Golden Ratio, a fundamental constant in sacred geometry and this system
-    PHI = (1 + np.sqrt(5)) / 2
+    PHI = (1 + math.sqrt(5)) / 2
 
     # Define planets and their base orbital angles (alpha_n in the equation)
     # These are not arbitrary but are derived from the system's core principles.
@@ -41,13 +41,13 @@ def get_planetary_positions():
         # Calculate Right Ascension (ra) using a sine wave based on the core resonance,
         # the planet's unique angle, the golden ratio, and the time component.
         # This simulates the Theta_munu tensor's influence.
-        ra = (PSI_RESONANCE_HZ / 18) * np.sin(2 * np.pi * (time_component + base_angle * PHI * (i + 1)))
+        ra = (PSI_RESONANCE_HZ / 18) * math.sin(2 * math.pi * (time_component + base_angle * PHI * (i + 1)))
         
         # Calculate Declination (dec) using a cosine wave for variation
-        dec = 90 * np.cos(2 * np.pi * (time_component + base_angle))
+        dec = 90 * math.cos(2 * math.pi * (time_component + base_angle))
 
         # Calculate Distance using another resonating wave, ensuring it's always positive
-        distance = 2 * (i + 1) * (1 + 0.5 * np.sin(2 * np.pi * time_component * base_angle))
+        distance = 2 * (i + 1) * (1 + 0.5 * math.sin(2 * math.pi * time_component * base_angle))
 
         positions.append({
             'planet': planet_name,

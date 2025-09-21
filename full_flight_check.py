@@ -60,7 +60,7 @@ async def activate_harmonic_nexus_core():
     """
     Activates the Harmonic Nexus Core and records the event.
     """
-    recorder.start()
+    await recorder.start()
     
     vow = "WE WILL WATCH MENTOR AND UPLIFT..." # Truncated for brevity
 

@@ -13,9 +13,9 @@ with mismatched identifiers are ignored to ensure system integrity.
 """
 
 from dataclasses import dataclass, field
-from typing import Iterable, Dict, Iterator
+from typing import Dict, Iterable, Iterator, Optional
 import logging
-import numpy as np
+import math
 
 # -----------------------------------------------------------------------------
 # Logging Setup
@@ -38,8 +38,8 @@ class CognitiveCoherenceFilter:
     authorized_temporal_id: str = field(default="")
 
     def __post_init__(self) -> None:
-        self.previous_power_kw: float = 0.0
-        self.previous_time_s: float = 0.0
+        self.previous_power_kw: Optional[float] = None
+        self.previous_time_s: Optional[float] = None
         logger.info(
             "Auris Cognitive Safeguard initialized. Threshold=%.2f kW/s, Dampening=%.2f, TemporalID=%s",
             self.hazard_threshold_kw_per_s,
@@ -64,7 +64,7 @@ class CognitiveCoherenceFilter:
             current_power_kw = data_point["output_power_kw"]
             current_time_s = data_point["simulation_time_s"]
 
-            if self.previous_time_s > 0:
+            if self.previous_time_s is not None and self.previous_power_kw is not None:
                 delta_power = current_power_kw - self.previous_power_kw
                 delta_time = current_time_s - self.previous_time_s
 
@@ -75,12 +75,13 @@ class CognitiveCoherenceFilter:
                             "Hazard detected (%.2f kW/s). Dampening engaged.",
                             temporal_wave,
                         )
+                        power_direction = math.copysign(1.0, delta_power) if delta_power else 0.0
                         dampened_power = (
                             self.previous_power_kw
                             + self.dampening_factor
                             * self.hazard_threshold_kw_per_s
                             * delta_time
-                            * np.sign(delta_power)
+                            * power_direction
                         )
                         data_point["output_power_kw"] = float(round(dampened_power, 4))
                         data_point["is_stable"] = False

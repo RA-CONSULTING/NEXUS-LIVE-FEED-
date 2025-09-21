@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Chronicles from './components/Chronicles';
+import NexusLiveFeedDashboard from './components/NexusLiveFeedDashboard';
 import NexusIntelligence from './components/NexusIntelligence';
 import Actuation from './components/Actuation';
 import MetaQuestLink from './components/MetaQuestLink';

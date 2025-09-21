@@ -1,4 +1,4 @@
-class MyComplexClass {
+  class MyComplexClass {
   constructor(data) {
     this.data = data;
   }

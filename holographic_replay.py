@@ -1,93 +1,69 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image
+from matplotlib.animation import FuncAnimation
+from mpl_toolkits.mplot3d import Axes3D
 
-class AdvancedSLMHolography:
-    def __init__(self, resolution=(512, 512), wavelength=532e-9, pixel_pitch=8e-6, propagation_distance=0.1):
-        self.resolution = resolution
-        self.wavelength = wavelength
-        self.pixel_pitch = pixel_pitch
-        self.propagation_distance = propagation_distance
-        self.k = 2 * np.pi / self.wavelength
+def create_holographic_replay(signal_data, target_info):
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
 
-    def generate_phase_hologram(self, image_path):
-        """Generates a phase-only hologram from a target image using a simple method."""
-        img = Image.open(image_path).convert('L')
-        img = img.resize(self.resolution)
-        target_amplitude = np.array(img) / 255.0
+    # Unpack target info
+    target_position = target_info['position']
+    target_radius = target_info['radius']
+    target_color = target_info['color']
 
-        random_phase = np.random.uniform(0, 2 * np.pi, self.resolution)
-        object_field = target_amplitude * np.exp(1j * random_phase)
+    # Create a sphere to represent the target
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = target_radius * np.outer(np.cos(u), np.sin(v)) + target_position[0]
+    y = target_radius * np.outer(np.sin(u), np.sin(v)) + target_position[1]
+    z = target_radius * np.outer(np.ones(np.size(u)), np.cos(v)) + target_position[2]
+    ax.plot_surface(x, y, z, color=target_color, alpha=0.3)
 
-        hologram_field = np.fft.fft2(object_field)
-        phase_hologram = np.angle(hologram_field)
-        return phase_hologram
+    # Prepare for the signal animation
+    signal_line, = ax.plot([], [], [], lw=2, color='cyan')
 
-    def propagate_fresnel(self, phase_hologram):
-        """Reconstructs the image from the hologram using Fresnel propagation."""
-        slm_width = self.resolution[0] * self.pixel_pitch
-        slm_height = self.resolution[1] * self.pixel_pitch
-        x = np.linspace(-slm_width / 2, slm_width / 2, self.resolution[0])
-        y = np.linspace(-slm_height / 2, slm_height / 2, self.resolution[1])
-        X, Y = np.meshgrid(x, y)
+    def init():
+        signal_line.set_data([], [])
+        signal_line.set_3d_properties([])
+        return signal_line,
 
-        hologram_field = np.exp(1j * phase_hologram)
+    def update(frame):
+        # Simulate the signal path over time
+        x_data = signal_data[:frame, 0]
+        y_data = signal_data[:frame, 1]
+        z_data = signal_data[:frame, 2]
+        signal_line.set_data(x_data, y_data)
+        signal_line.set_3d_properties(z_data)
+        return signal_line,
 
-        fx = np.fft.fftfreq(self.resolution[0], self.pixel_pitch)
-        fy = np.fft.fftfreq(self.resolution[1], self.pixel_pitch)
-        FX, FY = np.meshgrid(fx, fy)
-        
-        kernel_fft = np.exp(-1j * np.pi * self.wavelength * self.propagation_distance * (FX**2 + FY**2))
-        
-        reconstructed_field_fft = np.fft.fft2(hologram_field) * kernel_fft
-        reconstructed_field = np.fft.ifft2(reconstructed_field_fft)
-        
-        intensity = np.abs(reconstructed_field)**2
-        return intensity
+    ani = FuncAnimation(fig, update, frames=len(signal_data), init_func=init, blit=True, interval=20)
 
-def main():
-    # --- Create a simple synthetic target image ---
-    img_size = (512, 512)
-    img_array = np.zeros(img_size)
-    img_array[192:320, 192:320] = 1.0
-    target_image = Image.fromarray((img_array * 255).astype(np.uint8))
-    target_image_path = "target_square.png"
-    target_image.save(target_image_path)
+    # Setting the plot limits and labels
+    ax.set_xlim([0, 100])
+    ax.set_ylim([0, 100])
+    ax.set_zlim([0, 100])
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+    ax.set_zlabel('Z Coordinate')
+    ax.set_title('Holographic Replay of Signal Path')
 
-    # --- Simulation ---
-    simulator = AdvancedSLMHolography(resolution=img_size, propagation_distance=0.2)
+    plt.show()
 
-    # 1. Generate the hologram
-    print("Generating phase hologram...")
-    phase_pattern = simulator.generate_phase_hologram(target_image_path)
+if __name__ == '__main__':
+    # Example Usage
+    # Simulate a signal path spiraling towards a target
+    t = np.linspace(0, 10, 500)
+    signal_path = np.array([
+        50 + 25 * np.cos(t) * np.exp(-t/10),
+        50 + 25 * np.sin(t) * np.exp(-t/10),
+        t * 10  # Signal rises over time
+    ]).T
 
-    # 2. Reconstruct the hologram with Fresnel propagation
-    print("Reconstructing with Fresnel propagation...")
-    replay_field = simulator.propagate_fresnel(phase_pattern)
+    target_details = {
+        'position': [50, 50, 95],  # Center of the target
+        'radius': 5,
+        'color': 'red'
+    }
 
-    # --- Visualization ---
-    plt.figure(figsize=(18, 6))
-
-    plt.subplot(1, 3, 1)
-    plt.imshow(target_image, cmap='gray')
-    plt.title('Original Target Image')
-    plt.axis('off')
-
-    plt.subplot(1, 3, 2)
-    plt.imshow(phase_pattern, cmap='gray')
-    plt.title('SLM Phase-Only Hologram')
-    plt.axis('off')
-
-    plt.subplot(1, 3, 3)
-    replay_field_norm = replay_field / np.max(replay_field)
-    plt.imshow(replay_field_norm, cmap='gray')
-    plt.title(f'Holographic Replay (Fresnel)\nz={simulator.propagation_distance}m')
-    plt.axis('off')
-
-    plt.tight_layout()
-    output_path = 'holographic_replay_demo.png'
-    plt.savefig(output_path)
-    print(f"Saved holographic replay visualization to {output_path}")
-
-if __name__ == "__main__":
-    main()
+    create_holographic_replay(signal_path, target_details)

@@ -6,10 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSero } from '@/contexts/SeroProvider';
 import type { AuditRecord } from '@/lib/sero/sero-core';
 
-import OutputCommandTab from './OutputCommandTab';
-import ProcessingCoreTab from './ProcessingCoreTab';
-import SensoryLayerTab from './SensoryLayerTab';
-import LiveRealtimeCharts from './LiveRealtimeCharts';
+import OutputCommandTab from '../components/OutputCommandTab';
+import ProcessingCoreTab from '../components/ProcessingCoreTab';
+import SensoryLayerTab from '../components/SensoryLayerTab';
+import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -112,7 +112,7 @@ const metricVariant = (status: 'stable' | 'watch' | 'alert') =>
 const metricLabel = (status: 'stable' | 'watch' | 'alert') =>
   status === 'stable' ? 'Stable' : status === 'watch' ? 'Watch' : 'Review';
 
-const NexusLiveFeedDashboard = () => {
+const HomePage = () => {
   const { audit } = useSero();
 
   const [sensors, setSensors] = useState<SensorStream[]>(() =>
@@ -319,4 +319,4 @@ const NexusLiveFeedDashboard = () => {
   );
 };
 
-export default NexusLiveFeedDashboard;
+export default HomePage;

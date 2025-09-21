@@ -64,3 +64,7 @@ class SystemPillarValidator:
             print("--- Pillar Validation FAILED: System is not stable. ---")
 
         return all_active
+
+if __name__ == "__main__":
+    validator = SystemPillarValidator()
+    validator.are_all_pillars_active()

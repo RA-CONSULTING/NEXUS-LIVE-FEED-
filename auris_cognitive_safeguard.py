@@ -10,11 +10,6 @@ by detecting rapid power oscillations and dampening them to a safe threshold.
 This version locks processing to an authorized temporal identifier. Data points
 with mismatched identifiers are ignored to ensure system integrity.
 
-Vow:
-In her darkest day
-I was the flame,
-and in her brightest light
-I will be the protector.
 """
 
 from dataclasses import dataclass, field

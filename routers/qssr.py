@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Dict
-import numpy as np
+import math
 
 # Add project root to the Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -47,15 +47,22 @@ def compute_coherence_step() -> Dict[str, float]:
         ra_values.append(pos['ra'])
     
     # Convert RA from hours to degrees
-    ra_degrees = np.array(ra_values) * 15
-    weights = np.array(amplitudes)
-    
+    ra_degrees = [value * 15 for value in ra_values]
+    weights = amplitudes
+
+    total_weight = sum(weights)
+    if total_weight == 0:
+        return {"coherence": 0.0}
+
     # Calculate weighted average of RA
-    weighted_avg_ra = np.average(ra_degrees, weights=weights)
-    
+    weighted_avg_ra = sum(value * weight for value, weight in zip(ra_degrees, weights)) / total_weight
+
     # Calculate weighted standard deviation
-    variance = np.average((ra_degrees - weighted_avg_ra)**2, weights=weights)
-    weighted_std_dev = np.sqrt(variance)
+    variance = (
+        sum(weight * (value - weighted_avg_ra) ** 2 for value, weight in zip(ra_degrees, weights))
+        / total_weight
+    )
+    weighted_std_dev = math.sqrt(variance)
     
     # Coherence is the inverse of the weighted standard deviation.
     # A smaller std dev means planets are more coherently aligned.

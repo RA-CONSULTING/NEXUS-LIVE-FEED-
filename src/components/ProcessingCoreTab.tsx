@@ -1,134 +1,59 @@
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useLiveNexusData } from "@/contexts/LiveNexusDataContext";
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const ProcessingCoreTab = () => {
-  const { processing } = useLiveNexusData();
+type ProcessingStatus = 'Nominal' | 'Balancing' | 'Calibrating';
 
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <Card className="border-stone-200">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-stone-800">
-              QSSR Module
-            </CardTitle>
-            <Badge variant="success">{processing.qssrModule.cosmicWeather}</Badge>
-          </div>
-          <p className="text-sm text-stone-500">
-            Solar coherence and cosmic weather analysis pipelines
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-stone-600">
-          <div className="flex items-center justify-between">
-            <span>Solar coherence index</span>
-            <span className="font-semibold text-stone-900">
-              {processing.qssrModule.solarCoherenceIndex.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Planetary resonance</span>
-            <span className="font-semibold text-stone-900">
-              {processing.qssrModule.planetaryResonance}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Analysis queue</span>
-            <span className="font-semibold text-stone-900">
-              {processing.qssrModule.analysisQueue}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-stone-200">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-stone-800">
-              Storm Targeting
-            </CardTitle>
-            <Badge variant="info">{processing.stormTargeting.status}</Badge>
-          </div>
-          <p className="text-sm text-stone-500">
-            Harmonic neutralization and atmospheric disturbance tracking
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-stone-600">
-          <div className="flex items-center justify-between">
-            <span>Active patterns</span>
-            <span className="font-semibold text-stone-900">
-              {processing.stormTargeting.activePatterns}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Neutralization rate</span>
-            <span className="font-semibold text-stone-900">
-              {processing.stormTargeting.neutralizationRate.toFixed(1)}%
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Harmonic integration</span>
-            <span className="font-semibold text-stone-900">
-              {processing.stormTargeting.harmonicIntegration.toFixed(1)}%
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-stone-200">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-stone-800">
-              Auris Safeguard
-            </CardTitle>
-            <Badge variant="secondary">
-              {processing.aurisCognitiveSafeguard.status}
-            </Badge>
-          </div>
-          <p className="text-sm text-stone-500">
-            Cognitive hazard dampening and authorized temporal filters
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm text-stone-600">
-          <div className="flex items-center justify-between">
-            <span>Hazard detections</span>
-            <span className="font-semibold text-stone-900">
-              {processing.aurisCognitiveSafeguard.hazardDetections}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Dampening factor</span>
-            <span className="font-semibold text-stone-900">
-              {processing.aurisCognitiveSafeguard.dampeningFactor.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Authorized temporal ID</span>
-            <span className="font-semibold text-stone-900">
-              {processing.aurisCognitiveSafeguard.authorizedTemporalId}
-            </span>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Algorithms in play
-            </p>
-            <ul className="mt-2 space-y-1 text-sm">
-              {processing.algorithms.map((algorithm) => (
-                <li key={algorithm} className="text-stone-700">
-                  • {algorithm}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+type ProcessingLane = {
+  id: string;
+  name: string;
+  load: number; // 0-1
+  status: ProcessingStatus;
+  note: string;
 };
+
+const statusBadgeVariant = (status: ProcessingStatus) => {
+  switch (status) {
+    case 'Nominal':
+      return 'success' as const;
+    case 'Balancing':
+      return 'warning' as const;
+    case 'Calibrating':
+      return 'info' as const;
+    default:
+      return 'secondary' as const;
+  }
+};
+
+type ProcessingCoreTabProps = {
+  processing: ProcessingLane[];
+};
+
+const ProcessingCoreTab = ({ processing }: ProcessingCoreTabProps) => (
+  <Card className="border-stone-200">
+    <CardHeader className="pb-2">
+      <CardTitle className="text-xl font-semibold text-stone-900">Processing Lattice</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {processing.map((lane) => (
+        <div key={lane.id} className="rounded-xl border border-stone-200 bg-white/80 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold text-stone-800">{lane.name}</div>
+            <Badge variant={statusBadgeVariant(lane.status)}>{lane.status}</Badge>
+          </div>
+          <div className="mt-3 flex items-baseline justify-between">
+            <div className="text-2xl font-semibold text-stone-900">{Math.round(lane.load * 100)}%</div>
+            <span className="text-xs text-stone-500">{lane.note}</span>
+          </div>
+          <div className="mt-3 h-2 rounded-full bg-stone-200">
+            <div
+              className="h-2 rounded-full bg-sky-500"
+              style={{ width: `${Math.round(lane.load * 100)}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </CardContent>
+  </Card>
+);
 
 export default ProcessingCoreTab;

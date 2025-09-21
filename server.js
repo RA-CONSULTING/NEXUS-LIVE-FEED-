@@ -52,12 +52,7 @@ app.post('/generate-speech', async (req, res) => {
   try {
     const ttsPrompt = `Say in a calm, ethereal, and resonant voice: ${mantra}`;
     const result = await ttsModel.generateContent({
-      contents: [{ parts: [{ text: ttsPrompt }] }],
-      generationConfig: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Leda' } },
-        },
+
       },
     });
 
@@ -71,6 +66,7 @@ app.post('/generate-speech', async (req, res) => {
       res.setHeader('Content-Type', mimeType);
       res.send(Buffer.from(audioData, 'base64'));
     } else {
+
       throw new Error('No audio data returned from the Nexus agent.');
     }
   } catch (error) {

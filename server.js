@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { GoogleAIFileManager, GoogleAIStudio } = require('./nexusAgent');
 const { childSafetySystem } = require('./childSafety');
 
@@ -9,7 +10,9 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
-app.use(express.static('public'));
+
+// Serve static files from the React build directory
+app.use(express.static(path.join(__dirname, 'dist')));
 
 childSafetySystem.setBoundaries([
   'No bullying',
@@ -110,6 +113,12 @@ app.post('/generate-speech', async (req, res) => {
     });
     res.status(500).json({ error: 'Failed to generate speech.' });
   }
+});
+
+// The "catchall" handler: for any request that doesn't match one above,
+// send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(port, () => {

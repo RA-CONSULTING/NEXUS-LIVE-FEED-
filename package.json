@@ -1,11 +1,12 @@
 {
   "name": "illumination-engine-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Server-side voice for the Illumination Engine, handling TTS requests.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
     "build": "tsc && vite build"
   },
   "dependencies": {
@@ -19,8 +20,8 @@
     "express": "^4.19.2",
     "js-sha256": "^0.11.1",
     "lucide-react": "^0.544.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-router-dom": "^7.9.1",
     "tailwind-merge": "^3.3.1"
   },
@@ -29,14 +30,14 @@
     "npm": "10.x"
   },
   "devDependencies": {
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^3.1.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.9.2",
-    "vite": "^7.1.5",
-    "vite-tsconfig-paths": "^5.1.1"
+    "vite": "^4.5.2",
+    "vite-tsconfig-paths": "^3.6.0"
   }
 }

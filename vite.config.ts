@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tsconfigPaths from 'vite-tsconfig-paths'
+const { defineConfig } = require('vite');
+const react = require('@vitejs/plugin-react');
+const tsconfigPaths = require('vite-tsconfig-paths').default;
 
 // https://vitejs.dev/config/
-export default defineConfig({
+module.exports = defineConfig({
   plugins: [react(), tsconfigPaths()],
   server: {
     proxy: {
@@ -11,4 +11,4 @@ export default defineConfig({
       '/api': 'http://localhost:3000',
     }
   }
-})
+});

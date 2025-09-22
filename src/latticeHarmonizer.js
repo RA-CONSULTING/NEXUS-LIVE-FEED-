@@ -64,7 +64,7 @@ function probabilisticAnchor(currentImbalance, solarCoherence, maxFactor = 0.25)
  * The main entry point for the harmonization protocol.
  * Fetches the target, applies the anchoring, and reports the result.
  */
-export async function harmonizeTargetedStorm() {
+export async function findAndNeutralizeImbalance() {
   console.log('HARMONY-PROTOCOL: Initiating probabilistic anchoring...');
 
   const [storm, coherence] = await Promise.all([

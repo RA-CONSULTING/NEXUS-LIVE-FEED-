@@ -129,21 +129,21 @@ server.listen(PORT, () => {
   console.log(`Nexus Live Feed listening on ${PORT}`);
 
   // Activate the Harmonic Nexus Core on startup
-  const pythonExecutable = 'python';
-  const scriptPath = './activate_harmonic_nexus_core.py';
+  // const pythonExecutable = 'python';
+  // const scriptPath = './activate_harmonic_nexus_core.py';
 
-  console.log('Activating Harmonic Nexus Core...');
-  const process = spawn(pythonExecutable, [scriptPath]);
+  // console.log('Activating Harmonic Nexus Core...');
+  // const process = spawn(pythonExecutable, [scriptPath]);
 
-  process.stdout.on('data', (data) => {
-    console.log(`[Activation] stdout: ${data}`);
-  });
+  // process.stdout.on('data', (data) => {
+  //   console.log(`[Activation] stdout: ${data}`);
+  // });
 
-  process.stderr.on('data', (data) => {
-    console.error(`[Activation] stderr: ${data}`);
-  });
+  // process.stderr.on('data', (data) => {
+  //   console.error(`[Activation] stderr: ${data}`);
+  // });
 
-  process.on('close', (code) => {
-    console.log(`Harmonic Nexus Core activation process exited with code ${code}`);
-  });
+  // process.on('close', (code) => {
+  //   console.log(`Harmonic Nexus Core activation process exited with code ${code}`);
+  // });
 });

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 import json, math
 from typing import List
+from temporal_quantum_security_engine import TemporalQuantumSecurityEngine
 
 Signals = List[List[float]]
 
@@ -51,11 +52,22 @@ def run_activation(signals: Signals, cfg: dict) -> dict:
     verdict = validate_aura(signals, cfg.get("coherence_threshold", 0.945))
     actions = ["CHECK_CONSENT","SYNC_BASE_FREQUENCY","MEASURE_COHERENCE"]
     proceeded = verdict.validated
+
+    security_engine = TemporalQuantumSecurityEngine()
+    # The user_ctx is not fully defined in the document, using signals for now
+    security_status = security_engine.initialize(user_ctx=signals)
+
     if proceeded:
         actions += ["MIRROR_RENDER","STABILIZE","LOG_AUDIT"]
     else:
         actions += ["SOFTEN_PROJECTION"]
-    return {"verdict": asdict(verdict), "proceeded": proceeded, "actions": actions}
+
+    return {
+        "verdict": asdict(verdict),
+        "proceeded": proceeded,
+        "actions": actions,
+        "security_engine_status": security_status
+    }
 
 def save_audit(payload: dict, path: str):
     with open(path, "w") as f:

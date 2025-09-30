@@ -418,6 +418,15 @@ const HomePage = () => {
         </div>
       </div>
 
+      <Tabs defaultValue="system-overview" className="space-y-6">
+        <TabsList className="flex w-full flex-wrap gap-2 bg-stone-100 p-1">
+          <TabsTrigger value="system-overview">System Overview</TabsTrigger>
+          <TabsTrigger value="sensory-layer">Sensory &amp; Ingestion</TabsTrigger>
+          <TabsTrigger value="processing-core">Processing &amp; Analysis</TabsTrigger>
+          <TabsTrigger value="live-visualization">Live Visualization</TabsTrigger>
+          <TabsTrigger value="recording-systems">Recording Systems</TabsTrigger>
+          <TabsTrigger value="chronicle-governance">Chronicle &amp; Governance</TabsTrigger>
+          <TabsTrigger value="output-command">Command &amp; Output</TabsTrigger>
         </TabsList>
         <TabsContent value="system-overview" className="space-y-6">
           <Card className="border-stone-200">

@@ -581,6 +581,7 @@ const HomePage = () => {
           </Tabs>
         </div>
       </div>
+
     </div>
   );
 };

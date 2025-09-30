@@ -14,30 +14,35 @@ const chartConfigs: Array<{
   label: string;
   unit: string;
   accent: string;
+  glow: string;
 }> = [
   {
     key: "magnetometer",
     label: "Magnetometer Field Strength",
     unit: "µT",
-    accent: "text-sky-500",
+    accent: "text-sky-300",
+    glow: "from-sky-500/40 via-cyan-400/20 to-transparent",
   },
   {
     key: "schumann",
     label: "Schumann Resonance",
     unit: "Hz",
-    accent: "text-emerald-500",
+    accent: "text-emerald-300",
+    glow: "from-emerald-500/40 via-teal-400/20 to-transparent",
   },
   {
     key: "coherence",
     label: "System Coherence Index",
     unit: "",
-    accent: "text-amber-500",
+    accent: "text-amber-300",
+    glow: "from-amber-500/45 via-orange-400/20 to-transparent",
   },
   {
     key: "planetaryResonance",
     label: "Planetary Resonance",
     unit: "",
-    accent: "text-rose-500",
+    accent: "text-rose-300",
+    glow: "from-rose-500/40 via-fuchsia-400/20 to-transparent",
   },
 ];
 
@@ -48,17 +53,21 @@ const formatDelta = (delta: number, unit: string) => {
 };
 
 const RealtimeLineChart = ({
+  id,
   points,
   unit,
   accent,
 }: {
+  id: string;
   points: RealtimeChartPoint[];
   unit: string;
   accent: string;
 }) => {
   if (!points.length) {
     return (
-      <div className="h-32 text-sm text-stone-500">Awaiting telemetry...</div>
+      <div className="h-36 rounded-2xl border border-white/10 bg-slate-950/60 p-6 text-sm text-slate-300/70">
+        Awaiting telemetry...
+      </div>
     );
   }
 
@@ -75,32 +84,47 @@ const RealtimeLineChart = ({
       return `${x},${y}`;
     })
     .join(" ");
+  const polygon = `0,100 ${polyline} 100,100`;
   const delta = latest.value - previous.value;
+  const deltaClass = delta >= 0 ? "text-emerald-200" : "text-rose-200";
+  const fillId = `${id}-fill`; // unique per chart for gradient fill
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <div className="text-2xl font-semibold text-stone-900">
+        <div className="text-3xl font-semibold text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.35)]">
           {latest.value.toFixed(unit ? 2 : 3)}
-          {unit ? <span className="ml-1 text-sm font-normal text-stone-500">{unit}</span> : null}
+          {unit ? <span className="ml-1 text-sm font-normal text-slate-300/80">{unit}</span> : null}
         </div>
-        <div className="text-xs text-stone-500">{formatDelta(delta, unit)}</div>
+        <div className={`text-xs font-semibold uppercase tracking-[0.25em] ${deltaClass}`}>
+          {formatDelta(delta, unit)}
+        </div>
       </div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
-        className={cn("h-32 w-full", accent)}
+        className={cn(
+          "h-36 w-full drop-shadow-[0_0_25px_rgba(56,189,248,0.25)]",
+          accent
+        )}
       >
+        <defs>
+          <linearGradient id={fillId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="currentColor" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={polygon} fill={`url(#${fillId})`} opacity={0.4} />
         <polyline
           points={polyline}
           fill="none"
           stroke="currentColor"
-          strokeWidth={2.4}
+          strokeWidth={2.6}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
-      <div className="flex justify-between text-xs text-stone-500">
+      <div className="flex justify-between text-[10px] uppercase tracking-[0.3em] text-slate-400">
         <span>
           min {min.toFixed(2)}
           {unit ? ` ${unit}` : ""}
@@ -119,24 +143,42 @@ const LiveRealtimeCharts = () => {
 
   return (
     <div className="grid gap-4 lg:grid-cols-4">
-      {chartConfigs.map(({ key, label, unit, accent }) => {
+      {chartConfigs.map(({ key, label, unit, accent, glow }) => {
         const points = charts[key];
         const delta =
           points.length > 1
             ? points[points.length - 1].value - points[points.length - 2].value
             : 0;
-        const variant = delta >= 0 ? "success" : "warning";
+        const badgeTone =
+          delta >= 0
+            ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-100"
+            : "border-rose-400/40 bg-rose-500/20 text-rose-100";
 
         return (
-          <Card key={key} className="border-stone-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-semibold text-stone-800">
+          <Card
+            key={key}
+            className="group relative overflow-hidden border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_0_45px_rgba(59,130,246,0.2)] backdrop-blur"
+          >
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 opacity-70 transition duration-700 group-hover:opacity-90",
+                `bg-gradient-to-br ${glow}`
+              )}
+            />
+            <div className="pointer-events-none absolute -inset-24 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(255,255,255,0.25),_transparent_60%)] opacity-0 group-hover:opacity-40" />
+            <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-200">
                 {label}
               </CardTitle>
-              <Badge variant={variant}>{delta >= 0 ? "Rising" : "Cooling"}</Badge>
+              <Badge
+                variant="outline"
+                className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] ${badgeTone}`}
+              >
+                {delta >= 0 ? "Rising" : "Cooling"}
+              </Badge>
             </CardHeader>
-            <CardContent className="pt-0">
-              <RealtimeLineChart points={points} unit={unit} accent={accent} />
+            <CardContent className="relative z-10 pt-2">
+              <RealtimeLineChart id={key} points={points} unit={unit} accent={accent} />
             </CardContent>
           </Card>
         );

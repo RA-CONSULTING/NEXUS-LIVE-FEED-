@@ -245,11 +245,14 @@ const laneStatusFor = (load: number): { status: ProcessingStatus; note: string }
   return { status: 'Nominal', note: 'In sync with planetary cadence' };
 };
 
-const metricVariant = (status: 'stable' | 'watch' | 'alert') =>
-  status === 'stable' ? 'success' : status === 'watch' ? 'warning' : 'destructive';
-
 const metricLabel = (status: 'stable' | 'watch' | 'alert') =>
   status === 'stable' ? 'Stable' : status === 'watch' ? 'Watch' : 'Review';
+
+const metricBadgeStyles: Record<MetricSummary['status'], string> = {
+  stable: 'border-emerald-400/40 bg-emerald-500/20 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.45)]',
+  watch: 'border-amber-300/40 bg-amber-500/20 text-amber-100 shadow-[0_0_25px_rgba(251,191,36,0.35)]',
+  alert: 'border-rose-400/40 bg-rose-500/25 text-rose-100 shadow-[0_0_25px_rgba(244,63,94,0.35)]',
+};
 
 const HomePage = () => {
   const { audit } = useSero();
@@ -401,72 +404,184 @@ const HomePage = () => {
     ? { label: 'Online', variant: 'success' as const }
     : { label: 'Balancing', variant: 'warning' as const };
 
+  const statusBadgeClass =
+    networkStatus.variant === 'success'
+      ? 'border-emerald-400/40 bg-emerald-500/20 text-emerald-100 shadow-[0_0_35px_rgba(16,185,129,0.45)]'
+      : 'border-amber-300/50 bg-amber-500/20 text-amber-100 shadow-[0_0_35px_rgba(251,191,36,0.4)]';
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-stone-900">Nexus Live Feed</h1>
-          <p className="text-sm text-stone-500">
-            Harmonized view of planetary sensors, processing lattices, and stewardship commands.
-          </p>
+    <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-cosmic-mesh opacity-80" />
+      <div className="pointer-events-none absolute -top-32 left-8 h-80 w-80 rounded-full bg-sky-500/40 blur-3xl animate-cosmic-drift" />
+      <div className="pointer-events-none absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-fuchsia-500/35 blur-[140px] animate-orbital-glow" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 opacity-20 blur-3xl" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+      <div className="relative z-10 space-y-10">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <h1 className="bg-gradient-to-r from-sky-200 via-fuchsia-200 to-amber-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+              Nexus Live Feed
+            </h1>
+            <p className="max-w-xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
+              Witness the Harmonia Nexus breathing in real time—sensor choirs, quantum analysts, and command pillars weaving a living tapestry of celestial insight.
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-2 text-xs text-slate-300/80 lg:items-end">
+            <Badge
+              variant="outline"
+              className={`inline-flex items-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] ${statusBadgeClass}`}
+            >
+              {networkStatus.label}
+            </Badge>
+            <span className="text-sm text-slate-300/90">
+              Updated <span className="font-semibold text-white">{timestamp.toLocaleTimeString()}</span>
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col items-start gap-2 text-sm text-stone-500 lg:items-end">
-          <Badge variant={networkStatus.variant}>{networkStatus.label}</Badge>
-          <span>
-            Updated <span className="font-medium text-stone-700">{timestamp.toLocaleTimeString()}</span>
-          </span>
+
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />
+          <div className="pointer-events-none absolute -inset-20 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(255,255,255,0.18),_transparent_60%)]" />
+          <Tabs defaultValue="system-overview" className="relative z-10 space-y-8">
+            <TabsList className="relative flex w-full flex-wrap gap-2 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1 backdrop-blur">
+              <span className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500/0 via-sky-500/60 to-sky-500/0" />
+              <TabsTrigger
+                value="system-overview"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500/40 data-[state=active]:via-blue-500/30 data-[state=active]:to-cyan-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(56,189,248,0.45)]"
+              >
+                System Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="sensory-layer"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/40 data-[state=active]:via-teal-500/30 data-[state=active]:to-sky-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(16,185,129,0.45)]"
+              >
+                Sensory &amp; Ingestion
+              </TabsTrigger>
+              <TabsTrigger
+                value="processing-core"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/40 data-[state=active]:via-indigo-500/30 data-[state=active]:to-sky-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(139,92,246,0.45)]"
+              >
+                Processing &amp; Analysis
+              </TabsTrigger>
+              <TabsTrigger
+                value="live-visualization"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500/40 data-[state=active]:via-pink-500/30 data-[state=active]:to-amber-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(236,72,153,0.45)]"
+              >
+                Live Visualization
+              </TabsTrigger>
+              <TabsTrigger
+                value="recording-systems"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/40 data-[state=active]:via-orange-500/30 data-[state=active]:to-rose-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(245,158,11,0.45)]"
+              >
+                Recording Systems
+              </TabsTrigger>
+              <TabsTrigger
+                value="chronicle-governance"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500/40 data-[state=active]:via-purple-500/30 data-[state=active]:to-rose-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(59,130,246,0.45)]"
+              >
+                Chronicle &amp; Governance
+              </TabsTrigger>
+              <TabsTrigger
+                value="output-command"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/40 data-[state=active]:via-blue-500/30 data-[state=active]:to-indigo-500/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(37,99,235,0.45)]"
+              >
+                Command &amp; Output
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="system-overview" className="space-y-6">
+              <Card className="group relative overflow-hidden border-white/10 bg-slate-900/60 text-slate-100 shadow-[0_0_50px_rgba(59,130,246,0.25)]">
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-indigo-500/20 opacity-60 transition duration-700 group-hover:opacity-80" />
+                <div className="pointer-events-none absolute -inset-24 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(148,163,184,0.35),_transparent_55%)] opacity-0 group-hover:opacity-80" />
+                <CardHeader className="relative z-10 pb-3">
+                  <CardTitle className="text-xl font-semibold text-white">Operational Pulse</CardTitle>
+                </CardHeader>
+                <CardContent className="relative z-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                  {metrics.map((metric) => (
+                    <div
+                      key={metric.id}
+                      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500/40 via-transparent to-fuchsia-500/40 p-[1px] shadow-[0_0_40px_rgba(129,140,248,0.35)]"
+                    >
+                      <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,_rgba(236,72,153,0.2),_transparent_65%)] opacity-0 transition duration-500 group-hover:opacity-80" />
+                      <div className="relative h-full rounded-[1.5rem] bg-slate-950/75 p-4 backdrop-blur">
+                        <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.25),_transparent_60%)] opacity-0 transition duration-500 group-hover:opacity-80" />
+                        <div className="relative z-10 flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-slate-300/90">
+                          <span className="text-[11px] font-semibold">{metric.label}</span>
+                          <Badge
+                            variant="outline"
+                            className={`rounded-full px-3 py-1 ${metricBadgeStyles[metric.status]}`}
+                          >
+                            {metricLabel(metric.status)}
+                          </Badge>
+                        </div>
+                        <div className="relative z-10 mt-4 text-3xl font-semibold text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.35)]">
+                          {metric.value}
+                        </div>
+                        <p className="relative z-10 mt-2 text-xs leading-relaxed text-slate-300/80">{metric.hint}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+              <LiveRealtimeCharts />
+            </TabsContent>
+            <TabsContent
+              value="sensory-layer"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.2)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-transparent to-sky-500/15 opacity-70" />
+              <div className="relative z-10">
+                <SensoryLayerTab sensors={sensors} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="processing-core"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(139,92,246,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/15 via-transparent to-sky-500/15 opacity-70" />
+              <div className="relative z-10">
+                <ProcessingCoreTab processing={processing} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="live-visualization"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(236,72,153,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-amber-400/15 opacity-70" />
+              <div className="relative z-10">
+                <LiveVisualizationTab modules={LIVE_VISUALIZATION_MODULES} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="recording-systems"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(245,158,11,0.2)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/20 via-transparent to-rose-500/15 opacity-70" />
+              <div className="relative z-10">
+                <RecordingSystemsTab channels={RECORDING_CHANNELS} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="chronicle-governance"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(59,130,246,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-rose-500/15 opacity-70" />
+              <div className="relative z-10">
+                <ChronicleGovernanceTab governance={CHRONICLE_GOVERNANCE} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="output-command"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(37,99,235,0.25)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/20 via-transparent to-indigo-500/20 opacity-70" />
+              <div className="relative z-10">
+                <OutputCommandTab latestAudit={latestAudit} vaultStatus={vaultStatus} vaultError={vaultError} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
-      <Tabs defaultValue="system-overview" className="space-y-6">
-        <TabsList className="flex w-full flex-wrap gap-2 bg-stone-100 p-1">
-          <TabsTrigger value="system-overview">System Overview</TabsTrigger>
-          <TabsTrigger value="sensory-layer">Sensory &amp; Ingestion</TabsTrigger>
-          <TabsTrigger value="processing-core">Processing &amp; Analysis</TabsTrigger>
-          <TabsTrigger value="live-visualization">Live Visualization</TabsTrigger>
-          <TabsTrigger value="recording-systems">Recording Systems</TabsTrigger>
-          <TabsTrigger value="chronicle-governance">Chronicle &amp; Governance</TabsTrigger>
-          <TabsTrigger value="output-command">Command &amp; Output</TabsTrigger>
-        </TabsList>
-        <TabsContent value="system-overview" className="space-y-6">
-          <Card className="border-stone-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xl font-semibold text-stone-900">Operational Pulse</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {metrics.map((metric) => (
-                <div key={metric.id} className="rounded-xl border border-stone-200 bg-white/80 p-4 shadow-sm">
-                  <div className="flex items-center justify-between text-xs text-stone-500">
-                    <span>{metric.label}</span>
-                    <Badge variant={metricVariant(metric.status)}>{metricLabel(metric.status)}</Badge>
-                  </div>
-                  <div className="mt-3 text-3xl font-semibold text-stone-900">{metric.value}</div>
-                  <p className="mt-2 text-xs text-stone-500">{metric.hint}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          <LiveRealtimeCharts />
-        </TabsContent>
-        <TabsContent value="sensory-layer">
-          <SensoryLayerTab sensors={sensors} />
-        </TabsContent>
-        <TabsContent value="processing-core">
-          <ProcessingCoreTab processing={processing} />
-        </TabsContent>
-        <TabsContent value="live-visualization">
-          <LiveVisualizationTab modules={LIVE_VISUALIZATION_MODULES} />
-        </TabsContent>
-        <TabsContent value="recording-systems">
-          <RecordingSystemsTab channels={RECORDING_CHANNELS} />
-        </TabsContent>
-        <TabsContent value="chronicle-governance">
-          <ChronicleGovernanceTab governance={CHRONICLE_GOVERNANCE} />
-        </TabsContent>
-        <TabsContent value="output-command">
-          <OutputCommandTab latestAudit={latestAudit} vaultStatus={vaultStatus} vaultError={vaultError} />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

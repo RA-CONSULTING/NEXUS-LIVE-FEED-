@@ -418,35 +418,27 @@ const HomePage = () => {
         </div>
       </div>
 
-      <Card className="border-stone-200">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-semibold text-stone-900">Operational Pulse</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {metrics.map((metric) => (
-            <div key={metric.id} className="rounded-xl border border-stone-200 bg-white/80 p-4 shadow-sm">
-              <div className="flex items-center justify-between text-xs text-stone-500">
-                <span>{metric.label}</span>
-                <Badge variant={metricVariant(metric.status)}>{metricLabel(metric.status)}</Badge>
-              </div>
-              <div className="mt-3 text-3xl font-semibold text-stone-900">{metric.value}</div>
-              <p className="mt-2 text-xs text-stone-500">{metric.hint}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <LiveRealtimeCharts />
-
-      <Tabs defaultValue="sensory-layer">
-        <TabsList className="flex w-full flex-wrap gap-2 bg-stone-100 p-1">
-          <TabsTrigger value="sensory-layer">Sensory Layer</TabsTrigger>
-          <TabsTrigger value="processing-core">Processing Core</TabsTrigger>
-          <TabsTrigger value="live-visualization">Live Visualization</TabsTrigger>
-          <TabsTrigger value="recording-systems">Recording Systems</TabsTrigger>
-          <TabsTrigger value="chronicle-governance">Chronicle &amp; Governance</TabsTrigger>
-          <TabsTrigger value="output-command">Output &amp; Command</TabsTrigger>
         </TabsList>
+        <TabsContent value="system-overview" className="space-y-6">
+          <Card className="border-stone-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl font-semibold text-stone-900">Operational Pulse</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              {metrics.map((metric) => (
+                <div key={metric.id} className="rounded-xl border border-stone-200 bg-white/80 p-4 shadow-sm">
+                  <div className="flex items-center justify-between text-xs text-stone-500">
+                    <span>{metric.label}</span>
+                    <Badge variant={metricVariant(metric.status)}>{metricLabel(metric.status)}</Badge>
+                  </div>
+                  <div className="mt-3 text-3xl font-semibold text-stone-900">{metric.value}</div>
+                  <p className="mt-2 text-xs text-stone-500">{metric.hint}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+          <LiveRealtimeCharts />
+        </TabsContent>
         <TabsContent value="sensory-layer">
           <SensoryLayerTab sensors={sensors} />
         </TabsContent>

@@ -179,7 +179,7 @@ const mutateMetric = (metric: RealtimeMetric): RealtimeMetric => {
     };
   };
   
-  const mutateSensory = (sensory: LiveSensoryStatus): LiveSensoryStatus => {
+  const mutateSensory = (sensory: LiveSensoryStatus, liveData: { solarAlignment: string; lunarPhase: string }): LiveSensoryStatus => {
     const chronicle = sensory.chronicleRecorder;
     const nextEvents = clamp(Math.round(randomWithin(chronicle.eventsPerMinute, 12)), 80, 180);
     const nextStorage = clamp(randomWithin(chronicle.storageUsedTb, 0.08), 1.8, 4.6);
@@ -190,8 +190,6 @@ const mutateMetric = (metric: RealtimeMetric): RealtimeMetric => {
       30
     );
     const harmonicStates = ["Stable", "Elevated", "Slight Variance"];
-    const solarAlignments = ["Optimal", "Nominal", "Adjusting"];
-    const lunarPhases = ["Waxing Gibbous", "Full", "Waning Gibbous", "First Quarter"];
   
     const nextStreams = sensory.dataStreams.map((stream) => {
       const delta = stream.rate * 0.12 + 4;
@@ -222,8 +220,8 @@ const mutateMetric = (metric: RealtimeMetric): RealtimeMetric => {
       celestialCartography: {
         trackingSatellites: tracking,
         harmonicSignatures: harmonicStates[Math.floor(Math.random() * harmonicStates.length)],
-        solarAlignment: solarAlignments[Math.floor(Math.random() * solarAlignments.length)],
-        lunarPhase: lunarPhases[Math.floor(Math.random() * lunarPhases.length)],
+        solarAlignment: liveData.solarAlignment,
+        lunarPhase: liveData.lunarPhase,
       },
       dataStreams: nextStreams,
     };
@@ -458,7 +456,7 @@ const createInitialData = (): RealtimeNexusData => ({
   },
 });
 
-const computeNextData = (prev: RealtimeNexusData): RealtimeNexusData => {
+const computeNextData = (prev: RealtimeNexusData, liveData: { solarAlignment: string; lunarPhase: string }): RealtimeNexusData => {
   const toSample = (p: RealtimeChartPoint) => ({ t: p.timestamp / 1000, v: p.value });
   const fromSample = (s: { t: number; v: number }) => ({ timestamp: s.t * 1000, value: s.v });
 
@@ -490,7 +488,7 @@ const computeNextData = (prev: RealtimeNexusData): RealtimeNexusData => {
     timestamp: Date.now(),
     metrics: prev.metrics.map((metric) => mutateMetric(metric)),
     charts: resampledCharts,
-    sensory: mutateSensory(prev.sensory),
+    sensory: mutateSensory(prev.sensory, liveData),
     processing: mutateProcessing(prev.processing),
     output: mutateOutput(prev.output),
   };
@@ -499,14 +497,57 @@ const computeNextData = (prev: RealtimeNexusData): RealtimeNexusData => {
 export const useResampledNexusData = (refreshMs = 200): RealtimeNexusData => {
   const initial = useMemo(() => createInitialData(), []);
   const [data, setData] = useState<RealtimeNexusData>(initial);
+  const [liveCelestialData, setLiveCelestialData] = useState({ solarAlignment: "Optimal", lunarPhase: "Waxing Gibbous" });
+
+  useEffect(() => {
+    const fetchSolarData = async () => {
+      try {
+        // Using NASA's DONKI API for Coronal Mass Ejection events as a proxy for solar alignment
+        const response = await fetch("https://api.nasa.gov/DONKI/CME?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&api_key=DEMO_KEY");
+        const cmeEvents = await response.json();
+        if (cmeEvents.length > 0) {
+          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Adjusting" }));
+        } else {
+          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Optimal" }));
+        }
+      } catch (error) {
+        console.error("Error fetching solar data:", error);
+        setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Unknown" }));
+      }
+    };
+
+    const fetchLunarData = async () => {
+      try {
+        // Using a simple moon phase API
+        const response = await fetch("https://api.farmsense.net/v1/moonphases/");
+        const lunarData = await response.json();
+        if (lunarData.length > 0) {
+          setLiveCelestialData(prev => ({ ...prev, lunarPhase: lunarData[0].Phase }));
+        }
+      } catch (error) {
+        console.error("Error fetching lunar data:", error);
+        setLiveCelestialData(prev => ({ ...prev, lunarPhase: "Unknown" }));
+      }
+    };
+
+    fetchSolarData();
+    fetchLunarData();
+
+    const intervalId = setInterval(() => {
+        fetchSolarData();
+        fetchLunarData();
+    }, 1000 * 60 * 60); // Fetch every hour
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => {
-      setData((current) => computeNextData(current));
+      setData((current) => computeNextData(current, liveCelestialData));
     }, refreshMs);
 
     return () => clearInterval(id);
-  }, [refreshMs]);
+  }, [refreshMs, liveCelestialData]);
 
   return data;
 };

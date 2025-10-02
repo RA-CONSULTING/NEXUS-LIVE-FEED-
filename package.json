@@ -1,13 +1,13 @@
 {
-  "name": "illumination-engine-backend",
+  "name": "illumination-engine-frontend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Server-side voice for the Illumination Engine, handling TTS requests.",
-  "main": "server.js",
+  "description": "Frontend for the Illumination Engine, providing a real-time interface.",
+  "main": "src/index.tsx",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node src/server.js",
-    "build": "tsc && vite build"
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build"
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.4.0",

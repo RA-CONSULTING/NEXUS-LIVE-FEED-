@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -6,8 +7,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useLiveNexusData } from "@/contexts/LiveNexusDataContext";
-import type { RealtimeChartCollection, RealtimeChartPoint } from "@/hooks/useRealtimeNexusData";
+import type {
+  RealtimeChartCollection,
+  RealtimeChartPoint,
+} from "@/hooks/useResampledNexusData";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import MandalaOverlay from "./MandalaOverlay";
+import SpiralChart from "./SpiralChart";
 
 const chartConfigs: Array<{
   key: keyof RealtimeChartCollection;
@@ -71,8 +78,6 @@ const RealtimeLineChart = ({
     );
   }
 
-  const latest = points[points.length - 1];
-  const previous = points.length > 1 ? points[points.length - 2] : latest;
   const values = points.map((point) => point.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -85,21 +90,10 @@ const RealtimeLineChart = ({
     })
     .join(" ");
   const polygon = `0,100 ${polyline} 100,100`;
-  const delta = latest.value - previous.value;
-  const deltaClass = delta >= 0 ? "text-emerald-200" : "text-rose-200";
   const fillId = `${id}-fill`; // unique per chart for gradient fill
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <div className="text-3xl font-semibold text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.35)]">
-          {latest.value.toFixed(unit ? 2 : 3)}
-          {unit ? <span className="ml-1 text-sm font-normal text-slate-300/80">{unit}</span> : null}
-        </div>
-        <div className={`text-xs font-semibold uppercase tracking-[0.25em] ${deltaClass}`}>
-          {formatDelta(delta, unit)}
-        </div>
-      </div>
       <svg
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
@@ -140,6 +134,14 @@ const RealtimeLineChart = ({
 
 const LiveRealtimeCharts = () => {
   const { charts } = useLiveNexusData();
+  const [chartViews, setChartViews] = useState<Record<string, "line" | "spiral">>({});
+
+  const toggleView = (key: string) => {
+    setChartViews((prev) => ({
+      ...prev,
+      [key]: prev[key] === "spiral" ? "line" : "spiral",
+    }));
+  };
 
   return (
     <div className="grid gap-4 lg:grid-cols-4">
@@ -153,12 +155,18 @@ const LiveRealtimeCharts = () => {
           delta >= 0
             ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-100"
             : "border-rose-400/40 bg-rose-500/20 text-rose-100";
+        
+        const currentView = chartViews[key] || 'line';
+        const latest = points.length > 0 ? points[points.length-1] : {value: 0, timestamp: 0};
+        const deltaClass = delta >= 0 ? "text-emerald-200" : "text-rose-200";
+
 
         return (
           <Card
             key={key}
             className="group relative overflow-hidden border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_0_45px_rgba(59,130,246,0.2)] backdrop-blur"
           >
+            <MandalaOverlay />
             <div
               className={cn(
                 "pointer-events-none absolute inset-0 opacity-70 transition duration-700 group-hover:opacity-90",
@@ -177,8 +185,24 @@ const LiveRealtimeCharts = () => {
                 {delta >= 0 ? "Rising" : "Cooling"}
               </Badge>
             </CardHeader>
-            <CardContent className="relative z-10 pt-2">
-              <RealtimeLineChart id={key} points={points} unit={unit} accent={accent} />
+            <CardContent className="relative z-10 pt-2 space-y-4">
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-semibold text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.35)]">
+                  {latest.value.toFixed(unit ? 2 : 3)}
+                  {unit ? <span className="ml-1 text-sm font-normal text-slate-300/80">{unit}</span> : null}
+                </div>
+                <div className={`text-xs font-semibold uppercase tracking-[0.25em] ${deltaClass}`}>
+                  {formatDelta(delta, unit)}
+                </div>
+              </div>
+              {currentView === "line" ? (
+                <RealtimeLineChart id={key} points={points} unit={unit} accent={accent} />
+              ) : (
+                <SpiralChart points={points} accent={accent} />
+              )}
+              <Button onClick={() => toggleView(key)} size="sm" variant="ghost" className="absolute top-1 right-1 z-20">
+                  {currentView === 'line' ? 'Spiral' : 'Line'} View
+              </Button>
             </CardContent>
           </Card>
         );

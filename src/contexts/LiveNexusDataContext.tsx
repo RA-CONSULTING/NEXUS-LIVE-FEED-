@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 
-import { type RealtimeNexusData, useRealtimeNexusData } from "@/hooks/useRealtimeNexusData";
+import { type RealtimeNexusData, useResampledNexusData } from "@/hooks/useResampledNexusData";
 
 const LiveNexusDataContext = createContext<RealtimeNexusData | null>(null);
 
@@ -13,7 +13,7 @@ export const LiveNexusDataProvider = ({
   children,
   refreshInterval,
 }: LiveNexusDataProviderProps) => {
-  const data = useRealtimeNexusData(refreshInterval);
+  const data = useResampledNexusData(refreshInterval);
 
   return (
     <LiveNexusDataContext.Provider value={data}>

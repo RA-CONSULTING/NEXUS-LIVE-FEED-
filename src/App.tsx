@@ -25,24 +25,27 @@ const App: React.FC = () => {
               <Link to="/about" className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
                 About
               </Link>
-              {/* The following links are not yet routed */}
-              <button className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
+              <Link to="/chronicles" className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
                 Chronicles (Sense)
-              </button>
-              <button className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
+              </Link>
+              <Link to="/nexus-intelligence" className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
                 Nexus Intelligence (Understand)
-              </button>
-              <button className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
+              </Link>
+              <Link to="/actuation" className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
                 Actuation (Act)
-              </button>
-              <button className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
+              </Link>
+              <Link to="/meta-quest-link" className="py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300">
                 Meta Quest VR
-              </button>
+              </Link>
             </nav>
             <div className="mt-8">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/chronicles" element={<Chronicles />} />
+                <Route path="/nexus-intelligence" element={<NexusIntelligence />} />
+                <Route path="/actuation" element={<Actuation />} />
+                <Route path="/meta-quest-link" element={<MetaQuestLink />} />
               </Routes>
             </div>
           </div>

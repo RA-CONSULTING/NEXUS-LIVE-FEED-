@@ -10,12 +10,15 @@ function download(name: string, data: string, type = "text/plain") {
   a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
 
+// Add a unique ID to each result
+type ResultWithId = EquationResult & { resultId: string };
+
 export const AureonEquationStudio: React.FC = () => {
   const [text, setText] = React.useState<string>(
 `Coherence phasor for planetary songbook; unison threads via Kuramoto; glyph spiral check; echo recognition.`
   );
   const [compiled, setCompiled] = React.useState<{ equations: string[]; notes?: string }|null>(null);
-  const [results, setResults] = React.useState<EquationResult[]>([]);
+  const [results, setResults] = React.useState<ResultWithId[]>([]);
   const [status, setStatus] = React.useState<"IDLE"|"COMPILED"|"RUN"|"ERROR">("IDLE");
   const [err, setErr] = React.useState<string>("");
 
@@ -35,7 +38,13 @@ export const AureonEquationStudio: React.FC = () => {
       const intent = compileIntuition(text);
       const out = runAureon({ intent, data: {} });
       if (!out.ok) { setErr(out.errors?.join("; ") || "Unknown"); setStatus("ERROR"); }
-      else { setResults(out.results); setStatus("RUN"); setErr(""); }
+      else {
+        // Add a unique ID to each result
+        const resultsWithIds = out.results.map((r, i) => ({ ...r, resultId: `${r.id}-${i}-${Date.now()}` }));
+        setResults(resultsWithIds);
+        setStatus("RUN");
+        setErr("");
+      }
     } catch (e:any) {
       setErr(String(e?.message||e)); setStatus("ERROR");
     }
@@ -49,7 +58,7 @@ export const AureonEquationStudio: React.FC = () => {
     download("aureon_results.json", JSON.stringify(results, null, 2), "application/json");
   };
   const onCopyTeX = () => {
-    const tex = results.flatMap(r => r.tex).join("\n\n");
+    const tex = results.flatMap(r => r.tex).join("\\n\\n");
     navigator.clipboard.writeText(tex);
   };
 
@@ -95,8 +104,8 @@ export const AureonEquationStudio: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {results.length===0 && <div className="text-xs opacity-60">Run to see computed values.</div>}
-          {results.map((r, idx) => (
-            <div key={idx} className="rounded-lg border border-white/10 p-3">
+          {results.map((r) => (
+            <div key={r.resultId} className="rounded-lg border border-white/10 p-3">
               <div className="flex items-center justify-between">
                 <div className="font-semibold">{r.id}</div>
                 <Badge variant="secondary">values</Badge>
@@ -105,7 +114,7 @@ export const AureonEquationStudio: React.FC = () => {
                 <div className="space-y-0.5">
                   {Object.entries(r.values).map(([k,v])=>(
                     <div key={k}><span className="opacity-60">{k}:</span> {Number.isFinite(v)? (+v).toFixed(6): String(v)} {r.units[k] ?? ""}</div>
-                  ))}
+                  ))}\
                 </div>
                 <div className="space-y-0.5">
                   <div className="opacity-60">Meaning:</div>
@@ -116,7 +125,7 @@ export const AureonEquationStudio: React.FC = () => {
               </div>
               <details className="mt-2">
                 <summary className="text-xs opacity-70 cursor-pointer">TeX</summary>
-                <pre className="text-[11px] whitespace-pre-wrap leading-tight mt-1">{r.tex.join("\n")}</pre>
+                <pre className="text-[11px] whitespace-pre-wrap leading-tight mt-1">{r.tex.join("\\n")}</pre>
               </details>
             </div>
           ))}

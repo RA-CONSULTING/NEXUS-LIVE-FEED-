@@ -19,8 +19,8 @@ def get_planetary_positions():
     """
     # Use the current time to introduce a dynamic element (the 't' in the equation)
     now = datetime.now(timezone.utc)
-    # Normalize the time component to a value between 0 and 1
-    time_component = (now.hour * 3600 + now.minute * 60 + now.second) / 86400.0
+    # Use a continuous time value (days since epoch) to prevent "skipping"
+    time_component = now.timestamp() / 86400.0
 
     # The Golden Ratio, a fundamental constant in sacred geometry and this system
     PHI = (1 + math.sqrt(5)) / 2
@@ -63,4 +63,3 @@ def get_planetary_positions():
 def generate_celestial_chart():
     """DEPRECATED: This function is based on the old observational paradigm."""
     raise NotImplementedError("The observational model is deprecated. Use the creational model.")
-

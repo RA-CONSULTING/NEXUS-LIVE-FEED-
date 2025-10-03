@@ -2,7 +2,7 @@
  * Complete Nexus System with Ego Death & Observer Collapse
  * Integrates RFE, Ego Death Simulator, Observer Function, and Sacred Geometry
  */
-class NexusSystem {
+export class NexusSystem {
   constructor(config = {}) {
     this.config = {
       numObservers: config.numObservers || 7, // 7 chakras / 7 observers

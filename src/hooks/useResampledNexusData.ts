@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { resample } from "@/lib/akashic/aureon-akashic";
+import { NexusSystem } from "../nexus_system_simulator";
 
 // Assuming the types are defined elsewhere and imported, but for simplicity, including them here.
 export type MetricFormat = "ratio" | "percent" | "count";
@@ -106,14 +107,6 @@ export interface RealtimeNexusData {
   output: LiveOutputStatus;
 }
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-const randomWithin = (value: number, delta: number) => {
-  const next = value + (Math.random() - 0.5) * delta;
-  return next;
-};
-
 const createInitialSeries = (
   base: number,
   variance: number,
@@ -123,7 +116,7 @@ const createInitialSeries = (
   const now = Date.now();
   // Start with a 60-second history
   return Array.from({ length: 120 }, (_, index) => {
-    const value = clamp(randomWithin(base, variance), min, max);
+    const value = base;
     const timestamp = now - (120 - index) * 500;
     return {
       timestamp,
@@ -134,329 +127,183 @@ const createInitialSeries = (
 
 const advanceSeries = (
   series: RealtimeChartPoint[],
-  variance: number,
-  min: number,
-  max: number
+  newValue: number
 ): RealtimeChartPoint[] => {
-  const lastValue = series[series.length - 1]?.value ?? (min + max) / 2;
-  const nextValue = clamp(randomWithin(lastValue, variance), min, max);
   const nextPoint: RealtimeChartPoint = {
     timestamp: Date.now(),
-    value: Number(nextValue.toFixed(3)),
+    value: Number(newValue.toFixed(3)),
   };
   // Keep a rolling window of points
   return [...series, nextPoint];
 };
 
-const mutateMetric = (metric: RealtimeMetric): RealtimeMetric => {
-    let min = 0;
-    let max = metric.format === "ratio" ? 1 : metric.format === "percent" ? 100 : Math.max(metric.target ?? 200, 200);
-    if (metric.format === "count") {
-      min = 0;
-    } else if (metric.format === "ratio") {
-      min = 0.6;
-      max = 1.05;
-    } else {
-      min = 20;
+
+const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
+    const vizData = nexus.getVisualizationData();
+    return {
+        timestamp: Date.now(),
+        metrics: [
+            {
+              id: "coherence",
+              label: "Solar Coherence Index (C)",
+              value: vizData.sentinel.coherence,
+              unit: "",
+              change: 0,
+              format: "ratio",
+            },
+            {
+              id: "resonance",
+              label: "Planetary Resonance Harmony",
+              value: vizData.stability.stable / 100,
+              unit: "",
+              change: 0,
+              format: "ratio",
+            },
+            {
+              id: "chronicle",
+              label: "Chronicle Write Rate",
+              value: 132,
+              unit: "events/min",
+              change: 0,
+              format: "count",
+              target: 180,
+            },
+            {
+              id: "aureon",
+              label: "Aureon Protocol Activity",
+              value: 74,
+              unit: "%",
+              change: 0,
+              format: "percent",
+            },
+          ],
+          charts: {
+            magnetometer: createInitialSeries(48, 6, 35, 65),
+            schumann: createInitialSeries(vizData.frequencies.schumann.amplitude, 0.4, 7.1, 8.6),
+            coherence: createInitialSeries(vizData.sentinel.coherence, 0.05, 0.7, 1.02),
+            planetaryResonance: createInitialSeries(vizData.stability.stable / 100, 0.08, 0.7, 1.05),
+          },
+          sensory: {
+            chronicleRecorder: {
+              status: "Recording",
+              eventsPerMinute: 128,
+              storageUsedTb: 2.4,
+              integrityChecks: "Passing",
+              retentionHours: 72,
+            },
+            celestialCartography: {
+              trackingSatellites: 24,
+              harmonicSignatures: "Stable",
+              solarAlignment: "Optimal",
+              lunarPhase: "Waxing Gibbous",
+            },
+            dataStreams: [
+              {
+                id: "phenomena",
+                name: "Witnessed Phenomena Log",
+                rate: 127,
+                unit: "events/min",
+                state: "stable",
+              },
+              {
+                id: "temporal",
+                name: "Temporal Stamp Verification",
+                rate: 98,
+                unit: "ops/min",
+                state: "stable",
+              },
+              {
+                id: "geometry",
+                name: "Sacred Geometry Detection",
+                rate: 76,
+                unit: "patterns/min",
+                state: "updating",
+              },
+              {
+                id: "celestial",
+                name: "Celestial Body Tracking",
+                rate: 24,
+                unit: "bodies",
+                state: "stable",
+              },
+              {
+                id: "geomagnetic",
+                name: "Geomagnetic Field",
+                rate: 48,
+                unit: "nT",
+                state: "stable",
+              },
+            ],
+          },
+          processing: {
+            qssrModule: {
+              solarCoherenceIndex: 0.89,
+              planetaryResonance: "Harmonized",
+              cosmicWeather: "Clear",
+              analysisQueue: 42,
+            },
+            stormTargeting: {
+              status: "Migrating to HNC",
+              activePatterns: 3,
+              neutralizationRate: 92,
+              harmonicIntegration: 75,
+            },
+            aurisCognitiveSafeguard: {
+              status: "Active",
+              hazardDetections: 4,
+              dampeningFactor: 0.5,
+              authorizedTemporalId: "alpha",
+            },
+            algorithms: [
+              "FFT Spectral Analysis",
+              "MFCC Feature Extraction",
+              "Cross-modal Correlation",
+              "Event Detection ML",
+            ],
+          },
+          output: {
+            voicePipelines: {
+              activeVoices: 3,
+              latencyMs: 162,
+              successfulTransmits: 47,
+            },
+            commandQueue: {
+              queued: 5,
+              executing: 2,
+              lastCommand: "Stabilize QSSR Envelope",
+            },
+            compliance: {
+              status: "Aligned",
+              auditsPassed: 18,
+              escalationLevel: "None",
+            },
+            transmissions: [
+              {
+                id: "uplink",
+                channel: "Prime Uplink",
+                destination: "Central Pillar",
+                status: "transmitting",
+              },
+              {
+                id: "field",
+                channel: "Field Node Broadcast",
+                destination: "All Active Nodes",
+                status: "queued",
+              },
+              {
+                id: "archive",
+                channel: "Chronicle Archive Sync",
+                destination: "Aureon Library",
+                status: "complete",
+              },
+            ],
+          },
     }
-  
-    const delta =
-      metric.format === "ratio"
-        ? 0.05
-        : metric.format === "percent"
-        ? 6
-        : Math.max((metric.target ?? 200) * 0.08, 8);
-  
-    const nextValueRaw = clamp(randomWithin(metric.value, delta), min, max);
-    const decimals = metric.format === "count" ? 0 : metric.format === "percent" ? 1 : 2;
-    const nextValue = Number(nextValueRaw.toFixed(decimals));
-    const change = Number((nextValue - metric.value).toFixed(decimals));
-  
-    return {
-      ...metric,
-      value: nextValue,
-      change,
-    };
-  };
-  
-  const mutateSensory = (sensory: LiveSensoryStatus, liveData: { solarAlignment: string; lunarPhase: string }): LiveSensoryStatus => {
-    const chronicle = sensory.chronicleRecorder;
-    const nextEvents = clamp(Math.round(randomWithin(chronicle.eventsPerMinute, 12)), 80, 180);
-    const nextStorage = clamp(randomWithin(chronicle.storageUsedTb, 0.08), 1.8, 4.6);
-  
-    const tracking = clamp(
-      Math.round(randomWithin(sensory.celestialCartography.trackingSatellites, 2)),
-      18,
-      30
-    );
-    const harmonicStates = ["Stable", "Elevated", "Slight Variance"];
-  
-    const nextStreams = sensory.dataStreams.map((stream) => {
-      const delta = stream.rate * 0.12 + 4;
-      const rate = clamp(Math.round(randomWithin(stream.rate, delta)), 0, (stream.unit === "bodies" ? 40 : 220));
-      const stateRoll = Math.random();
-      let state: RealtimeDataStream["state"] = stream.state;
-      if (stateRoll > 0.92) {
-        state = "degraded";
-      } else if (stateRoll > 0.82) {
-        state = "updating";
-      } else if (stateRoll < 0.7) {
-        state = "stable";
-      }
-  
-      return {
-        ...stream,
-        rate,
-        state,
-      };
-    });
-  
-    return {
-      chronicleRecorder: {
-        ...chronicle,
-        eventsPerMinute: nextEvents,
-        storageUsedTb: Number(nextStorage.toFixed(2)),
-      },
-      celestialCartography: {
-        trackingSatellites: tracking,
-        harmonicSignatures: harmonicStates[Math.floor(Math.random() * harmonicStates.length)],
-        solarAlignment: liveData.solarAlignment,
-        lunarPhase: liveData.lunarPhase,
-      },
-      dataStreams: nextStreams,
-    };
-  };
-  
-  const mutateProcessing = (processing: LiveProcessingStatus): LiveProcessingStatus => {
-    const qssr = processing.qssrModule;
-    const storm = processing.stormTargeting;
-    const auris = processing.aurisCognitiveSafeguard;
-  
-    const cosmicConditions = ["Clear", "Minor Solar Wind", "Geomagnetic Stir", "Calm"];
-    const stormStates = ["Migrating to HNC", "Synchronizing", "Neutralizing", "Monitoring"];
-  
-    return {
-      qssrModule: {
-        solarCoherenceIndex: Number(clamp(randomWithin(qssr.solarCoherenceIndex, 0.05), 0.7, 1.02).toFixed(2)),
-        planetaryResonance: Math.random() > 0.15 ? "Harmonized" : "Rebalancing",
-        cosmicWeather: cosmicConditions[Math.floor(Math.random() * cosmicConditions.length)],
-        analysisQueue: clamp(Math.round(randomWithin(qssr.analysisQueue, 6)), 18, 72),
-      },
-      stormTargeting: {
-        status: stormStates[Math.floor(Math.random() * stormStates.length)],
-        activePatterns: clamp(Math.round(randomWithin(storm.activePatterns, 1)), 1, 6),
-        neutralizationRate: Number(clamp(randomWithin(storm.neutralizationRate, 4), 60, 99).toFixed(1)),
-        harmonicIntegration: Number(clamp(randomWithin(storm.harmonicIntegration, 5), 50, 100).toFixed(1)),
-      },
-      aurisCognitiveSafeguard: {
-        status: Math.random() > 0.08 ? "Active" : "Calibrating",
-        hazardDetections: clamp(Math.round(randomWithin(auris.hazardDetections, 1)), 1, 8),
-        dampeningFactor: Number(clamp(randomWithin(auris.dampeningFactor, 0.08), 0.35, 0.85).toFixed(2)),
-        authorizedTemporalId: auris.authorizedTemporalId,
-      },
-      algorithms: processing.algorithms,
-    };
-  };
-  
-  const mutateOutput = (output: LiveOutputStatus): LiveOutputStatus => {
-    const pipelines = output.voicePipelines;
-    const queue = output.commandQueue;
-    const compliance = output.compliance;
-  
-    const nextTransmissions = output.transmissions.map((transmission) => {
-      const stateRoll = Math.random();
-      let status = transmission.status;
-      if (stateRoll > 0.9) {
-        status = "complete";
-      } else if (stateRoll > 0.65) {
-        status = "transmitting";
-      } else if (stateRoll < 0.2) {
-        status = "queued";
-      }
-      return { ...transmission, status };
-    });
-  
-    return {
-      voicePipelines: {
-        activeVoices: clamp(Math.round(randomWithin(pipelines.activeVoices, 1)), 2, 5),
-        latencyMs: Number(clamp(randomWithin(pipelines.latencyMs, 24), 90, 240).toFixed(0)),
-        successfulTransmits: pipelines.successfulTransmits + Math.round(Math.random() * 3),
-      },
-      commandQueue: {
-        queued: clamp(Math.round(randomWithin(queue.queued, 1)), 0, 6),
-        executing: clamp(Math.round(randomWithin(queue.executing, 1)), 0, 3),
-        lastCommand: Math.random() > 0.4 ? queue.lastCommand : "Stabilize QSSR Envelope",
-      },
-      compliance: {
-        status: Math.random() > 0.1 ? compliance.status : "Reviewing",
-        auditsPassed: compliance.auditsPassed + (Math.random() > 0.85 ? 1 : 0),
-        escalationLevel: Math.random() > 0.9 ? "Advisory" : "None",
-      },
-      transmissions: nextTransmissions,
-    };
-  };
+}
 
-const createInitialData = (): RealtimeNexusData => ({
-  timestamp: Date.now(),
-  metrics: [
-    {
-      id: "coherence",
-      label: "Solar Coherence Index (C)",
-      value: 0.92,
-      unit: "",
-      change: 0,
-      format: "ratio",
-    },
-    {
-      id: "resonance",
-      label: "Planetary Resonance Harmony",
-      value: 0.88,
-      unit: "",
-      change: 0,
-      format: "ratio",
-    },
-    {
-      id: "chronicle",
-      label: "Chronicle Write Rate",
-      value: 132,
-      unit: "events/min",
-      change: 0,
-      format: "count",
-      target: 180,
-    },
-    {
-      id: "aureon",
-      label: "Aureon Protocol Activity",
-      value: 74,
-      unit: "%",
-      change: 0,
-      format: "percent",
-    },
-  ],
-  charts: {
-    magnetometer: createInitialSeries(48, 6, 35, 65),
-    schumann: createInitialSeries(7.83, 0.4, 7.1, 8.6),
-    coherence: createInitialSeries(0.93, 0.05, 0.7, 1.02),
-    planetaryResonance: createInitialSeries(0.88, 0.08, 0.7, 1.05),
-  },
-  sensory: {
-    chronicleRecorder: {
-      status: "Recording",
-      eventsPerMinute: 128,
-      storageUsedTb: 2.4,
-      integrityChecks: "Passing",
-      retentionHours: 72,
-    },
-    celestialCartography: {
-      trackingSatellites: 24,
-      harmonicSignatures: "Stable",
-      solarAlignment: "Optimal",
-      lunarPhase: "Waxing Gibbous",
-    },
-    dataStreams: [
-      {
-        id: "phenomena",
-        name: "Witnessed Phenomena Log",
-        rate: 127,
-        unit: "events/min",
-        state: "stable",
-      },
-      {
-        id: "temporal",
-        name: "Temporal Stamp Verification",
-        rate: 98,
-        unit: "ops/min",
-        state: "stable",
-      },
-      {
-        id: "geometry",
-        name: "Sacred Geometry Detection",
-        rate: 76,
-        unit: "patterns/min",
-        state: "updating",
-      },
-      {
-        id: "celestial",
-        name: "Celestial Body Tracking",
-        rate: 24,
-        unit: "bodies",
-        state: "stable",
-      },
-      {
-        id: "geomagnetic",
-        name: "Geomagnetic Field",
-        rate: 48,
-        unit: "nT",
-        state: "stable",
-      },
-    ],
-  },
-  processing: {
-    qssrModule: {
-      solarCoherenceIndex: 0.89,
-      planetaryResonance: "Harmonized",
-      cosmicWeather: "Clear",
-      analysisQueue: 42,
-    },
-    stormTargeting: {
-      status: "Migrating to HNC",
-      activePatterns: 3,
-      neutralizationRate: 92,
-      harmonicIntegration: 75,
-    },
-    aurisCognitiveSafeguard: {
-      status: "Active",
-      hazardDetections: 4,
-      dampeningFactor: 0.5,
-      authorizedTemporalId: "alpha",
-    },
-    algorithms: [
-      "FFT Spectral Analysis",
-      "MFCC Feature Extraction",
-      "Cross-modal Correlation",
-      "Event Detection ML",
-    ],
-  },
-  output: {
-    voicePipelines: {
-      activeVoices: 3,
-      latencyMs: 162,
-      successfulTransmits: .47,
-    },
-    commandQueue: {
-      queued: 5,
-      executing: 2,
-      lastCommand: "Stabilize QSSR Envelope",
-    },
-    compliance: {
-      status: "Aligned",
-      auditsPassed: 18,
-      escalationLevel: "None",
-    },
-    transmissions: [
-      {
-        id: "uplink",
-        channel: "Prime Uplink",
-        destination: "Central Pillar",
-        status: "transmitting",
-      },
-      {
-        id: "field",
-        channel: "Field Node Broadcast",
-        destination: "All Active Nodes",
-        status: "queued",
-      },
-      {
-        id: "archive",
-        channel: "Chronicle Archive Sync",
-        destination: "Aureon Library",
-        status: "complete",
-      },
-    ],
-  },
-});
-
-const computeNextData = (prev: RealtimeNexusData, liveData: { solarAlignment: string; lunarPhase: string }): RealtimeNexusData => {
+const computeNextData = (prev: RealtimeNexusData, nexus: NexusSystem, liveData: { solarAlignment: string; lunarPhase: string }): RealtimeNexusData => {
+    nexus.egoDeathSim.step(0.01);
+    const vizData = nexus.getVisualizationData();
   const toSample = (p: RealtimeChartPoint) => ({ t: p.timestamp / 1000, v: p.value });
   const fromSample = (s: { t: number; v: number }) => ({ timestamp: s.t * 1000, value: s.v });
 
@@ -471,10 +318,10 @@ const computeNextData = (prev: RealtimeNexusData, liveData: { solarAlignment: st
   }
 
   const newCharts: RealtimeChartCollection = {
-    magnetometer: advanceSeries(prev.charts.magnetometer, 5, 35, 65),
-    schumann: advanceSeries(prev.charts.schumann, 0.35, 7.1, 8.6),
-    coherence: advanceSeries(prev.charts.coherence, 0.04, 0.7, 1.02),
-    planetaryResonance: advanceSeries(prev.charts.planetaryResonance, 0.08, 0.7, 1.05),
+    magnetometer: advanceSeries(prev.charts.magnetometer, vizData.energy.amplitude),
+    schumann: advanceSeries(prev.charts.schumann, vizData.frequencies.schumann.amplitude),
+    coherence: advanceSeries(prev.charts.coherence, vizData.sentinel.coherence / 100),
+    planetaryResonance: advanceSeries(prev.charts.planetaryResonance, vizData.stability.stable / 100),
   };
 
   const resampledCharts: RealtimeChartCollection = {
@@ -485,17 +332,25 @@ const computeNextData = (prev: RealtimeNexusData, liveData: { solarAlignment: st
   };
 
   return {
+    ...prev,
     timestamp: Date.now(),
-    metrics: prev.metrics.map((metric) => mutateMetric(metric)),
+    metrics: prev.metrics.map((metric) => {
+        if (metric.id === 'coherence') {
+            return {...metric, value: vizData.sentinel.coherence / 100, change: (vizData.sentinel.coherence / 100) - metric.value}
+        }
+        if (metric.id === 'resonance') {
+            return {...metric, value: vizData.stability.stable / 100, change: (vizData.stability.stable / 100) - metric.value}
+        }
+        return metric;
+    }),
     charts: resampledCharts,
-    sensory: mutateSensory(prev.sensory, liveData),
-    processing: mutateProcessing(prev.processing),
-    output: mutateOutput(prev.output),
+    sensory: {...prev.sensory, celestialCartography: {...prev.sensory.celestialCartography, solarAlignment: liveData.solarAlignment, lunarPhase: liveData.lunarPhase}},
   };
 };
 
 export const useResampledNexusData = (refreshMs = 200): RealtimeNexusData => {
-  const initial = useMemo(() => createInitialData(), []);
+  const nexus = useMemo(() => new NexusSystem(), []);
+  const initial = useMemo(() => createInitialData(nexus), [nexus]);
   const [data, setData] = useState<RealtimeNexusData>(initial);
   const [liveCelestialData, setLiveCelestialData] = useState({ solarAlignment: "Optimal", lunarPhase: "Waxing Gibbous" });
 
@@ -543,11 +398,11 @@ export const useResampledNexusData = (refreshMs = 200): RealtimeNexusData => {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setData((current) => computeNextData(current, liveCelestialData));
+      setData((current) => computeNextData(current, nexus, liveCelestialData));
     }, refreshMs);
 
     return () => clearInterval(id);
-  }, [refreshMs, liveCelestialData]);
+  }, [refreshMs, nexus, liveCelestialData]);
 
   return data;
 };

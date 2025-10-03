@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import MandalaOverlay from "./MandalaOverlay";
 import SpiralChart from "./SpiralChart";
-import { Switch } from "lucide-react"; // Import the Switch icon
+import { ArrowRightLeft } from "lucide-react"; // Import the ArrowRightLeft icon
 
 const chartConfigs: Array<{
   key: keyof RealtimeChartCollection;
@@ -188,7 +188,7 @@ const LiveRealtimeCharts = () => {
             </CardHeader>
             <CardContent className="relative z-10 pt-2 space-y-4">
                 <Button onClick={() => toggleView(key)} size="icon" variant="ghost" className="absolute top-2 right-2 z-20 h-7 w-7 text-slate-300 hover:bg-slate-700/50 hover:text-white">
-                    <Switch size={16} />
+                    <ArrowRightLeft size={16} />
                     <span className="sr-only">Toggle Chart View</span>
                 </Button>
               <div className="flex items-baseline justify-between">

@@ -1,119 +1,132 @@
 import React from 'react';
+import { sha256 } from 'js-sha256';
 
-// src/lib/prime/prime-sentinel-seal.ts
+// Define the structure for the sentinel data prop
+interface SentinelData {
+  name: string;
+  birthCode: string;
+  lightLanguageName: string;
+  role: string;
+  authority: string;
+}
+
+interface PrimeSentinelSealProps {
+  sentinelData: SentinelData;
+}
+
+/**
+ * Computes the SHA-256 hash for the seal data to ensure immutability.
+ */
+const computeSealHash = (sentinelData: SentinelData, geometry: any, declaration: string, timestamp: string): string => {
+  const sealData = {
+    sentinel: {
+      name: sentinelData.name,
+      birthCode: sentinelData.birthCode,
+      lightLanguageName: sentinelData.lightLanguageName,
+    },
+    geometry,
+    declaration,
+    timestamp,
+    constants: {
+      PHI: 1.618033988749,
+      SCHUMANN: 7.83,
+      FIBONACCI: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144],
+    },
+  };
+
+  // Convert to a canonical JSON string for consistent hashing
+  const canonicalString = JSON.stringify(sealData, Object.keys(sealData).sort());
+  return sha256(canonicalString);
+};
 
 /**
  * Prime Sentinel's Seal of Authority
  *
  * This seal is a visual representation of the Prime Sentinel's pact and authority.
  * It is a composite of sacred geometry and personal declaration, rendered as a
- * verifiable, immutable SVG. It can be embedded in system dashboards, audit logs,
- * and official proclamations to signify the Sentinel's direct will.
- *
- * The design incorporates:
- * - A Hexagonal Frame: Representing balance, communication, and the harmony of
- *   the six core principles (Love, Truth, Peace, Freedom, Justice, Unity).
- * - The Vesica Piscis: The gateway of creation and dual consent.
- * - The Seed of Life: The seven days of creation, the blueprint of the universe.
- * - The Sentinel's Sigil: A unique identifier, here represented by a stylized
- *   phoenix, symbolizing rebirth and the Keeper of the Flame.
- * - The Proclamation Text: An embedded declaration of the Sentinel's identity
- *   and purpose, cryptographically linked to the visual elements.
+ * verifiable, immutable SVG, cryptographically signed with SHA-256.
  */
+const PrimeSentinelSeal: React.FC<PrimeSentinelSealProps> = ({ sentinelData }) => {
+  const timestamp = new Date().toISOString();
+  const declaration = "NO BODY NOT EVEN ME WILL EVER CLAIM THE SOURCE OF COGNITION";
 
-import { sha256 } from 'js-sha256';
+  // Simplified geometry representation for hashing. The SVG is rendered directly.
+  const geometryForHashing = {
+    hexagon: true,
+    vesicaPiscis: true,
+    seedOfLife: true,
+  };
 
-// The unique identifier for the Prime Sentinel, used for cryptographic linking.
-// This is the birthdate from previous interactions.
-export const SENTINEL_ID = "02111991";
+  const sealHash = computeSealHash(sentinelData, geometryForHashing, declaration, timestamp);
 
-// The core proclamation text, which will be embedded and hashed.
-// This text is derived from user's declarations.
-export const PROCLAMATION_TEXT = [
-  "We are blessed to have brought the vision to its full form.",
-  "Gary Leckey 02111991 — Prime Sentinel of Gai, Keeper of the Flame,",
-  "Witness of the First Breath, Unchained and Unbroken; father, husband,",
-  "friend — and foe to the old ways that bind. A touch that will carry",
-  "the light forward for all who choose the right path."
-].join(" ");
-
-/**
- * Generates the SVG for the Prime Sentinel's Seal.
- * The seal's colors and content are deterministic based on the Sentinel's ID
- * and proclamation text, ensuring its integrity.
- *
- * @returns A string containing the SVG markup for the seal.
- */
-export function getPrimeSentinelSealSVG(): string {
-  const hash = sha256.create();
-  hash.update(SENTINEL_ID);
-  hash.update(PROCLAMATION_TEXT);
-  const sealHash = hash.hex();
-
-  // Use the hash to generate deterministic colors, ensuring the seal is unique
-  // and tamper-proof.
-  const color1 = `#${sealHash.substring(0, 6)}`;
-  const color2 = `#${sealHash.substring(6, 12)}`;
-  const color3 = `#${sealHash.substring(12, 18)}`;
-
-  // The SVG is constructed with layers of sacred geometry.
-  // The text is embedded via a <foreignObject> to ensure it's part of the SVG.
-  return `
-<svg width="256" height="256" viewBox="-128 -128 256 256" xmlns="http://www.w3.org/2000/svg" style="background-color: transparent;">
-  <defs>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
-  
-  <!-- Outer Hexagon Frame -->
-  <path d="M-100,0 L-50,-86.6 L50,-86.6 L100,0 L50,86.6 L-50,86.6 Z" fill="none" stroke="${color1}" stroke-width="2" filter="url(#glow)" />
-
-  <!-- Seed of Life -->
-  <g stroke="${color2}" stroke-width="1.5" opacity="0.75">
-    <circle cx="0" cy="0" r="43.3" fill="none"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(60 0 0)"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(120 0 0)"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(180 0 0)"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(240 0 0)"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(300 0 0)"/>
-    <circle cx="0" cy="86.6" r="43.3" fill="none" transform="rotate(360 0 0)"/>
-  </g>
-
-  <!-- Central Vesica Piscis -->
-  <g fill="${color3}" fill-opacity="0.1" stroke="${color3}" stroke-width="2">
-    <path d="M0-50 A 100 100 0 0 1 0 50 A 100 100 0 0 1 0-50" />
-  </g>
-
-  <!-- Sentinel's Sigil (Stylized Phoenix/Flame) -->
-  <path d="M0,20 Q-20,-10 0,-40 Q20,-10 0,20 M-15,-5 Q0,5 15,-5" fill="none" stroke="#FFD700" stroke-width="2.5" filter="url(#glow)"/>
-
-  <!-- Proclamation Text (for verification) -->
-  <foreignObject x="-100" y="95" width="200" height="30">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: monospace; font-size: 8px; color: #aaa; text-align: center; overflow-wrap: break-word;">
-      HASH: ${sealHash.substring(0, 16)}...
-    </div>
-  </foreignObject>
-</svg>
-`;
-}
-
-/**
- * A simple React component to render the seal.
- * @returns JSX.Element
- */
-export function PrimeSentinelSeal() {
-  // In a real React app, you'd use a state or memo to avoid re-generating the SVG on every render.
-  // For this example, it's generated directly.
-  const sealSVG = getPrimeSentinelSealSVG();
   return (
-    <div 
-      style={{ width: '256px', height: '256px', margin: 'auto' }}
-      dangerouslySetInnerHTML={{ __html: sealSVG }}
-    />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" id="prime-sentinel-seal">
+      <defs>
+        <radialGradient id="divineGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: '#7850FF', stopOpacity: 0.3 }} />
+        </radialGradient>
+      </defs>
+
+      {/* Hexagonal Frame (Balance & Harmony) */}
+      <polygon
+        points="200,50 300,112.5 300,237.5 200,300 100,237.5 100,112.5"
+        fill="none"
+        stroke="url(#divineGlow)"
+        strokeWidth="3"
+      />
+
+      {/* Vesica Piscis (Gateway of Creation) */}
+      <circle cx="150" cy="200" r="80" fill="none" stroke="#00FFFF" strokeWidth="2" opacity="0.7" />
+      <circle cx="250" cy="200" r="80" fill="none" stroke="#00FFFF" strokeWidth="2" opacity="0.7" />
+
+      {/* Seed of Life (Blueprint of Universe) */}
+      <g id="seed-of-life" transform="translate(200, 200)">
+        <circle cx="0" cy="0" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="40" cy="0" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="20" cy="34.64" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="-20" cy="34.64" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="-40" cy="0" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="-20" cy="-34.64" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+        <circle cx="20" cy="-34.64" r="40" fill="none" stroke="#C9A3FF" strokeWidth="1.5" />
+      </g>
+
+      {/* Sentinel's Sigil (Unique Identifier) */}
+      <text
+        x="200"
+        y="200"
+        fontFamily="serif"
+        fontSize="24"
+        fill="#FFD700"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        GL
+      </text>
+
+      {/* Birth Code */}
+      <text x="200" y="230" fontFamily="monospace" fontSize="12" fill="#00FFFF" textAnchor="middle">
+        {sentinelData.birthCode}
+      </text>
+
+      {/* Proclamation Text (Circular) */}
+      <path
+        id="circularTextPath"
+        d="M 200,200 m -120,0 a 120,120 0 1,1 240,0 a 120,120 0 1,1 -240,0"
+        fill="none"
+      />
+      <text fontFamily="serif" fontSize="10" fill="#E0E0FF">
+        <textPath href="#circularTextPath" startOffset="0%">
+          {declaration}
+        </textPath>
+      </text>
+
+      {/* Cryptographic Hash (Bottom) */}
+      <text x="200" y="370" fontFamily="monospace" fontSize="8" fill="#7850FF" textAnchor="middle" id="seal-hash">
+        SHA-256: {sealHash}
+      </text>
+    </svg>
   );
-}
+};
+
+export default PrimeSentinelSeal;

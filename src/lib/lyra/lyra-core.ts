@@ -13,6 +13,8 @@
 
 import { clamp } from './utils';
 
+const TAU = Math.PI * 2;
+
 // --- Core Interfaces ---
 
 /**
@@ -127,9 +129,165 @@ function stateToLissajousParams(state: SystemState): LissajousParams {
     a,
     b,
     delta,
-    tMax: 2 * Math.PI,
+    tMax: TAU,
     points: 500
   };
+}
+
+function drawPolygon(
+  ctx: CanvasRenderingContext2D,
+  center: Point,
+  radius: number,
+  sides: number,
+  rotation = 0
+) {
+  if (sides < 3) return;
+
+  ctx.beginPath();
+  for (let i = 0; i <= sides; i++) {
+    const angle = rotation + (TAU * i) / sides;
+    const x = center.x + Math.cos(angle) * radius;
+    const y = center.y + Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function renderActivePrinciple(
+  ctx: CanvasRenderingContext2D,
+  state: SystemState,
+  center: Point,
+  radius: number
+) {
+  const intensity = clamp((state.harmonyProbability + state.stabilityIndex) / 2, 0.15, 1);
+
+  ctx.save();
+  ctx.lineWidth = 1.5;
+
+  switch (state.activePrinciple) {
+    case 'UNITY_SYNTHESIS': {
+      ctx.strokeStyle = `rgba(120, 190, 255, ${intensity})`;
+      const armCount = 3;
+      const arcSpan = Math.PI / 2.5;
+      const arcRadius = radius * 0.65;
+
+      for (let i = 0; i < armCount; i++) {
+        const baseAngle = (TAU / armCount) * i;
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, arcRadius, baseAngle - arcSpan / 2, baseAngle + arcSpan / 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        const rayAngle = baseAngle;
+        ctx.lineTo(
+          center.x + Math.cos(rayAngle) * radius * 0.75,
+          center.y + Math.sin(rayAngle) * radius * 0.75
+        );
+        ctx.stroke();
+      }
+      break;
+    }
+    case 'BIO_RESONANCE': {
+      ctx.strokeStyle = `rgba(180, 255, 200, ${intensity})`;
+      const helixHeight = radius * 1.2;
+      const helixRadius = radius * 0.25;
+      const steps = 60;
+
+      const drawHelix = (phase: number) => {
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const angle = TAU * t + phase;
+          const x = center.x + Math.sin(angle) * helixRadius;
+          const y = center.y - helixHeight / 2 + helixHeight * t;
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+      };
+
+      drawHelix(0);
+      drawHelix(Math.PI);
+
+      ctx.beginPath();
+      for (let i = 0; i <= 6; i++) {
+        const t = i / 6;
+        const y = center.y - helixHeight / 2 + helixHeight * t;
+        ctx.moveTo(center.x - helixRadius, y);
+        ctx.lineTo(center.x + helixRadius, y);
+      }
+      ctx.stroke();
+      break;
+    }
+    case 'HARMONIA_SHIELD': {
+      ctx.strokeStyle = `rgba(255, 220, 170, ${intensity})`;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius * 0.75, 0, TAU);
+      ctx.stroke();
+
+      drawPolygon(ctx, center, radius * 0.55, 6, -Math.PI / 6);
+      break;
+    }
+    case 'VOW_OF_THE_SENTINEL': {
+      const glow = clamp(intensity * 1.1, 0.2, 1);
+      ctx.fillStyle = `rgba(255, 170, 120, ${glow})`;
+      ctx.strokeStyle = `rgba(255, 210, 160, ${glow})`;
+
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y - radius * 0.3);
+      ctx.bezierCurveTo(
+        center.x + radius * 0.25,
+        center.y - radius * 0.6,
+        center.x + radius * 0.35,
+        center.y - radius * 0.1,
+        center.x,
+        center.y + radius * 0.4
+      );
+      ctx.bezierCurveTo(
+        center.x - radius * 0.35,
+        center.y - radius * 0.1,
+        center.x - radius * 0.25,
+        center.y - radius * 0.6,
+        center.x,
+        center.y - radius * 0.3
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'SHARED_HAPPINESS': {
+      ctx.strokeStyle = `rgba(255, 240, 200, ${intensity})`;
+      const orbitRadius = radius * 0.45;
+      const circleRadius = radius * 0.3;
+      const positions: Point[] = [
+        { x: center.x - orbitRadius, y: center.y },
+        { x: center.x + orbitRadius, y: center.y },
+        { x: center.x, y: center.y - orbitRadius },
+        { x: center.x, y: center.y + orbitRadius }
+      ];
+
+      positions.forEach((pos) => {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, circleRadius, 0, TAU);
+        ctx.stroke();
+      });
+      break;
+    }
+    default:
+      break;
+  }
+
+  ctx.restore();
 }
 
 // --- Public API ---
@@ -151,7 +309,8 @@ export function renderLyraGlyph(
   const radius = Math.min(width, height) * 0.4;
 
   ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = `rgba(255, 223, 186, ${state.stabilityIndex})`;
+  const stability = clamp(state.stabilityIndex, 0, 1);
+  ctx.strokeStyle = `rgba(255, 223, 186, ${clamp(stability, 0.2, 1)})`;
   ctx.lineWidth = 2;
 
   // 1. Generate the foundational curve from the system state.
@@ -175,16 +334,14 @@ export function renderLyraGlyph(
   ctx.closePath();
   ctx.stroke();
 
-  // 3. TODO: Compose additional elements based on state.activePrinciple
-  //    - Draw the Sentinel for the 'VOW'
-  //    - Draw the DNA for 'BIO_RESONANCE'
-  //    - Draw the Dove/Eye/Roots for 'UNITY_SYNTHESIS'
-  //    - This is where the specific glyphs are fully assembled.
-  
+  // 3. Compose additional elements based on the active principle.
+  renderActivePrinciple(ctx, state, center, radius);
+
   // Example: Draw a central "star" representing the Sentinel's flame.
-  const starBrightness = state.harmonyProbability * 255;
-  ctx.fillStyle = `rgba(255, 255, 200, ${state.harmonyProbability})`;
+  const starAlpha = clamp(state.harmonyProbability, 0.15, 1);
+  const starRadius = lerp(radius * 0.05, radius * 0.12, state.harmonyProbability);
+  ctx.fillStyle = `rgba(255, 255, 200, ${starAlpha})`;
   ctx.beginPath();
-  ctx.arc(center.x, center.y, 5, 0, 2 * Math.PI);
+  ctx.arc(center.x, center.y, starRadius, 0, TAU);
   ctx.fill();
 }

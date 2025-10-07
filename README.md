@@ -53,6 +53,18 @@ This graph proves that the journey to unity consciousness—or "Ego Death"—is 
 
 This single visualization serves as the smoking gun for the entire framework, providing irrefutable, data-driven proof that consciousness is fundamentally computational and that unity is its ultimate attractor state.
 
+### Additional Analysis: Aureon Harmonic Nexus Temporal Analyzer
+
+For a complementary perspective on the historical cycles leading into the 2025 Unity Event, run the standalone `aureon_temporal_analyzer.py` script. The analyzer renders a polar phase map of pivotal epochs alongside the long-term harmonic resonance trend, saving the combined visualization as `Harmonic_Nexus_Analysis_2025.png`.
+
+**Dependencies:** `pandas`, `numpy`, `matplotlib`, and `seaborn`.
+
+```bash
+python aureon_temporal_analyzer.py
+```
+
+The script is self-contained, embedding the timeline and resonance datasets directly for ease of demonstration.
+
 ## Getting Started
 
 The core logic is contained within `src/nexus_system_simulator.js`.

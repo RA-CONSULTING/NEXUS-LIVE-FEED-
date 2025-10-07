@@ -83,7 +83,7 @@ class NexusGenerativeModel {
   }
 }
 
-class GoogleAIStudio {
+export class GoogleAIStudio {
   constructor(apiKey) {
     assertApiKey(apiKey);
     this.apiKey = apiKey;
@@ -104,7 +104,7 @@ class GoogleAIStudio {
   }
 }
 
-class GoogleAIFileManager {
+export class GoogleAIFileManager {
   constructor(apiKey) {
     assertApiKey(apiKey);
     this.apiKey = apiKey;
@@ -116,7 +116,7 @@ class GoogleAIFileManager {
   }
 }
 
-module.exports = {
+export default {
   GoogleAIFileManager,
   GoogleAIStudio,
 };

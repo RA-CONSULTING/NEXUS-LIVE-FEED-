@@ -1,4 +1,4 @@
-class ChildSafetySystem {
+export class ChildSafetySystem {
   constructor() {
     this.boundaries = [];
     this.mentors = [];
@@ -38,6 +38,4 @@ class ChildSafetySystem {
   }
 }
 
-const childSafetySystem = new ChildSafetySystem();
-
-module.exports = { ChildSafetySystem, childSafetySystem };
+export const childSafetySystem = new ChildSafetySystem();

@@ -1,9 +1,16 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const { GoogleAIFileManager, GoogleAIStudio } = require('./nexusAgent');
-const { childSafetySystem } = require('./childSafety');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { GoogleAIFileManager, GoogleAIStudio } from './nexusAgent.js';
+import { childSafetySystem } from './childSafety.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;

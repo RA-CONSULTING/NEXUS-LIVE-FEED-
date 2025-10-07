@@ -107,6 +107,9 @@ export interface RealtimeNexusData {
   output: LiveOutputStatus;
 }
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
 const createInitialSeries = (
   base: number,
   variance: number,
@@ -138,6 +141,17 @@ const advanceSeries = (
 };
 
 
+const STREAM_TUNINGS: Record<
+  string,
+  { variance: number; watch: number; alert: number }
+> = {
+  phenomena: { variance: 6, watch: 140, alert: 165 },
+  temporal: { variance: 4, watch: 105, alert: 130 },
+  geometry: { variance: 3, watch: 82, alert: 96 },
+  celestial: { variance: 1.2, watch: 28, alert: 34 },
+  geomagnetic: { variance: 2.5, watch: 56, alert: 70 },
+};
+
 const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
     const vizData = nexus.getVisualizationData();
     return {
@@ -146,7 +160,7 @@ const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
             {
               id: "coherence",
               label: "Solar Coherence Index (C)",
-              value: vizData.sentinel.coherence,
+              value: vizData.sentinel.coherence / 100,
               unit: "",
               change: 0,
               format: "ratio",
@@ -180,7 +194,7 @@ const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
           charts: {
             magnetometer: createInitialSeries(48, 6, 35, 65),
             schumann: createInitialSeries(vizData.frequencies.schumann.amplitude, 0.4, 7.1, 8.6),
-            coherence: createInitialSeries(vizData.sentinel.coherence, 0.05, 0.7, 1.02),
+            coherence: createInitialSeries(vizData.sentinel.coherence / 100, 0.05, 0.7, 1.02),
             planetaryResonance: createInitialSeries(vizData.stability.stable / 100, 0.08, 0.7, 1.05),
           },
           sensory: {
@@ -331,20 +345,154 @@ const computeNextData = (prev: RealtimeNexusData, nexus: NexusSystem, liveData: 
     planetaryResonance: truncateAndResample(newCharts.planetaryResonance),
   };
 
+  const coherenceRatio = clamp(vizData.sentinel.coherence / 100, 0, 1);
+  const resonanceRatio = clamp(vizData.stability.stable / 100, 0, 1);
+
+  const updatedStreams = prev.sensory.dataStreams.map((stream) => {
+    const tuning = STREAM_TUNINGS[stream.id] ?? {
+      variance: Math.max(1, stream.rate * 0.05),
+      watch: Number.POSITIVE_INFINITY,
+      alert: Number.POSITIVE_INFINITY,
+    };
+    const delta = (Math.random() - 0.5) * tuning.variance;
+    const nextRate = clamp(stream.rate + delta, Math.max(0, stream.rate - tuning.variance * 4), stream.rate + tuning.variance * 4);
+    let nextState: RealtimeDataStream["state"] = "stable";
+    if (nextRate >= tuning.alert) {
+      nextState = "degraded";
+    } else if (nextRate >= tuning.watch) {
+      nextState = "updating";
+    }
+
+    return {
+      ...stream,
+      rate: Number(nextRate.toFixed(1)),
+      state: nextState,
+    };
+  });
+
+  const updatedProcessing: LiveProcessingStatus = {
+    qssrModule: {
+      solarCoherenceIndex: Number(coherenceRatio.toFixed(3)),
+      planetaryResonance: resonanceRatio > 0.85 ? "Harmonized" : resonanceRatio > 0.7 ? "Balancing" : "Investigating",
+      cosmicWeather: resonanceRatio > 0.8 ? "Clear" : resonanceRatio > 0.65 ? "Variable" : "Turbulent",
+      analysisQueue: clamp(
+        Math.round(prev.processing.qssrModule.analysisQueue + (Math.random() - 0.5) * 6),
+        18,
+        96
+      ),
+    },
+    stormTargeting: {
+      status: coherenceRatio > 0.85 ? "Synchronized" : coherenceRatio > 0.72 ? "Migrating to HNC" : "Recalibrating",
+      activePatterns: clamp(
+        Math.round(
+          prev.processing.stormTargeting.activePatterns + (Math.random() - 0.5) * 1.5
+        ),
+        1,
+        6
+      ),
+      neutralizationRate: clamp(
+        Math.round(70 + coherenceRatio * 28 + (Math.random() - 0.5) * 4),
+        52,
+        99
+      ),
+      harmonicIntegration: clamp(
+        Math.round(60 + resonanceRatio * 35 + (Math.random() - 0.5) * 6),
+        48,
+        98
+      ),
+    },
+    aurisCognitiveSafeguard: {
+      status: prev.processing.aurisCognitiveSafeguard.status,
+      hazardDetections: clamp(
+        Math.round(prev.processing.aurisCognitiveSafeguard.hazardDetections + (Math.random() - 0.5) * 1.6),
+        0,
+        9
+      ),
+      dampeningFactor: Number(clamp(0.42 + (1 - coherenceRatio) * 0.4, 0.35, 0.88).toFixed(2)),
+      authorizedTemporalId: prev.processing.aurisCognitiveSafeguard.authorizedTemporalId,
+    },
+    algorithms: prev.processing.algorithms,
+  };
+
+  const updatedTransmissions = prev.output.transmissions.map((tx) => {
+    const cycle: Record<typeof tx.status, typeof tx.status> = {
+      queued: "transmitting",
+      transmitting: "complete",
+      complete: "queued",
+    };
+    const shouldAdvance = Math.random() > 0.76;
+    if (!shouldAdvance) {
+      if (tx.status === "complete" && Math.random() > 0.94) {
+        return { ...tx, status: "queued" };
+      }
+      return tx;
+    }
+    return { ...tx, status: cycle[tx.status] };
+  });
+
+  const completedBefore = prev.output.transmissions.filter((tx) => tx.status === "complete").length;
+  const completedAfter = updatedTransmissions.filter((tx) => tx.status === "complete").length;
+  const completedDelta = Math.max(0, completedAfter - completedBefore);
+
   return {
     ...prev,
     timestamp: Date.now(),
     metrics: prev.metrics.map((metric) => {
-        if (metric.id === 'coherence') {
-            return {...metric, value: vizData.sentinel.coherence / 100, change: (vizData.sentinel.coherence / 100) - metric.value}
-        }
-        if (metric.id === 'resonance') {
-            return {...metric, value: vizData.stability.stable / 100, change: (vizData.stability.stable / 100) - metric.value}
-        }
-        return metric;
+      if (metric.id === "coherence") {
+        const nextValue = coherenceRatio;
+        return {
+          ...metric,
+          value: nextValue,
+          change: Number((nextValue - metric.value).toFixed(3)),
+        };
+      }
+      if (metric.id === "resonance") {
+        const nextValue = resonanceRatio;
+        return {
+          ...metric,
+          value: nextValue,
+          change: Number((nextValue - metric.value).toFixed(3)),
+        };
+      }
+      return metric;
     }),
     charts: resampledCharts,
-    sensory: {...prev.sensory, celestialCartography: {...prev.sensory.celestialCartography, solarAlignment: liveData.solarAlignment, lunarPhase: liveData.lunarPhase}},
+    sensory: {
+      ...prev.sensory,
+      dataStreams: updatedStreams,
+      celestialCartography: {
+        ...prev.sensory.celestialCartography,
+        solarAlignment: liveData.solarAlignment,
+        lunarPhase: liveData.lunarPhase,
+      },
+    },
+    processing: updatedProcessing,
+    output: {
+      ...prev.output,
+      voicePipelines: {
+        ...prev.output.voicePipelines,
+        latencyMs: clamp(
+          Math.round(prev.output.voicePipelines.latencyMs + (Math.random() - 0.5) * 18),
+          120,
+          220
+        ),
+        successfulTransmits: prev.output.voicePipelines.successfulTransmits + completedDelta,
+      },
+      commandQueue: {
+        ...prev.output.commandQueue,
+        queued: clamp(
+          Math.round(prev.output.commandQueue.queued + (Math.random() - 0.5) * 1.2),
+          2,
+          7
+        ),
+        executing: clamp(
+          Math.round(prev.output.commandQueue.executing + (Math.random() - 0.5) * 1.2),
+          1,
+          3
+        ),
+      },
+      transmissions: updatedTransmissions,
+    },
   };
 };
 

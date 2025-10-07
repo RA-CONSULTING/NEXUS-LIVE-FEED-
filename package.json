@@ -5,7 +5,7 @@
   "description": "Frontend for the Illumination Engine, providing a real-time interface.",
   "main": "src/index.tsx",
   "scripts": {
-    "start": "vite",
+    "start": "node server.js",
     "dev": "vite",
     "build": "vite build"
   },

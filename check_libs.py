@@ -1,12 +1,13 @@
+import subprocess
 import sys
-try:
-    import imageio
-    print("imageio is available")
-except ImportError:
-    print("imageio is NOT available")
+
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
 try:
-    from PIL import Image
-    print("PIL is available")
+    import yaml
+    print("PyYAML is already installed.")
 except ImportError:
-    print("PIL is NOT available")
+    print("PyYAML not found. Installing...")
+    install("pyyaml")
+    print("PyYAML installed successfully.")

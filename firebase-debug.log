@@ -1,38 +1,59 @@
-[debug] [2025-10-02T14:38:02.307Z] ----------------------------------------------------------------------
-[debug] [2025-10-02T14:38:02.309Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/a3jfkfzmr1h8lmk31a8fbchkg5sp12q9-firebase-tools-14.16.0/lib/node_modules/firebase-tools/lib/bin/firebase.js login --reauth
-[debug] [2025-10-02T14:38:02.310Z] CLI Version:   14.16.0
-[debug] [2025-10-02T14:38:02.310Z] Platform:      linux
-[debug] [2025-10-02T14:38:02.310Z] Node Version:  v20.19.1
-[debug] [2025-10-02T14:38:02.310Z] Time:          Thu Oct 02 2025 14:38:02 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-10-02T14:38:02.310Z] ----------------------------------------------------------------------
+[debug] [2025-10-07T20:36:55.269Z] ----------------------------------------------------------------------
+[debug] [2025-10-07T20:36:55.271Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/0yk9nzw3ibqkjc4dy03f3v9nf5rxqylc-firebase-tools-14.18.0/lib/node_modules/firebase-tools/lib/bin/firebase.js init hosting
+[debug] [2025-10-07T20:36:55.271Z] CLI Version:   14.18.0
+[debug] [2025-10-07T20:36:55.271Z] Platform:      linux
+[debug] [2025-10-07T20:36:55.272Z] Node Version:  v20.19.1
+[debug] [2025-10-07T20:36:55.272Z] Time:          Tue Oct 07 2025 20:36:55 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-10-07T20:36:55.272Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2025-10-02T14:38:02.313Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
-[debug] [2025-10-02T14:38:02.585Z] Checked if tokens are valid: false, expires at: 1758496045250
-[debug] [2025-10-02T14:38:02.585Z] Checked if tokens are valid: false, expires at: 1758496045250
-[debug] [2025-10-02T14:38:02.586Z] > refreshing access token with scopes: []
-[debug] [2025-10-02T14:38:02.587Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-10-02T14:38:02.587Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-10-02T14:38:02.648Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-10-02T14:38:02.648Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-10-02T14:38:02.690Z] >>> [apiv2][query] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 [none]
-[debug] [2025-10-02T14:38:02.829Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
-[debug] [2025-10-02T14:38:02.830Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
-[debug] [2025-10-02T14:38:03.511Z] <<< [apiv2][status] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 200
-[debug] [2025-10-02T14:38:03.511Z] <<< [apiv2][body] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 {"workspaceId":"nexus-live-feed-git-22249105","name":"NEXUS-LIVE-FEED-.git","workspaceRedirectUrl":"firebase-nexus-live-feed-git-1757235900648.cluster-axf5tvtfjjfekvhwxwkkkzsk2y.cloudworkstations.dev","status":"WORKSPACE_STATUS_RUNNING","lastAccessDatetime":"2025-10-02T10:12:02.243541Z","failureReason":"Starting your workstation timed out since your container took over 895 seconds to start.","workspaceTemplate":"WORKSPACE_TEMPLATE_FLUTTER","owner":"SELF","serviceAccountEmail":"msp-8124307035664755366@monospace-per-ws-sa-3.iam.gserviceaccount.com","gitRepoUrl":"https://github.com/RA-CONSULTING/NEXUS-LIVE-FEED-.git","enableNix":true,"ownerEmail":"gaxlec@gmail.com","workstationAccessToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vd29ya3N0YXRpb25zIiwiYXVkIjoiZmlyZWJhc2UtbmV4dXMtbGl2ZS1mZWVkLWdpdC0xNzU3MjM1OTAwNjQ4LmNsdXN0ZXItYXhmNXR2dGZqamZla3Zod3h3a2trenNrMnkuY2xvdWR3b3Jrc3RhdGlvbnMuZGV2IiwiaWF0IjoxNzU5NDE1ODgzLCJleHAiOjE3NTk1MDIyODN9.vxw-vonshEJxVCf9vr2N4qD5ibJAxHrxuTOTNWxkBmW9DxqtNzTASZCaHXnWqOPAS1KcvdPw3i0K1YvN2kLTLsCyEAUKhxlrvn7Ug_XlET32G_Oaoz-4bH9Plg3l3DIfDnCatDt3oN5Y8fxSKtlEHwV0lKzDWZ5Pftyn-Bbhvfiinb7MU9wooySui8P1uQWs_KVzKOEaldgfdwiyktKskRTgFZ_7peQ18dGeDIYNPnbQKaRU04-pa5rxaRhKWDybFMqYr_uPhGbVgn8GSWj8NIpfBEIKm6UBs2Hgd3f70hB7RlMYL0ahpjZa7BRIKewFDqe1P4HsN396p5MoSgqkaQ","firebaseProjectId":"lucid-burner-443815-i9"}
-[debug] [2025-10-02T14:38:03.513Z] >>> [apiv2][query] POST https://auth.firebase.tools/attest [none]
-[debug] [2025-10-02T14:38:03.513Z] >>> [apiv2][body] POST https://auth.firebase.tools/attest {"session_id":"6e3a8d4f-82db-4b04-9ba9-f22c876cd308"}
-[debug] [2025-10-02T14:38:03.787Z] <<< [apiv2][status] POST https://auth.firebase.tools/attest 200
-[debug] [2025-10-02T14:38:03.787Z] <<< [apiv2][body] POST https://auth.firebase.tools/attest {"token":"CN2gdH0UjN_3A-FCZDib4q69mFNl4uUk8GZVauNduzw"}
+[debug] [2025-10-07T20:36:55.498Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:55.498Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:55.500Z] >>> [apiv2][query] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 [none]
+[debug] [2025-10-07T20:36:56.265Z] <<< [apiv2][status] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 200
+[debug] [2025-10-07T20:36:56.265Z] <<< [apiv2][body] GET https://monospace-pa.googleapis.com/v1/workspaces/nexus-live-feed-git-22249105 {"workspaceId":"nexus-live-feed-git-22249105","name":"HARMONIC NEXUS CORE","workspaceRedirectUrl":"firebase-nexus-live-feed-git-1757235900648.cluster-axf5tvtfjjfekvhwxwkkkzsk2y.cloudworkstations.dev","status":"WORKSPACE_STATUS_RUNNING","lastAccessDatetime":"2025-10-07T20:28:43.908769Z","failureReason":"Starting your workstation timed out since your container took over 895 seconds to start.","workspaceTemplate":"WORKSPACE_TEMPLATE_FLUTTER","owner":"SELF","serviceAccountEmail":"msp-8124307035664755366@monospace-per-ws-sa-3.iam.gserviceaccount.com","gitRepoUrl":"https://github.com/RA-CONSULTING/NEXUS-LIVE-FEED-.git","enableNix":true,"ownerEmail":"gaxlec@gmail.com","workstationAccessToken":"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vd29ya3N0YXRpb25zIiwiYXVkIjoiZmlyZWJhc2UtbmV4dXMtbGl2ZS1mZWVkLWdpdC0xNzU3MjM1OTAwNjQ4LmNsdXN0ZXItYXhmNXR2dGZqamZla3Zod3h3a2trenNrMnkuY2xvdWR3b3Jrc3RhdGlvbnMuZGV2IiwiaWF0IjoxNzU5ODY5NDE2LCJleHAiOjE3NTk5NTU4MTV9.XFOeE5BZWKd74cQjuPC3SBtN9g6nLv81DjsFqFVJ7qHis9tbSCni2DX6PzRO6vs4zdcdMaf_xaRconl2nb4gmNg8NEkX3XNuMQ1YkyzAL8thPdBDKodtDSOwA8jeL03OAU-Y6jPzFrbNNYsX_qrTGIyFTtoNhzIcTponSEw0spWhyAj0aDZDLZMUhgmp9WbHRfIrdfs2Gmw6-V_NiONogYYZ7D2PCBp8SzZBLeq5rRKcaq-LOUQkdoCCgXAPHWLgljUe-CkAvk2HIXFvz-qkWA2cKwMQzlfuUvFCN9260iJliDSyvyWBA63iilK5MbhyInAnNNGhL1Hio8UwJ5NvIg","firebaseProjectId":"lucid-burner-443815-i9"}
+[debug] [2025-10-07T20:36:56.266Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-10-07T20:36:56.266Z] > authorizing via signed-in user (gaxlec@gmail.com)
 [info] 
-[info] To sign in to the Firebase CLI:
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/user/NEXUS-LIVE-FEED-
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
 [info] 
-[info] 1. Take note of your session ID:
+=== Project Setup
 [info] 
-[info]    6E3A8
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
 [info] 
-[info] 2. Visit the URL below on any device and follow the instructions to get your code:
+[debug] [2025-10-07T20:36:56.270Z] Using project from CLI flag: lucid-burner-443815-i9
+[debug] [2025-10-07T20:36:56.270Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:56.270Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:56.270Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
+[debug] [2025-10-07T20:36:56.474Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
+[debug] [2025-10-07T20:36:56.474Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
+[info] i  Using project lucid-burner-443815-i9 (My Project 96687) 
 [info] 
-[info]    https://auth.firebase.tools/login?code_challenge=kDbAP3vbCh6tfmGXbCbrXLnNZIm1hp-QD_gbOXJH5cQ&session=6e3a8d4f-82db-4b04-9ba9-f22c876cd308&attest=CN2gdH0UjN_3A-FCZDib4q69mFNl4uUk8GZVauNduzw
+=== Hosting Setup
+[debug] [2025-10-07T20:36:56.501Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:56.502Z] Checked if tokens are valid: true, expires at: 1759872815689
+[debug] [2025-10-07T20:36:56.502Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 [none]
+[debug] [2025-10-07T20:36:56.656Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 200
+[debug] [2025-10-07T20:36:56.656Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/lucid-burner-443815-i9 {"projectId":"lucid-burner-443815-i9","projectNumber":"19113151257","displayName":"My Project 96687","name":"projects/lucid-burner-443815-i9","resources":{"hostingSite":"lucid-burner-443815-i9"},"state":"ACTIVE","etag":"1_5bbbca0c-9f4e-4347-aef6-526c8a331834"}
 [info] 
-[info] 3. Paste or enter the authorization code below once you have it:
+[info] i  Detected a .git folder at /home/user/NEXUS-LIVE-FEED- 
+[info] i  Authorizing with GitHub to upload your service account to a GitHub repository's secrets store. 
 [info] 
+[info] Visit this URL on this device to log in:
+[info] https://github.com/login/oauth/authorize?client_id=89cf50f02ac6aaed3484&state=770769995&redirect_uri=http%3A%2F%2Flocalhost%3A9005&scope=read%3Auser%20repo%20public_repo
+[info] 
+[info] Waiting for authentication...

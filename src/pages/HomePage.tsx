@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSero } from '@/contexts/SeroProvider';
+import { useLiveNexusData } from '@/contexts/LiveNexusDataContext';
 import type { AuditRecord } from '@/lib/sero/sero-core';
 
 import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/ChronicleGovernanceTab';
@@ -55,38 +56,19 @@ type MetricSummary = {
   hint: string;
 };
 
-const SENSOR_SEEDS: Array<{ id: string; name: string; location: string; intensity: number }> = [
-  {
-    id: 'earth-grid',
-    name: 'Earth Grid Magnetometer',
-    location: 'Cusco Array',
-    intensity: 63.4,
-  },
-  {
-    id: 'ionosphere',
-    name: 'Ionosphere Choir',
-    location: 'Inuvik Relay',
-    intensity: 71.2,
-  },
-  {
-    id: 'storm-lens',
-    name: 'Storm Lens Doppler',
-    location: 'Azores Node',
-    intensity: 58.6,
-  },
-  {
-    id: 'solar-halo',
-    name: 'Solar Halo Spectrometer',
-    location: 'Mauna Kea Apex',
-    intensity: 79.1,
-  },
-];
+const STREAM_METADATA: Record<string, { location: string; capacity: number }> = {
+  phenomena: { location: 'Witness Array · Cusco Grid', capacity: 180 },
+  temporal: { location: 'Temporal Anchor Lab · Reykjavik', capacity: 140 },
+  geometry: { location: 'Sacred Geometry Observatory · Chartres', capacity: 120 },
+  celestial: { location: 'Orbital Relay · Lagrange L1', capacity: 36 },
+  geomagnetic: { location: 'Geomagnetic Vault · Mauna Kea Apex', capacity: 80 },
+};
 
-const PROCESSING_SEEDS: Array<{ id: string; name: string; load: number }> = [
-  { id: 'harmonics', name: 'Harmonic Coherence Synthesizer', load: 0.72 },
-  { id: 'storm-mapper', name: 'Storm Trajectory Mapper', load: 0.81 },
-  { id: 'ethics', name: 'Prime Ethics Correlator', load: 0.64 },
-];
+const NOTE_BY_SENSOR_STATE: Record<SensorState, string> = {
+  Stable: 'Field drift < 0.5%',
+  Watch: 'Harmonic balancing underway',
+  Anomaly: 'Escalate for manual review',
+};
 
 const LIVE_VISUALIZATION_MODULES: VisualizationModule[] = [
   {
@@ -226,24 +208,14 @@ const CHRONICLE_GOVERNANCE: ChronicleGovernance = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const sensorStateFor = (intensity: number): { state: SensorState; note: string } => {
-  if (intensity >= 85) {
-    return { state: 'Anomaly', note: 'Escalate for manual review' };
-  }
-  if (intensity >= 70) {
-    return { state: 'Watch', note: 'Harmonic balancing underway' };
-  }
-  return { state: 'Stable', note: 'Field drift < 0.5%' };
-};
-
-const laneStatusFor = (load: number): { status: ProcessingStatus; note: string } => {
+const laneStatusFor = (load: number): ProcessingStatus => {
   if (load >= 0.88) {
-    return { status: 'Calibrating', note: 'Phase correction engaged' };
+    return 'Calibrating';
   }
   if (load >= 0.78) {
-    return { status: 'Balancing', note: 'Redistributing workload across clusters' };
+    return 'Balancing';
   }
-  return { status: 'Nominal', note: 'In sync with planetary cadence' };
+  return 'Nominal';
 };
 
 const metricLabel = (status: 'stable' | 'watch' | 'alert') =>
@@ -257,23 +229,10 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 
 const HomePage = () => {
   const { audit } = useSero();
+  const { metrics: liveMetrics, sensory, processing: processingData, output, timestamp } = useLiveNexusData();
 
-  const [sensors, setSensors] = useState<SensorStream[]>(() =>
-    SENSOR_SEEDS.map((seed) => {
-      const { state, note } = sensorStateFor(seed.intensity);
-      return { ...seed, intensity: Number(seed.intensity.toFixed(1)), state, note };
-    })
-  );
-  const [processing, setProcessing] = useState<ProcessingLane[]>(() =>
-    PROCESSING_SEEDS.map((seed) => {
-      const { status, note } = laneStatusFor(seed.load);
-      return { ...seed, load: Number(seed.load.toFixed(2)), status, note };
-    })
-  );
-  const [transmissions, setTransmissions] = useState<Transmission[]>([]);
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
-  const [timestamp, setTimestamp] = useState(() => new Date());
 
   useEffect(() => {
     let active = true;
@@ -293,54 +252,78 @@ const HomePage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setSensors((prev) =>
-        prev.map((stream) => {
-          const nextIntensity = clamp(stream.intensity + (Math.random() - 0.5) * 1.6, 52, 94);
-          const { state, note } = sensorStateFor(nextIntensity);
-          return {
-            ...stream,
-            intensity: Number(nextIntensity.toFixed(1)),
-            state,
-            note,
-          };
-        })
-      );
+  const sensors = useMemo<SensorStream[]>(() => {
+    const dataStreams = sensory?.dataStreams ?? [];
+    return dataStreams.map((stream) => {
+      const meta = STREAM_METADATA[stream.id] ?? { location: 'Unknown Node', capacity: 100 };
+      const normalized = clamp((stream.rate / meta.capacity) * 100, 0, 100);
+      const state: SensorState = stream.state === 'degraded' || normalized >= 90
+        ? 'Anomaly'
+        : stream.state === 'updating' || normalized >= 72
+          ? 'Watch'
+          : 'Stable';
 
-      setProcessing((prev) =>
-        prev.map((lane) => {
-          const nextLoad = clamp(lane.load + (Math.random() - 0.5) * 0.06, 0.58, 0.93);
-          const { status, note } = laneStatusFor(nextLoad);
-          return {
-            ...lane,
-            load: Number(nextLoad.toFixed(2)),
-            status,
-            note,
-          };
-        })
-      );
+      return {
+        id: stream.id,
+        name: stream.name,
+        location: meta.location,
+        intensity: Number(normalized.toFixed(1)),
+        state,
+        note: NOTE_BY_SENSOR_STATE[state],
+      };
+    });
+  }, [sensory]);
 
-      setTransmissions((prev) =>
-        prev.map((tx) => {
-          const transitions: TransmissionStatus[] = ['Queued', 'Transmitting', 'Complete'];
-          const shouldAdvance = Math.random() > 0.72;
-          if (!shouldAdvance) {
-            return tx.status === 'Complete' && Math.random() > 0.92
-              ? { ...tx, status: 'Queued' }
-              : tx;
-          }
-          const currentIndex = transitions.indexOf(tx.status);
-          const nextStatus = transitions[(currentIndex + 1) % transitions.length];
-          return { ...tx, status: nextStatus };
-        })
-      );
+  const processing = useMemo<ProcessingLane[]>(() => {
+    if (!processingData) {
+      return [];
+    }
 
-      setTimestamp(new Date());
-    }, 6000);
+    const qssrLoad = clamp(0.65 + (1 - processingData.qssrModule.solarCoherenceIndex) * 0.5, 0, 1);
+    const stormLoad = clamp(processingData.stormTargeting.harmonicIntegration / 100, 0, 1);
+    const safeguardLoad = clamp(0.45 + processingData.aurisCognitiveSafeguard.dampeningFactor * 0.5, 0, 1);
 
-    return () => window.clearInterval(interval);
-  }, []);
+    const lanes: ProcessingLane[] = [
+      {
+        id: 'harmonics',
+        name: 'Harmonic Coherence Synthesizer',
+        load: Number(qssrLoad.toFixed(2)),
+        status: laneStatusFor(qssrLoad),
+        note: `Coherence ${(processingData.qssrModule.solarCoherenceIndex * 100).toFixed(0)}% · Queue ${processingData.qssrModule.analysisQueue}`,
+      },
+      {
+        id: 'storm-mapper',
+        name: 'Storm Trajectory Mapper',
+        load: Number(stormLoad.toFixed(2)),
+        status: laneStatusFor(stormLoad),
+        note: `Neutralization ${processingData.stormTargeting.neutralizationRate}% · Patterns ${processingData.stormTargeting.activePatterns}`,
+      },
+      {
+        id: 'ethics',
+        name: 'Prime Ethics Correlator',
+        load: Number(safeguardLoad.toFixed(2)),
+        status: laneStatusFor(safeguardLoad),
+        note: `Safeguard ${processingData.aurisCognitiveSafeguard.status} · Hazards ${processingData.aurisCognitiveSafeguard.hazardDetections}`,
+      },
+    ];
+
+    return lanes;
+  }, [processingData]);
+
+  const transmissions = useMemo<Transmission[]>(() => {
+    const records = output?.transmissions ?? [];
+    return records.map((tx) => ({
+      id: tx.id,
+      channel: tx.channel,
+      target: tx.destination,
+      status:
+        tx.status === 'transmitting'
+          ? 'Transmitting'
+          : tx.status === 'complete'
+            ? 'Complete'
+            : 'Queued',
+    }));
+  }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
     if (!sensors.length || !processing.length) {
@@ -352,14 +335,18 @@ const HomePage = () => {
     const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
     const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
-    const nexusHealth = (sensorIntegrity * 0.4) + ((100 - averageIntensity) / 100 * 0.3) + ((1 - averageLoad) * 0.3);
+    const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
+    const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
+    const coherence = coherenceMetric ? coherenceMetric.value : 0;
+    const resonance = resonanceMetric ? resonanceMetric.value : 0;
+    const nexusHealth = (sensorIntegrity * 0.3) + (coherence * 0.4) + (resonance * 0.3);
 
     return [
       {
         id: 'nexus-health',
         label: 'Nexus Health',
         value: `${Math.round(nexusHealth * 100)}%`,
-        status: nexusHealth > 0.9 ? 'stable' : nexusHealth > 0.75 ? 'watch' : 'alert',
+        status: nexusHealth > 0.88 ? 'stable' : nexusHealth > 0.72 ? 'watch' : 'alert',
         hint: 'Overall system stability and coherence'
       },
       {
@@ -394,7 +381,7 @@ const HomePage = () => {
         hint: 'Sessions awaiting completion',
       },
     ];
-  }, [processing, sensors, transmissions]);
+  }, [processing, sensors, transmissions, liveMetrics]);
 
   const latestAudit = useMemo<AuditRecord[]>(
     () => audit.slice(-4).reverse(),
@@ -403,12 +390,18 @@ const HomePage = () => {
 
   const networkStatus = sensors.every((stream) => stream.state === 'Stable')
     ? { label: 'Online', variant: 'success' as const }
-    : { label: 'Balancing', variant: 'warning' as const };
+    : sensors.some((stream) => stream.state === 'Anomaly')
+      ? { label: 'Investigate', variant: 'warning' as const }
+      : { label: 'Balancing', variant: 'warning' as const };
 
   const statusBadgeClass =
-    networkStatus.variant === 'success'
+    networkStatus.label === 'Online'
       ? 'border-emerald-400/40 bg-emerald-500/20 text-emerald-100 shadow-[0_0_35px_rgba(16,185,129,0.45)]'
-      : 'border-amber-300/50 bg-amber-500/20 text-amber-100 shadow-[0_0_35px_rgba(251,191,36,0.4)]';
+      : networkStatus.label === 'Investigate'
+        ? 'border-rose-400/50 bg-rose-500/20 text-rose-100 shadow-[0_0_35px_rgba(244,63,94,0.35)]'
+        : 'border-amber-300/50 bg-amber-500/20 text-amber-100 shadow-[0_0_35px_rgba(251,191,36,0.4)]';
+
+  const updatedAt = useMemo(() => new Date(timestamp), [timestamp]);
 
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
@@ -435,7 +428,7 @@ const HomePage = () => {
               {networkStatus.label}
             </Badge>
             <span className="text-sm text-slate-300/90">
-              Updated <span className="font-semibold text-white">{timestamp.toLocaleTimeString()}</span>
+              Updated <span className="font-semibold text-white">{updatedAt.toLocaleTimeString()}</span>
             </span>
           </div>
         </div>

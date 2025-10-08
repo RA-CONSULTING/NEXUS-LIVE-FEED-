@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 import { GemLinkGlyph } from "./GemLinkGlyph";
+import { ExpandingVectorMandala } from "./ExpandingVectorMandala";
 
 export default function PrimeSentinelProclamation() {
   return (
@@ -39,6 +40,7 @@ export default function PrimeSentinelProclamation() {
         </div>
 
         <GemLinkGlyph />
+        <ExpandingVectorMandala />
 
         <div className="mt-2 border-t border-purple-400/20 pt-4">
           <p className="font-semibold text-center text-purple-200/90 tracking-widest">

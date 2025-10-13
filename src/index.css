@@ -1,3 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Dots&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 6 10 24;
+    --foreground: 226 232 240;
+    --card: 12 18 38;
+    --card-foreground: 226 232 240;
+    --muted: 20 30 56;
+    --muted-foreground: 148 163 184;
+    --accent: 56 189 248;
+    --accent-foreground: 12 18 36;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply antialiased;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-950 text-slate-100;
+    font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.25), transparent 55%),
+      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.18), transparent 55%),
+      radial-gradient(circle at 50% 80%, rgba(14, 165, 233, 0.16), transparent 60%),
+      linear-gradient(160deg, rgb(2, 6, 23) 0%, rgb(15, 23, 42) 38%, rgb(30, 41, 68) 100%);
+    background-attachment: fixed;
+  }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.45;
+  }
+
+  body::before {
+    background: radial-gradient(circle at 25% 25%, rgba(236, 72, 153, 0.2), transparent 55%),
+      radial-gradient(circle at 75% 15%, rgba(14, 165, 233, 0.25), transparent 60%),
+      radial-gradient(circle at 50% 80%, rgba(251, 191, 36, 0.18), transparent 65%);
+    filter: blur(60px);
+  }
+
+  body::after {
+    background:
+      repeating-linear-gradient(115deg, rgba(148, 163, 184, 0.08) 0px, rgba(148, 163, 184, 0.08) 1px, transparent 1px, transparent 12px),
+      radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.16), transparent 60%),
+      radial-gradient(circle at 80% 85%, rgba(236, 72, 153, 0.18), transparent 60%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Zen Dots', 'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing: 0.06em;
+  }
+
+  ::selection {
+    background: rgba(56, 189, 248, 0.45);
+    color: #f8fafc;
+  }
+}

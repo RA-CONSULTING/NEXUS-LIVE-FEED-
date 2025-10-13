@@ -1,3 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Dots&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 6 10 24;
+    --foreground: 226 232 240;
+    --card: 12 18 38;
+    --card-foreground: 226 232 240;
+    --muted: 20 30 56;
+    --muted-foreground: 148 163 184;
+    --accent: 56 189 248;
+    --accent-foreground: 12 18 36;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply antialiased;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-950 text-slate-100;
+    font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.3), transparent 58%),
+      radial-gradient(circle at 80% 15%, rgba(236, 72, 153, 0.22), transparent 58%),
+      radial-gradient(circle at 50% 80%, rgba(251, 191, 36, 0.2), transparent 62%),
+      repeating-linear-gradient(120deg, rgba(148, 163, 184, 0.06) 0px, rgba(148, 163, 184, 0.06) 1px, transparent 1px, transparent 26px),
+      linear-gradient(160deg, rgb(2, 6, 23) 0%, rgb(13, 23, 42) 38%, rgb(24, 33, 64) 100%);
+    background-blend-mode: screen, screen, screen, soft-light, normal;
+    background-attachment: fixed;
+  }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0.45;
+  }
+
+  body::before {
+    background: radial-gradient(circle at 25% 25%, rgba(236, 72, 153, 0.25), transparent 55%),
+      radial-gradient(circle at 75% 15%, rgba(14, 165, 233, 0.28), transparent 60%),
+      radial-gradient(circle at 50% 80%, rgba(251, 191, 36, 0.22), transparent 65%);
+    filter: blur(80px);
+  }
+
+  body::after {
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cg fill='none' stroke='rgba(148,163,184,0.12)' stroke-width='0.5'%3E%3Cpath d='M0 100h200M100 0v200'/%3E%3Ccircle cx='100' cy='100' r='96'/%3E%3Ccircle cx='100' cy='100' r='64' opacity='0.6'/%3E%3Ccircle cx='100' cy='100' r='32' opacity='0.35'/%3E%3C/g%3E%3C/svg%3E"),
+      radial-gradient(circle at 10% 90%, rgba(56, 189, 248, 0.2), transparent 60%),
+      radial-gradient(circle at 80% 85%, rgba(236, 72, 153, 0.22), transparent 60%);
+    background-size: 220px 220px, auto, auto;
+    opacity: 0.35;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Zen Dots', 'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing: 0.06em;
+  }
+
+  ::selection {
+    background: rgba(56, 189, 248, 0.45);
+    color: #f8fafc;
+  }
+}

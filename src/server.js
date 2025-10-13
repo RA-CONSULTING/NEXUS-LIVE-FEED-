@@ -2,9 +2,23 @@ import http from 'http';
 import { spawn, exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
 import { sampleMetrics } from './metrics.js';
 import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
 import { generateContent } from './geminiClient.js'; // Import the new Gemini client
+
+dotenv.config();
+
+const KEY_NAMES = [
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+  'NOAA_CDO_TOKEN',
+  'NASA_API_KEY',
+  'USGS_API_KEY',
+];
+
+const maskValue = (value) =>
+  value ? `${value.slice(0, 4)}…${value.slice(-4)} (len=${value.length})` : '(missing)';
 
 const server = http.createServer(async (req, res) => {
   if (req.url === '/stream') {
@@ -112,12 +126,15 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({ message: 'Bio-resonance harmonization initiated.' }));
 
   } else if (req.url === '/api/keys-status') {
+    const status = Object.fromEntries(
+      KEY_NAMES.map((name) => {
+        const value = process.env[name] || '';
+        return [name, { present: Boolean(value), masked: maskValue(value) }];
+      })
+    );
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      "prime-sentinel-archive": { present: true, masked: "p********e" },
-      "aureon-expansion-key": { present: false, masked: "a********y" },
-      "lyra-constellation-map": { present: true, masked: "l********p" }
-    }));
+    res.end(JSON.stringify(status));
   } else {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(sampleMetrics()));

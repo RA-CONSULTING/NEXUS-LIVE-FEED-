@@ -71,7 +71,9 @@ const RealtimeLineChart = ({
   unit: string;
   accent: string;
 }) => {
-  if (!points.length) {
+  const finitePoints = points.filter((point) => Number.isFinite(point.value));
+
+  if (!finitePoints.length) {
     return (
       <div className="h-36 rounded-2xl border border-white/10 bg-slate-950/60 p-6 text-sm text-slate-300/70">
         Awaiting telemetry...
@@ -79,13 +81,13 @@ const RealtimeLineChart = ({
     );
   }
 
-  const values = points.map((point) => point.value);
+  const values = finitePoints.map((point) => point.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
   const range = max - min || 1;
-  const polyline = points
+  const polyline = finitePoints
     .map((point, index) => {
-      const x = (index / Math.max(points.length - 1, 1)) * 100;
+      const x = (index / Math.max(finitePoints.length - 1, 1)) * 100;
       const y = 100 - ((point.value - min) / range) * 100;
       return `${x},${y}`;
     })
@@ -147,7 +149,8 @@ const LiveRealtimeCharts = () => {
   return (
     <div className="grid gap-4 lg:grid-cols-4">
       {chartConfigs.map(({ key, label, unit, accent, glow }) => {
-        const points = charts[key];
+        const rawPoints = charts[key] ?? [];
+        const points = rawPoints.filter((point) => Number.isFinite(point.value));
         const delta =
           points.length > 1
             ? points[points.length - 1].value - points[points.length - 2].value
@@ -156,7 +159,7 @@ const LiveRealtimeCharts = () => {
           delta >= 0
             ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-100"
             : "border-rose-400/40 bg-rose-500/20 text-rose-100";
-        
+
         const currentView = chartViews[key] || 'line';
         const latest = points.length > 0 ? points[points.length-1] : {value: 0, timestamp: 0};
         const deltaClass = delta >= 0 ? "text-emerald-200" : "text-rose-200";

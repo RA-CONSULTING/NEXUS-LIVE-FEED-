@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 
@@ -40,7 +39,6 @@ const Layout: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(236,72,153,0.2),_transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(251,191,36,0.12),_transparent_70%)]" />
         <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
-
       </div>
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-10 lg:px-10">
         <header className="flex flex-col gap-8">
@@ -48,7 +46,7 @@ const Layout: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-[0.6em] text-slate-300/80">
               Harmonia Nexus Live Interface
             </span>
->>>>> main
+            <h1 className="text-3xl font-semibold uppercase tracking-[0.4em] text-white sm:text-4xl">
               NEXUS · LIVE · FEED
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300/85 sm:text-base">
@@ -73,7 +71,7 @@ const Layout: React.FC = () => {
             )}
           </div>
 
-
+          <nav className="relative overflow-hidden rounded-3xl border border-slate-700/40 bg-slate-900/40 p-4 shadow-[0_0_35px_rgba(56,189,248,0.2)] backdrop-blur">
             <ul className="relative z-10 flex flex-wrap justify-center gap-2 md:justify-between">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.to;
@@ -84,8 +82,7 @@ const Layout: React.FC = () => {
                       className={cn(
                         'group relative flex h-full items-center justify-center overflow-hidden rounded-2xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] transition',
                         'text-slate-300/85 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60',
-                        isActive &&
-                          'text-white shadow-[0_0_40px_rgba(56,189,248,0.35)]'
+                        isActive && 'text-white shadow-[0_0_40px_rgba(56,189,248,0.35)]'
                       )}
                     >
                       <span

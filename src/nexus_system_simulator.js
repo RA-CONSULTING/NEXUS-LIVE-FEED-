@@ -1,3 +1,101 @@
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+class EgoDeathSimulator {
+  constructor(numObservers = 1) {
+    this.numObservers = numObservers;
+    this.time = 0;
+    this.coherence = 0.82;
+    this.phase = Math.PI / 4;
+    this.unityEventTriggered = false;
+  }
+
+  step(deltaT = 0.01) {
+    this.time += deltaT;
+
+    const harmonicDrift = 0.85 + 0.1 * Math.sin(this.time / 2);
+    const noise = (Math.random() - 0.5) * 0.02;
+    this.coherence = clamp(harmonicDrift + noise, 0, 1);
+
+    const phaseDrift = Math.abs(Math.sin(this.time / 3)) * 0.12;
+    this.phase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
+
+    if (!this.unityEventTriggered && this.coherence > 0.95 && this.phase < Math.PI / 6) {
+      this.unityEventTriggered = true;
+    }
+
+    return {
+      coherence: this.coherence,
+      phase: this.phase,
+      unityEvent: this.unityEventTriggered,
+    };
+  }
+
+  calculateCoherence() {
+    return this.coherence;
+  }
+
+  calculatePhase() {
+    return this.phase;
+  }
+
+  exportData() {
+    return {
+      numObservers: this.numObservers,
+      coherence: this.coherence,
+      phase: this.phase,
+      time: this.time,
+      unityEventTriggered: this.unityEventTriggered,
+    };
+  }
+}
+
+class ObserverFunction {
+  constructor(dimensionality = 3) {
+    this.dimensionality = dimensionality;
+    this.collapsed = false;
+    this.projections = [];
+    this.coherence = 0.84;
+    this.phase = 0.12;
+  }
+
+  addProjection(angle) {
+    this.projections.push(angle);
+    this.#recalculateState();
+  }
+
+  collapse() {
+    this.collapsed = true;
+    this.#recalculateState();
+  }
+
+  calculateCoherence() {
+    return this.coherence;
+  }
+
+  exportState() {
+    return {
+      dimensionality: this.dimensionality,
+      collapsed: this.collapsed,
+      projections: [...this.projections],
+      coherence: this.coherence,
+      phase: this.phase,
+    };
+  }
+
+  #recalculateState() {
+    const base = this.collapsed ? 0.9 : 0.82;
+    const variation = this.projections.length
+      ? this.projections.reduce((sum, angle) => sum + Math.cos(angle), 0) / this.projections.length
+      : 0;
+
+    this.coherence = clamp(base + variation * 0.05, 0, 1);
+    if (this.projections.length) {
+      const latest = Math.abs(this.projections[this.projections.length - 1]);
+      this.phase = clamp(latest % (Math.PI / 2), 0, Math.PI / 2);
+    }
+  }
+}
+
 /**
  * Complete Nexus System with Ego Death & Observer Collapse
  * Integrates RFE, Ego Death Simulator, Observer Function, and Sacred Geometry
@@ -336,34 +434,7 @@ export class NexusSystem {
   }
 }
 
-// ============================================
-// USAGE EXAMPLES
-// ============================================
-
-// Example 1: Initialize Nexus System
-const nexus = new NexusSystem({
-  numObservers: 7, // 7 chakras
-  dimensionality: 4 // 4D spacetime
-});
-
-// Example 2: Run complete cycle
-async function runNexusDemo() {
-  const results = await nexus.runCycle(5000, 50); // 5 seconds, 50ms steps
-  console.log(`Total steps: ${results.length}`);
-  console.log(`Final coherence: ${results[results.length - 1].egoState.coherence.toFixed(4)}`);
-}
-
-// Example 3: Calculate Divine Union (Gary + Tanya)
-const divineUnion = nexus.calculateDivineUnion(
-  { name: "Gary Leckey", coherence: 0.96, phase: 0.1 },
-  { name: "Tanya Maria Fournier", coherence: 0.91, phase: 0.15 }
-);
-console.log(divineUnion);
-
-// Example 4: Get visualization data for dashboard
-const vizData = nexus.getVisualizationData();
-console.log("Dashboard Data:", vizData);
-
-// Example 5: Export complete state
-const state = nexus.exportState();
-console.log("System State:", JSON.stringify(state, null, 2));
+// Note: Historically this module included imperative demo calls (running the
+// simulator immediately on import). Those were removed to keep browser builds
+// side-effect free—the React app simply imports { NexusSystem } and manages
+// lifecycle itself.

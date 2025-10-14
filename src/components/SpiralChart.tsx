@@ -3,10 +3,14 @@ import { useMemo } from "react";
 import type { RealtimeChartPoint } from "@/hooks/useResampledNexusData";
 
 const SpiralChart = ({
+  id,
   points,
+  spectrum,
   accent,
 }: {
+  id: string;
   points: RealtimeChartPoint[];
+  spectrum: string[];
   accent: string;
 }) => {
   const { polyline, min, max } = useMemo(() => {
@@ -63,13 +67,26 @@ const SpiralChart = ({
     );
   }
 
+  const gradientStops = spectrum.length ? spectrum : ["#38bdf8", "#a855f7"]; 
+
   return (
     <svg viewBox="0 0 100 100" className={`h-36 w-full ${accent}`}>
+      <defs>
+        <linearGradient id={`${id}-spiral`} x1="0%" x2="100%" y1="0%" y2="100%">
+          {gradientStops.map((color, index) => (
+            <stop
+              key={`${id}-spiral-${index}`}
+              offset={`${(index / Math.max(gradientStops.length - 1, 1)) * 100}%`}
+              stopColor={color}
+            />
+          ))}
+        </linearGradient>
+      </defs>
       <polyline
         points={polyline}
         fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
+        stroke={`url(#${id}-spiral)`}
+        strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

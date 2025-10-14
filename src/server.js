@@ -2,10 +2,77 @@ import http from 'http';
 import { spawn, exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { sampleMetrics } from './metrics.js';
 import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
 import { generateContent } from './geminiClient.js'; // Import the new Gemini client
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DIST_DIR = path.join(__dirname, '..', 'dist');
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
+};
+
+const serveFile = (res, filePath) => {
+  const ext = path.extname(filePath).toLowerCase();
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+  const stream = fs.createReadStream(filePath);
+  stream.on('open', () => {
+    res.writeHead(200, { 'Content-Type': contentType });
+    stream.pipe(res);
+  });
+
+  stream.on('error', () => {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Failed to read requested asset.' }));
+  });
+};
+
+const serveAppAsset = (req, res) => {
+  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+  const pathname = decodeURIComponent(url.pathname);
+  const requestedPath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+  const absolutePath = path.join(DIST_DIR, requestedPath);
+  const normalizedPath = path.normalize(absolutePath);
+
+  if (!normalizedPath.startsWith(DIST_DIR)) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Forbidden' }));
+    return;
+  }
+
+  fs.stat(normalizedPath, (err, stats) => {
+    if (!err && stats.isFile()) {
+      serveFile(res, normalizedPath);
+      return;
+    }
+
+    const fallbackPath = path.join(DIST_DIR, 'index.html');
+    fs.stat(fallbackPath, (fallbackErr) => {
+      if (fallbackErr) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found' }));
+        return;
+      }
+
+      serveFile(res, fallbackPath);
+    });
+  });
+};
 
 dotenv.config();
 
@@ -135,9 +202,11 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(status));
+  } else if (req.method === 'GET') {
+    serveAppAsset(req, res);
   } else {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(sampleMetrics()));
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not Found' }));
   }
 });
 

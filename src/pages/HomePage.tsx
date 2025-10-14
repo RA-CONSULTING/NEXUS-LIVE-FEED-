@@ -8,6 +8,7 @@ import { useLiveNexusData } from '@/contexts/LiveNexusDataContext';
 import type { AuditRecord } from '@/lib/sero/sero-core';
 
 import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/ChronicleGovernanceTab';
+import BioProfilePanel from '../components/BioProfilePanel';
 import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 import LiveVisualizationTab, { type VisualizationModule } from '../components/LiveVisualizationTab';
 import CelestialCalendarTab from '../components/CelestialCalendarTab';
@@ -71,44 +72,6 @@ const NOTE_BY_SENSOR_STATE: Record<SensorState, string> = {
   Anomaly: 'Escalate for manual review',
 };
 
-const LIVE_VISUALIZATION_MODULES: VisualizationModule[] = [
-  {
-    id: 'spectrogram',
-    title: 'Quantum Spectrogram',
-    summary: 'Frequency waterfall spanning ELF through Ka-band harmonics.',
-    status: 'Real-time',
-    metrics: [
-      { label: 'Frequency Range', value: '0.1 Hz – 40 GHz', hint: 'Coverage from Schumann resonance to millimeter wave.' },
-      { label: 'Resolution', value: 'High', hint: 'Adaptive 4096-bin FFT granularity.' },
-      { label: 'Update Rate', value: '< 50 ms', hint: 'Streaming refresh cadence.', tone: 'stable' },
-      { label: 'Visual Theme', value: 'Sacred Geometry', hint: 'Golden ratio overlays and Fibonacci gradients.' },
-    ],
-  },
-  {
-    id: 'magnetogram',
-    title: 'Planetary Magnetogram',
-    summary: 'Vector field strength and anomaly detection lattice.',
-    status: 'Coherence 0.94',
-    metrics: [
-      { label: 'Field Strength', value: '±100 μT', hint: 'Fluxgate triaxial capture band.' },
-      { label: 'Sampling', value: '100 Hz', hint: 'Resynchronized with PPS clock.', tone: 'stable' },
-      { label: 'Anomaly Watch', value: 'Active', hint: 'Auto-escalation when >2σ drift.', tone: 'watch' },
-      { label: 'Calibration', value: 'Self-healing', hint: 'Auto zeroing and drift compensation.' },
-    ],
-  },
-  {
-    id: 'network-map',
-    title: 'Global Node Map',
-    summary: 'Synced nexus nodes with orbital relays and ground stations.',
-    status: '18 Nodes',
-    metrics: [
-      { label: 'Active Connections', value: '17', hint: 'Live command paths currently online.' },
-      { label: 'Latency', value: '< 50 ms', hint: 'Median round-trip via Aureon mesh.', tone: 'stable' },
-      { label: 'Synchronization', value: 'Locked', hint: 'All clusters phase aligned.', tone: 'stable' },
-      { label: 'Overlays', value: 'Sacred Geometry', hint: 'Fibonacci lattice overlays on map.', },
-    ],
-  },
-];
 
 const RECORDING_CHANNELS: RecordingChannel[] = [
   {
@@ -230,7 +193,7 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 
 const HomePage = () => {
   const { audit } = useSero();
-  const { metrics: liveMetrics, sensory, processing: processingData, output, timestamp } = useLiveNexusData();
+  const { metrics: liveMetrics, sensory, processing: processingData, output, timestamp, bioProfile } = useLiveNexusData();
 
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
@@ -384,6 +347,244 @@ const HomePage = () => {
     ];
   }, [processing, sensors, transmissions, liveMetrics]);
 
+  const visualizationModules = useMemo<VisualizationModule[]>(() => {
+    const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
+    const ratioTone = (value: number): VisualizationMetric['tone'] =>
+      value >= 0.86 ? 'stable' : value >= 0.72 ? 'watch' : 'alert';
+    const percentTone = (value: number): VisualizationMetric['tone'] =>
+      value >= 85 ? 'stable' : value >= 65 ? 'watch' : 'alert';
+    const queueTone = (queued: number): VisualizationMetric['tone'] =>
+      queued <= 4 ? 'stable' : queued <= 6 ? 'watch' : 'alert';
+    const solarTone = (alignment?: string): VisualizationMetric['tone'] => {
+      if (!alignment) return 'watch';
+      const normalized = alignment.toLowerCase();
+      if (normalized.includes('optimal') || normalized.includes('locked')) return 'stable';
+      if (normalized.includes('adjust') || normalized.includes('balancing')) return 'watch';
+      return 'alert';
+    };
+    const solarProgress = (alignment?: string) => {
+      const tone = solarTone(alignment);
+      if (tone === 'stable') return 1;
+      if (tone === 'watch') return 0.6;
+      return 0.3;
+    };
+
+    const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
+    const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
+    const chronicleMetric = liveMetrics.find((metric) => metric.id === 'chronicle');
+    const aureonMetric = liveMetrics.find((metric) => metric.id === 'aureon');
+
+    const coherenceRatio = clamp(coherenceMetric?.value ?? 0, 0, 1);
+    const resonanceRatio = clamp(resonanceMetric?.value ?? 0, 0, 1);
+    const chronicleValue = chronicleMetric?.value ?? sensory?.chronicleRecorder.eventsPerMinute ?? 0;
+    const chronicleTarget = chronicleMetric?.target ?? 180;
+    const chronicleProgress = chronicleTarget ? clamp(chronicleValue / chronicleTarget, 0, 1) : undefined;
+    const aureonPercent = clamp(aureonMetric?.value ?? 0, 0, 100);
+
+    const streams = sensory?.dataStreams ?? [];
+    const totalStreams = streams.length;
+    const stableStreams = streams.filter((stream) => stream.state === 'stable').length;
+    const watchStreams = streams.filter((stream) => stream.state !== 'stable').length;
+    const streamIntegrity = totalStreams ? stableStreams / totalStreams : 0;
+
+    const chronicleRecorder = sensory?.chronicleRecorder;
+    const celestial = sensory?.celestialCartography;
+
+    const voice = output?.voicePipelines;
+    const queue = output?.commandQueue;
+    const compliance = output?.compliance;
+    const transmissions = output?.transmissions ?? [];
+    const totalTransmissions = transmissions.length;
+    const completedTransmissions = transmissions.filter((tx) => tx.status === 'complete').length;
+    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'complete').length;
+    const transmittingCount = transmissions.filter((tx) => tx.status === 'transmitting').length;
+
+    const latencyTone = (latency?: number): VisualizationMetric['tone'] => {
+      if (latency === undefined) return undefined;
+      if (latency <= 180) return 'stable';
+      if (latency <= 210) return 'watch';
+      return 'alert';
+    };
+
+    const complianceTone = (level?: string): VisualizationMetric['tone'] => {
+      if (!level) return 'watch';
+      const normalized = level.toLowerCase();
+      if (normalized === 'none' || normalized === 'low') return normalized === 'none' ? 'stable' : 'watch';
+      if (normalized.includes('advisory')) return 'watch';
+      return 'alert';
+    };
+
+    const latencyProgress = voice ? clamp(1 - (voice.latencyMs - 120) / 120, 0, 1) : undefined;
+    const queueProgress = queue
+      ? clamp(queue.executing / Math.max(queue.executing + queue.queued, 1), 0, 1)
+      : undefined;
+    const complianceProgress = compliance ? clamp(compliance.auditsPassed / 24, 0, 1) : undefined;
+    const transmissionProgress = totalTransmissions
+      ? clamp(completedTransmissions / totalTransmissions, 0, 1)
+      : undefined;
+
+    const lastSync = new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+
+    return [
+      {
+        id: 'bio-resonance-core',
+        title: 'Bio-Resonance Core',
+        summary:
+          processingData
+            ? `${processingData.qssrModule.cosmicWeather} skies · Queue ${processingData.qssrModule.analysisQueue}`
+            : 'Awaiting QSSR synchronizer handshake.',
+        status: processingData?.qssrModule.planetaryResonance
+          ? `${processingData.qssrModule.planetaryResonance} · ${lastSync}`
+          : `Synced ${lastSync}`,
+        metrics: [
+          {
+            label: 'System Coherence',
+            value: formatRatio(coherenceRatio),
+            hint: `Cosmic weather ${processingData?.qssrModule.cosmicWeather ?? 'calibrating'}.`,
+            tone: ratioTone(coherenceRatio),
+            progress: coherenceRatio,
+          },
+          {
+            label: 'Resonance Harmony',
+            value: formatRatio(resonanceRatio),
+            hint: `Sentinel lattice ${processingData?.stormTargeting.status ?? 'tuning phase'}.`,
+            tone: ratioTone(resonanceRatio),
+            progress: resonanceRatio,
+          },
+          {
+            label: 'Chronicle Throughput',
+            value: `${Math.round(chronicleValue)} evt/min`,
+            hint: `Target ${chronicleTarget} · Storage ${chronicleRecorder?.storageUsedTb ?? 0} TB`,
+            tone: percentTone(Math.min(chronicleProgress ?? 0, 1) * 100),
+            progress: chronicleProgress,
+          },
+          {
+            label: 'Aureon Activity',
+            value: `${Math.round(aureonPercent)}%`,
+            hint: `Cognitive safeguard ${processingData?.aurisCognitiveSafeguard.status ?? 'idle'}.`,
+            tone: percentTone(aureonPercent),
+            progress: aureonPercent / 100,
+          },
+        ],
+      },
+      {
+        id: 'sensory-stream-lattice',
+        title: 'Sensory Stream Lattice',
+        summary:
+          totalStreams > 0
+            ? `${stableStreams} stable · ${watchStreams} balancing across ${totalStreams} channels.`
+            : 'Awaiting sensory array link.',
+        status: celestial?.harmonicSignatures,
+        metrics: [
+          {
+            label: 'Active Streams',
+            value: totalStreams ? `${stableStreams}/${totalStreams} stable` : 'No channels',
+            hint: `Integrity ${(streamIntegrity * 100).toFixed(0)}% across the mesh.`,
+            tone: ratioTone(streamIntegrity),
+            progress: totalStreams ? streamIntegrity : undefined,
+          },
+          {
+            label: 'Streams on Watch',
+            value: `${watchStreams}`,
+            hint:
+              watchStreams === 0
+                ? 'All channels within harmonic band.'
+                : 'Balancing flux across regional nodes.',
+            tone: watchStreams === 0 ? 'stable' : watchStreams <= 2 ? 'watch' : 'alert',
+            progress: totalStreams ? clamp(watchStreams / totalStreams, 0, 1) : undefined,
+          },
+          {
+            label: 'Chronicle Recorder',
+            value: chronicleRecorder
+              ? `${chronicleRecorder.status} @ ${chronicleRecorder.eventsPerMinute} evt/min`
+              : 'Offline',
+            hint: chronicleRecorder
+              ? `Retention ${chronicleRecorder.retentionHours}h · Integrity ${chronicleRecorder.integrityChecks}`
+              : 'No recorder handshake detected.',
+            tone: chronicleRecorder?.status === 'Recording' ? 'stable' : 'watch',
+            progress: chronicleRecorder ? clamp(chronicleRecorder.retentionHours / 72, 0, 1) : undefined,
+          },
+          {
+            label: 'Celestial Alignment',
+            value: celestial
+              ? `${celestial.solarAlignment} · ${celestial.lunarPhase}`
+              : 'Alignment unknown',
+            hint: celestial
+              ? `Tracking ${celestial.trackingSatellites} satellites.`
+              : 'Orbital telemetry pending.',
+            tone: solarTone(celestial?.solarAlignment),
+            progress: solarProgress(celestial?.solarAlignment),
+          },
+        ],
+      },
+      {
+        id: 'operator-command-bridge',
+        title: 'Operator Command Bridge',
+        summary:
+          output
+            ? `${activeTransmissions} uplinks live · Compliance ${compliance?.status ?? 'Unknown'}.`
+            : 'Command bridge establishing secure link.',
+        status: voice ? `Voices ${voice.activeVoices}` : undefined,
+        metrics: [
+          {
+            label: 'Voice Pipeline Latency',
+            value: voice ? `${voice.latencyMs} ms` : '—',
+            hint: voice
+              ? `${voice.activeVoices} active voices · ${voice.successfulTransmits} transmits`
+              : 'No active voice circuits.',
+            tone: latencyTone(voice?.latencyMs),
+            progress: latencyProgress,
+          },
+          {
+            label: 'Command Queue',
+            value: queue
+              ? `${queue.executing} executing · ${queue.queued} queued`
+              : 'Queue offline',
+            hint: queue ? `Last command: ${queue.lastCommand}` : 'Awaiting queue handshake.',
+            tone: queue ? queueTone(queue.queued) : undefined,
+            progress: queueProgress,
+          },
+          {
+            label: 'Compliance Shield',
+            value: compliance ? compliance.status : 'Unknown',
+            hint: compliance
+              ? `Audits ${compliance.auditsPassed} · Escalation ${compliance.escalationLevel}`
+              : 'Compliance node offline.',
+            tone: complianceTone(compliance?.escalationLevel),
+            progress: complianceProgress,
+          },
+          {
+            label: 'Transmission Flow',
+            value: totalTransmissions
+              ? `${completedTransmissions}/${totalTransmissions} complete`
+              : 'No transmissions',
+            hint: totalTransmissions
+              ? `${activeTransmissions} uplinks active · ${transmittingCount} transmitting`
+              : 'Awaiting uplink requests.',
+            tone:
+              activeTransmissions <= 1
+                ? 'stable'
+                : activeTransmissions <= 2
+                  ? 'watch'
+                  : 'alert',
+            progress: transmissionProgress,
+          },
+        ],
+      },
+    ];
+  }, [
+    liveMetrics,
+    sensory,
+    output,
+    processingData,
+    timestamp,
+  ]);
+
   const latestAudit = useMemo<AuditRecord[]>(
     () => audit.slice(-4).reverse(),
     [audit]
@@ -433,6 +634,8 @@ const HomePage = () => {
             </span>
           </div>
         </div>
+
+        <BioProfilePanel profile={bioProfile} />
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />
@@ -555,7 +758,7 @@ const HomePage = () => {
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-amber-400/15 opacity-70" />
               <div className="relative z-10">
-                <LiveVisualizationTab modules={LIVE_VISUALIZATION_MODULES} />
+                <LiveVisualizationTab modules={visualizationModules} />
               </div>
             </TabsContent>
             <TabsContent

@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ScrollsPage from './pages/ScrollsPage';
 import RitualPage from './pages/RitualPage'; // Import the new RitualPage component
+import LoginPage from './pages/LoginPage';
 
 import Chronicles from './components/Chronicles';
 import NexusIntelligence from './components/NexusIntelligence';
@@ -14,6 +15,7 @@ import MetaQuestLink from './components/MetaQuestLink';
 
 import { SeroProvider } from './contexts/SeroProvider';
 import { LiveNexusDataProvider } from './contexts/LiveNexusDataContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { cn } from './lib/utils';
 
 const NAV_ITEMS = [
@@ -29,6 +31,7 @@ const NAV_ITEMS = [
 
 const Layout: React.FC = () => {
   const { pathname } = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="relative min-h-screen overflow-hidden text-slate-100">
@@ -45,17 +48,32 @@ const Layout: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-[0.6em] text-slate-300/80">
               Harmonia Nexus Live Interface
             </span>
-
-            <h1 className="text-3xl font-semibold tracking-[0.4em] text-white sm:text-4xl">
+>>>>> main
               NEXUS · LIVE · FEED
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300/85 sm:text-base">
               Traverse the spectrums of sensation, intelligence, and actuation. Every console streams from the same harmonic
               lattice—balanced, radiant, and ready to respond.
             </p>
+            {user && (
+              <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-slate-700/40 bg-slate-900/60 p-4 text-left text-slate-200 shadow-[0_0_25px_rgba(56,189,248,0.18)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-cyan-200/80">Bio-Monitoring Access Granted</p>
+                <p className="text-sm leading-relaxed text-slate-100/90">
+                  Connected as <span className="font-semibold text-white">{user.name}</span> · Born {user.dateOfBirth} in {user.placeOfBirth}.
+                  The Quantum Fit-Bit lattice is synchronized and ready.
+                </p>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="self-start rounded-xl border border-cyan-400/50 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-cyan-200 transition hover:border-cyan-300 hover:text-cyan-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
           </div>
 
-          <nav className="rounded-3xl border border-white/10 bg-white/5 p-2 backdrop-blur">
+
             <ul className="relative z-10 flex flex-wrap justify-center gap-2 md:justify-between">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.to;
@@ -102,15 +120,30 @@ const Layout: React.FC = () => {
   );
 };
 
+const ProtectedApp: React.FC = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Layout />;
+};
+
 const App: React.FC = () => {
   return (
-    <SeroProvider>
-      <LiveNexusDataProvider>
-        <Router>
-          <Layout />
-        </Router>
-      </LiveNexusDataProvider>
-    </SeroProvider>
+    <AuthProvider>
+      <SeroProvider>
+        <LiveNexusDataProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/*" element={<ProtectedApp />} />
+            </Routes>
+          </Router>
+        </LiveNexusDataProvider>
+      </SeroProvider>
+    </AuthProvider>
   );
 };
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { resample } from "@/lib/akashic/aureon-akashic";
+import type { AuthUser } from "@/contexts/AuthContext";
 import { NexusSystem } from "../nexus_system_simulator";
 
 // Assuming the types are defined elsewhere and imported, but for simplicity, including them here.
@@ -91,6 +92,41 @@ export interface LiveOutputStatus {
   }[];
 }
 
+export type BioSignalTone = "stable" | "watch" | "alert";
+
+export interface BioSignalMetric {
+  id: string;
+  label: string;
+  value: number;
+  unit: string;
+  tone: BioSignalTone;
+  change: number;
+  targetRange: [number, number];
+}
+
+export interface BioStreamStatus {
+  id: string;
+  label: string;
+  value: number;
+  unit: string;
+  reading: string;
+  hint: string;
+  status: BioSignalTone;
+  trend: number;
+  targetRange: [number, number];
+}
+
+export interface BioProfileAnalytics {
+  signature: string;
+  profileId: string;
+  displayName: string;
+  origin: string;
+  timelineTag: string;
+  summary: string;
+  metrics: BioSignalMetric[];
+  streams: BioStreamStatus[];
+}
+
 export interface RealtimeChartCollection {
   magnetometer: RealtimeChartPoint[];
   schumann: RealtimeChartPoint[];
@@ -105,6 +141,7 @@ export interface RealtimeNexusData {
   sensory: LiveSensoryStatus;
   processing: LiveProcessingStatus;
   output: LiveOutputStatus;
+  bioProfile: BioProfileAnalytics;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -152,8 +189,203 @@ const STREAM_TUNINGS: Record<
   geomagnetic: { variance: 2.5, watch: 56, alert: 70 },
 };
 
-const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
+const signatureForProfile = (profile: AuthUser | null): string => {
+  if (!profile) return "anonymous";
+  const name = profile.name.trim().toLowerCase();
+  const origin = profile.placeOfBirth.trim().toLowerCase();
+  const dob = profile.dateOfBirth || "";
+  return `${name}|${dob}|${origin}`;
+};
+
+const hashString = (value: string): number => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+};
+
+const seededNumber = (seed: number, min: number, max: number, offset: number) => {
+  const x = Math.abs(Math.sin(seed * 0.0001 + offset * 12.9898));
+  return Number((min + (max - min) * x).toFixed(2));
+};
+
+const formatDate = (value: string | undefined) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+};
+
+const toneForRange = (value: number, [low, high]: [number, number]): BioSignalTone => {
+  const margin = (high - low) * 0.35 || 6;
+  if (value >= low && value <= high) {
+    return "stable";
+  }
+  if (value >= low - margin && value <= high + margin) {
+    return "watch";
+  }
+  return "alert";
+};
+
+const createBioProfileAnalytics = (profile: AuthUser | null): BioProfileAnalytics => {
+  const signature = signatureForProfile(profile);
+  const hash = hashString(signature);
+  const displayName = profile?.name?.trim() || "Unlinked Operative";
+  const origin = profile?.placeOfBirth?.trim() || "Origin Unknown";
+  const formattedDob = formatDate(profile?.dateOfBirth || "");
+  const timelineTag = formattedDob ? `${formattedDob} · ${origin}` : origin;
+  const summary = profile
+    ? `Quantum bio-stream locked to ${displayName} across the ${origin} lattice.`
+    : "Awaiting human-connection handshake to personalize analytics.";
+
+  const cardiacBaseline = seededNumber(hash + 17, 58, 74, 1);
+  const neuralBaseline = seededNumber(hash + 29, 80, 95, 2);
+  const auraBaseline = seededNumber(hash + 43, 66, 90, 3);
+  const respirationBaseline = seededNumber(hash + 11, 12, 17, 4);
+  const hydrationBaseline = seededNumber(hash + 7, 58, 72, 5);
+  const chronoBaseline = seededNumber(hash + 3, 84, 97, 6);
+
+  const metrics: BioSignalMetric[] = [
+    {
+      id: "cardiac",
+      label: "Cardiac Resonance",
+      value: Number(cardiacBaseline.toFixed(1)),
+      unit: "bpm",
+      tone: toneForRange(cardiacBaseline, [59, 71]),
+      change: 0,
+      targetRange: [59, 71],
+    },
+    {
+      id: "neural",
+      label: "Neural Synchrony",
+      value: Number(neuralBaseline.toFixed(1)),
+      unit: "%",
+      tone: toneForRange(neuralBaseline, [84, 93]),
+      change: 0,
+      targetRange: [84, 93],
+    },
+    {
+      id: "aura",
+      label: "Biofield Flux",
+      value: Number(auraBaseline.toFixed(1)),
+      unit: "%",
+      tone: toneForRange(auraBaseline, [70, 88]),
+      change: 0,
+      targetRange: [70, 88],
+    },
+  ];
+
+  const streams: BioStreamStatus[] = [
+    {
+      id: "respiration",
+      label: "Respiration Wave",
+      value: respirationBaseline,
+      unit: "L/min",
+      reading: `${respirationBaseline.toFixed(1)} L/min`,
+      hint: "Diaphragmatic rhythm within harmonic tolerance.",
+      status: toneForRange(respirationBaseline, [13, 16]),
+      trend: 0,
+      targetRange: [13, 16],
+    },
+    {
+      id: "hydration",
+      label: "Hydration Conductivity",
+      value: hydrationBaseline,
+      unit: "%",
+      reading: `${hydrationBaseline.toFixed(1)}%`,
+      hint: "Cellular lattice saturation level.",
+      status: toneForRange(hydrationBaseline, [60, 70]),
+      trend: 0,
+      targetRange: [60, 70],
+    },
+    {
+      id: "chrono",
+      label: "Chrono-Stability",
+      value: chronoBaseline,
+      unit: "%",
+      reading: `${chronoBaseline.toFixed(1)}%`,
+      hint: "Temporal anchor resilience against drift.",
+      status: toneForRange(chronoBaseline, [86, 94]),
+      trend: 0,
+      targetRange: [86, 94],
+    },
+  ];
+
+  return {
+    signature,
+    profileId: signature.replace(/[^a-z0-9]+/g, "-") || "anonymous",
+    displayName,
+    origin,
+    timelineTag,
+    summary,
+    metrics,
+    streams,
+  };
+};
+
+const updateBioProfile = (
+  previous: BioProfileAnalytics,
+  profile: AuthUser | null
+): BioProfileAnalytics => {
+  const signature = signatureForProfile(profile);
+  if (signature !== previous.signature) {
+    return createBioProfileAnalytics(profile);
+  }
+
+  const driftMetric = (metric: BioSignalMetric, variance: number) => {
+    const nextValue = clamp(
+      metric.value + (Math.random() - 0.5) * variance,
+      metric.targetRange[0] - 12,
+      metric.targetRange[1] + 12
+    );
+    const change = Number((nextValue - metric.value).toFixed(2));
+    const tone = toneForRange(nextValue, metric.targetRange);
+    return {
+      ...metric,
+      value: Number(nextValue.toFixed(1)),
+      change,
+      tone,
+    };
+  };
+
+  const driftStream = (stream: BioStreamStatus, variance: number) => {
+    const nextValue = clamp(
+      stream.value + (Math.random() - 0.5) * variance,
+      stream.targetRange[0] - variance,
+      stream.targetRange[1] + variance
+    );
+    const tone = toneForRange(nextValue, stream.targetRange);
+    const trend = Number((nextValue - stream.value).toFixed(2));
+    return {
+      ...stream,
+      value: Number(nextValue.toFixed(2)),
+      reading: `${nextValue.toFixed(1)} ${stream.unit}`,
+      status: tone,
+      trend,
+    };
+  };
+
+  return {
+    ...previous,
+    metrics: previous.metrics.map((metric, index) =>
+      driftMetric(metric, index === 0 ? 1.4 : index === 1 ? 2 : 2.5)
+    ),
+    streams: previous.streams.map((stream, index) =>
+      driftStream(stream, index === 0 ? 0.6 : index === 1 ? 1 : 1.4)
+    ),
+  };
+};
+
+const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): RealtimeNexusData => {
     const vizData = nexus.getVisualizationData();
+    const temporalId = signatureForProfile(profile).replace(/[^a-z0-9]+/g, "-");
     return {
         timestamp: Date.now(),
         metrics: [
@@ -266,7 +498,7 @@ const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
               status: "Active",
               hazardDetections: 4,
               dampeningFactor: 0.5,
-              authorizedTemporalId: "alpha",
+              authorizedTemporalId: temporalId,
             },
             algorithms: [
               "FFT Spectral Analysis",
@@ -307,15 +539,21 @@ const createInitialData = (nexus: NexusSystem): RealtimeNexusData => {
               {
                 id: "archive",
                 channel: "Chronicle Archive Sync",
-                destination: "Aureon Library",
-                status: "complete",
-              },
-            ],
+              destination: "Aureon Library",
+              status: "complete",
+            },
+          ],
           },
-    }
-}
+          bioProfile: createBioProfileAnalytics(profile),
+    };
+};
 
-const computeNextData = (prev: RealtimeNexusData, nexus: NexusSystem, liveData: { solarAlignment: string; lunarPhase: string }): RealtimeNexusData => {
+const computeNextData = (
+  prev: RealtimeNexusData,
+  nexus: NexusSystem,
+  liveData: { solarAlignment: string; lunarPhase: string },
+  profile: AuthUser | null
+): RealtimeNexusData => {
     nexus.egoDeathSim.step(0.01);
     const vizData = nexus.getVisualizationData();
   const toSample = (p: RealtimeChartPoint) => ({ t: p.timestamp / 1000, v: p.value });
@@ -409,7 +647,8 @@ const computeNextData = (prev: RealtimeNexusData, nexus: NexusSystem, liveData: 
         9
       ),
       dampeningFactor: Number(clamp(0.42 + (1 - coherenceRatio) * 0.4, 0.35, 0.88).toFixed(2)),
-      authorizedTemporalId: prev.processing.aurisCognitiveSafeguard.authorizedTemporalId,
+      authorizedTemporalId:
+        profile ? signatureForProfile(profile) : prev.processing.aurisCognitiveSafeguard.authorizedTemporalId,
     },
     algorithms: prev.processing.algorithms,
   };
@@ -493,14 +732,19 @@ const computeNextData = (prev: RealtimeNexusData, nexus: NexusSystem, liveData: 
       },
       transmissions: updatedTransmissions,
     },
+    bioProfile: updateBioProfile(prev.bioProfile, profile),
   };
 };
 
-export const useResampledNexusData = (refreshMs = 200): RealtimeNexusData => {
+export const useResampledNexusData = (refreshMs = 200, profile: AuthUser | null = null): RealtimeNexusData => {
   const nexus = useMemo(() => new NexusSystem(), []);
-  const initial = useMemo(() => createInitialData(nexus), [nexus]);
-  const [data, setData] = useState<RealtimeNexusData>(initial);
+  const signature = signatureForProfile(profile);
+  const [data, setData] = useState<RealtimeNexusData>(() => createInitialData(nexus, profile));
   const [liveCelestialData, setLiveCelestialData] = useState({ solarAlignment: "Optimal", lunarPhase: "Waxing Gibbous" });
+
+  useEffect(() => {
+    setData(createInitialData(nexus, profile));
+  }, [nexus, signature]);
 
   useEffect(() => {
     const fetchSolarData = async () => {
@@ -546,11 +790,11 @@ export const useResampledNexusData = (refreshMs = 200): RealtimeNexusData => {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setData((current) => computeNextData(current, nexus, liveCelestialData));
+      setData((current) => computeNextData(current, nexus, liveCelestialData, profile));
     }, refreshMs);
 
     return () => clearInterval(id);
-  }, [refreshMs, nexus, liveCelestialData]);
+  }, [refreshMs, nexus, liveCelestialData, signature]);
 
   return data;
 };

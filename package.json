@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "refresh:forecast": "node scripts/updateForecastWindow.js"
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.4.0",

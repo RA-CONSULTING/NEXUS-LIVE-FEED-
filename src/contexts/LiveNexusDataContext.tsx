@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 import { type RealtimeNexusData, useResampledNexusData } from "@/hooks/useResampledNexusData";
+import { useAuth } from "./AuthContext";
 
 const LiveNexusDataContext = createContext<RealtimeNexusData | null>(null);
 
@@ -13,7 +14,8 @@ export const LiveNexusDataProvider = ({
   children,
   refreshInterval,
 }: LiveNexusDataProviderProps) => {
-  const data = useResampledNexusData(refreshInterval);
+  const { user } = useAuth();
+  const data = useResampledNexusData(refreshInterval, user);
 
   return (
     <LiveNexusDataContext.Provider value={data}>

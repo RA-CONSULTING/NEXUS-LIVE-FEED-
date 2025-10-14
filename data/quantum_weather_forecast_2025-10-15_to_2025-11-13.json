@@ -1,5 +1,6 @@
 [
   {
+
     "date": "2025-10-16",
     "solar_field": {
       "kp_index": 5.2,
@@ -110,7 +111,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.22,
-      "tomsk_frequency_hz": 8,
+
       "cumana_e_field": "Cresting surges near 28 pT",
       "heartmath_power_band_hz": "Broadband coherence with 14 Hz overtone"
     },
@@ -184,7 +185,7 @@
       "aurora_outlook": "Auroral intensity wanes but remains photogenic"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5.1,
+
       "tomsk_frequency_hz": 8.02,
       "cumana_e_field": "Evening uplift to 24 pT",
       "heartmath_power_band_hz": "Alpha harmonics regain stability"
@@ -202,7 +203,7 @@
   {
     "date": "2025-10-24",
     "solar_field": {
-      "kp_index": 4,
+
       "storm_class": "Unsettled",
       "solar_wind_speed_km_s": 480,
       "solar_radiation": "Background returns to baseline",
@@ -284,7 +285,7 @@
       "aurora_outlook": "Aurora intensifies toward evening"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5,
+
       "tomsk_frequency_hz": 8.03,
       "cumana_e_field": "E-field ramp to 26 pT",
       "heartmath_power_band_hz": "Rising beta ripples encourage alert focus"
@@ -427,14 +428,14 @@
   {
     "date": "2025-11-02",
     "solar_field": {
-      "kp_index": 4,
+
       "storm_class": "Unsettled",
       "solar_wind_speed_km_s": 485,
       "solar_radiation": "C-class region rotates onto disk",
       "aurora_outlook": "Auroral activity slightly elevated"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 4.8,
+
       "tomsk_frequency_hz": 8.04,
       "cumana_e_field": "19 pT midday shimmer",
       "heartmath_power_band_hz": "Alpha pulses reawaken focus"
@@ -485,7 +486,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.34,
-      "tomsk_frequency_hz": 8,
+
       "cumana_e_field": "30 pT surges pre-dawn",
       "heartmath_power_band_hz": "Gamma flashes ride alpha carrier"
     },
@@ -509,7 +510,7 @@
       "aurora_outlook": "Aurora extends into continental interiors"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5.7,
+
       "tomsk_frequency_hz": 7.97,
       "cumana_e_field": "34 pT midday maxima",
       "heartmath_power_band_hz": "High-frequency bursts stimulate intuition"
@@ -527,7 +528,7 @@
   {
     "date": "2025-11-06",
     "solar_field": {
-      "kp_index": 5,
+
       "storm_class": "G1 Minor Storm",
       "solar_wind_speed_km_s": 550,
       "solar_radiation": "C-class base, occasional M-class spark",
@@ -609,7 +610,7 @@
       "aurora_outlook": "Auroras confined to polar crown"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 4.7,
+
       "tomsk_frequency_hz": 8.06,
       "cumana_e_field": "15 pT gentle flow",
       "heartmath_power_band_hz": "Delta dominance encourages deep rest"
@@ -660,7 +661,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.18,
-      "tomsk_frequency_hz": 8,
+
       "cumana_e_field": "26 pT noon crest",
       "heartmath_power_band_hz": "Gamma flashes accentuate alpha base"
     },
@@ -677,94 +678,18 @@
   {
     "date": "2025-11-12",
     "solar_field": {
-      "kp_index": 4.9,
-      "storm_class": "Active",
-      "solar_wind_speed_km_s": 540,
-      "solar_radiation": "C-class flickers with isolated M-class tease",
-      "aurora_outlook": "Aurora oval stretches with brief mid-latitude fringes"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 5.42,
-      "tomsk_frequency_hz": 7.99,
-      "cumana_e_field": "28 pT surge before dawn",
-      "heartmath_power_band_hz": "Gamma harmonics brush 50 Hz ceiling"
-    },
-    "cosmic_events": {
-      "interstellar_current": "Comet 3I/ATLAS tail braided with CME remnants",
-      "galactic_wave_interaction": "Wavefront crest re-energizes magnetosphere flank"
-    },
-    "nervous_system_guidance": [
-      "Alternate nostril breathing on the hour",
-      "Selenite sweep through auric field before rest"
-    ],
-    "narrative": "Charge intensifies but remains graceful—maintain boundary hygiene.",
-    "validation": {
-      "source": "quantum-ingest/v4",
-      "confidence": 0.91,
-      "last_synced_at": "2025-10-14T10:15:00.000Z"
-    },
-    "last_updated": "2025-10-14T10:15:00.000Z"
+
   },
   {
     "date": "2025-11-13",
     "solar_field": {
-      "kp_index": 4.7,
-      "storm_class": "Active",
-      "solar_wind_speed_km_s": 525,
-      "solar_radiation": "C-class background with decaying flare arc",
-      "aurora_outlook": "Curtains recede to polar latitudes"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 5.12,
-      "tomsk_frequency_hz": 8.01,
-      "cumana_e_field": "22 pT evening flow",
-      "heartmath_power_band_hz": "Alpha rhythm holds while beta ripples soften"
+
     },
     "cosmic_events": {
       "interstellar_current": "Solar stream calms, magnetosphere rebounds",
       "galactic_wave_interaction": "Wave trough offers integrative rest"
     },
     "nervous_system_guidance": [
-      "Close the cycle with gratitude journaling",
-      "Share restorative tea circles before sleep"
-    ],
-    "narrative": "Integration window opens—seal intentions and release static.",
-    "validation": {
-      "source": "quantum-ingest/v4",
-      "confidence": 0.93,
-      "last_synced_at": "2025-10-14T10:20:00.000Z"
-    },
-    "last_updated": "2025-10-14T10:20:00.000Z"
-  },
-  {
-    "date": "2025-11-14",
-    "solar_field": {
-      "kp_index": 4.4,
-      "storm_class": "Active",
-      "solar_wind_speed_km_s": 500,
-      "solar_radiation": "Background B-class sparkles",
-      "aurora_outlook": "Aurora relaxes to polar crown with faint arcs"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 4.88,
-      "tomsk_frequency_hz": 8.05,
-      "cumana_e_field": "20 pT gentle hum",
-      "heartmath_power_band_hz": "Theta support lifts meditation depth"
-    },
-    "cosmic_events": {
-      "interstellar_current": "Deep-space plasma wave dissipates",
-      "galactic_wave_interaction": "Galaxy-wide tide shifts into resting phase"
-    },
-    "nervous_system_guidance": [
-      "Recenter with forest bathing or indoor plant communion",
-      "Light stretching paired with harmonic humming"
-    ],
-    "narrative": "Coherence settles into the grid—prepare the next harmonic arc.",
-    "validation": {
-      "source": "quantum-ingest/v4",
-      "confidence": 0.95,
-      "last_synced_at": "2025-10-14T10:30:00.000Z"
-    },
-    "last_updated": "2025-10-14T10:30:00.000Z"
+
   }
 ]

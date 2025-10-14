@@ -16,8 +16,8 @@ class EgoDeathSimulator {
     const noise = (Math.random() - 0.5) * 0.02;
     this.coherence = clamp(harmonicDrift + noise, 0, 1);
 
-    const phaseDrift = Math.abs(Math.sin(this.time / 3)) * 0.15;
-    this.phase = clamp((Math.PI / 2) * (1 - this.coherence * 0.5) + phaseDrift, 0, Math.PI / 2);
+    const phaseDrift = Math.abs(Math.sin(this.time / 3)) * 0.12;
+    this.phase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
 
     if (!this.unityEventTriggered && this.coherence > 0.95 && this.phase < Math.PI / 6) {
       this.unityEventTriggered = true;

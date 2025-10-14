@@ -2,3 +2,4 @@
 node_modules
 planning/__pycache__/
 dist/
+streams/nexus_verification.json

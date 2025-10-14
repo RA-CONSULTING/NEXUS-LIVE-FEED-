@@ -12,6 +12,13 @@ export default defineConfig({
         }
         warn(warning);
       },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
     },
+    assetsDir: 'assets',
+    manifest: false,
   },
 });

@@ -11,6 +11,7 @@ import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/
 import BioProfilePanel from '../components/BioProfilePanel';
 import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 import LiveVisualizationTab, { type VisualizationModule } from '../components/LiveVisualizationTab';
+import CelestialCalendarTab from '../components/CelestialCalendarTab';
 import OutputCommandTab from '../components/OutputCommandTab';
 import ProcessingCoreTab from '../components/ProcessingCoreTab';
 import RecordingSystemsTab, { type RecordingChannel } from '../components/RecordingSystemsTab';
@@ -667,6 +668,12 @@ const HomePage = () => {
                 Live Visualization
               </TabsTrigger>
               <TabsTrigger
+                value="celestial-calendar"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500/35 data-[state=active]:via-violet-500/35 data-[state=active]:to-amber-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(59,130,246,0.45)]"
+              >
+                Celestial Calendar
+              </TabsTrigger>
+              <TabsTrigger
                 value="visual-relay"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/40 data-[state=active]:via-indigo-500/30 data-[state=active]:to-rose-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(14,165,233,0.45)]"
               >
@@ -752,6 +759,15 @@ const HomePage = () => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-amber-400/15 opacity-70" />
               <div className="relative z-10">
                 <LiveVisualizationTab modules={visualizationModules} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="celestial-calendar"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(59,130,246,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/25 via-transparent to-violet-500/20 opacity-70" />
+              <div className="relative z-10">
+                <CelestialCalendarTab />
               </div>
             </TabsContent>
             <TabsContent

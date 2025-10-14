@@ -25,9 +25,7 @@
     @apply min-h-screen bg-slate-950 text-slate-100;
     font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-image:
-      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.18), transparent 60%),
-      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.14), transparent 65%),
-      radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.1), transparent 70%);
+
     background-attachment: fixed;
   }
 
@@ -42,13 +40,12 @@
   }
 
   body::before {
-    background: radial-gradient(circle at 15% 85%, rgba(56, 189, 248, 0.12), transparent 65%);
+
   }
 
   body::after {
     background:
-      radial-gradient(circle at 85% 15%, rgba(236, 72, 153, 0.18), transparent 70%),
-      radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.12), transparent 75%);
+
   }
 
   h1,

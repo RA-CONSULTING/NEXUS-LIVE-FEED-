@@ -48,7 +48,7 @@ const Layout: React.FC = () => {
             <span className="text-xs font-semibold uppercase tracking-[0.6em] text-slate-300/80">
               Harmonia Nexus Live Interface
             </span>
-            <h1 className="text-3xl font-semibold uppercase tracking-[0.4em] text-white sm:text-4xl">
+>>>>> main
               NEXUS · LIVE · FEED
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300/85 sm:text-base">
@@ -73,7 +73,7 @@ const Layout: React.FC = () => {
             )}
           </div>
 
-          <nav className="relative overflow-hidden rounded-3xl border border-slate-700/40 bg-slate-900/40 p-4 shadow-[0_0_35px_rgba(56,189,248,0.2)] backdrop-blur">
+
             <ul className="relative z-10 flex flex-wrap justify-center gap-2 md:justify-between">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.to;

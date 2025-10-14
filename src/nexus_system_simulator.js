@@ -7,6 +7,14 @@ class EgoDeathSimulator {
     this.coherence = 0.82;
     this.phase = Math.PI / 4;
     this.unityEventTriggered = false;
+    this.guardianBridge = {
+      active: false,
+      reverseBridgeGain: 1,
+      anchorThreshold: 0.95,
+      coherenceRamp: 0,
+      phaseCompression: 0,
+      anchored: false
+    };
   }
 
   step(deltaT = 0.01) {
@@ -14,10 +22,55 @@ class EgoDeathSimulator {
 
     const harmonicDrift = 0.85 + 0.1 * Math.sin(this.time / 2);
     const noise = (Math.random() - 0.5) * 0.02;
-    this.coherence = clamp(harmonicDrift + noise, 0, 1);
+    let targetCoherence = harmonicDrift;
+
+    if (this.guardianBridge.active) {
+      const {
+        reverseBridgeGain,
+        anchorThreshold,
+        coherenceRamp
+      } = this.guardianBridge;
+
+      targetCoherence = clamp(
+        targetCoherence + coherenceRamp * reverseBridgeGain,
+        0,
+        1
+      );
+
+      if (this.coherence < anchorThreshold) {
+        const anchorDelta = anchorThreshold - this.coherence;
+        targetCoherence = clamp(
+          targetCoherence + anchorDelta * 0.5 * reverseBridgeGain,
+          0,
+          1
+        );
+      }
+    }
+
+    const integrationRate = this.guardianBridge.active
+      ? 0.35 * this.guardianBridge.reverseBridgeGain
+      : 0.2;
+
+    this.coherence = clamp(
+      this.coherence + (targetCoherence - this.coherence) * integrationRate + noise,
+      0,
+      1
+    );
 
     const phaseDrift = Math.abs(Math.sin(this.time / 3)) * 0.12;
-    this.phase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
+    let newPhase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
+
+    if (this.guardianBridge.active) {
+      const { phaseCompression, reverseBridgeGain } = this.guardianBridge;
+      const compression = clamp(1 - phaseCompression * reverseBridgeGain, 0, 1);
+      newPhase *= compression;
+      if (!this.guardianBridge.anchored && this.coherence >= this.guardianBridge.anchorThreshold) {
+        this.guardianBridge.anchored = true;
+        this.guardianBridge.anchoredAt = this.time;
+      }
+    }
+
+    this.phase = newPhase;
 
     if (!this.unityEventTriggered && this.coherence > 0.95 && this.phase < Math.PI / 6) {
       this.unityEventTriggered = true;
@@ -45,6 +98,24 @@ class EgoDeathSimulator {
       phase: this.phase,
       time: this.time,
       unityEventTriggered: this.unityEventTriggered,
+      guardianBridge: { ...this.guardianBridge }
+    };
+  }
+
+  applyGuardianBridgeProtocol(config = {}) {
+    const defaults = {
+      reverseBridgeGain: 1.5,
+      anchorThreshold: 0.93,
+      coherenceRamp: 0.08,
+      phaseCompression: 0.22
+    };
+
+    this.guardianBridge = {
+      ...defaults,
+      ...config,
+      active: true,
+      anchored: false,
+      activatedAt: new Date().toISOString()
     };
   }
 }
@@ -56,6 +127,9 @@ class ObserverFunction {
     this.projections = [];
     this.coherence = 0.84;
     this.phase = 0.12;
+    this.guardianBridge = {
+      active: false
+    };
   }
 
   addProjection(angle) {
@@ -79,6 +153,7 @@ class ObserverFunction {
       projections: [...this.projections],
       coherence: this.coherence,
       phase: this.phase,
+      guardianBridge: { ...this.guardianBridge }
     };
   }
 
@@ -93,6 +168,28 @@ class ObserverFunction {
       const latest = Math.abs(this.projections[this.projections.length - 1]);
       this.phase = clamp(latest % (Math.PI / 2), 0, Math.PI / 2);
     }
+  }
+
+  harmonizeWithGuardianBridge(protocol = {}) {
+    const settings = {
+      anchorVector: 0,
+      coherenceLift: 0.06,
+      phaseAlignment: 0.18,
+      ...protocol
+    };
+
+    this.guardianBridge = {
+      ...settings,
+      active: true,
+      harmonizedAt: new Date().toISOString()
+    };
+
+    if (typeof settings.anchorVector === "number") {
+      this.projections.push(settings.anchorVector);
+    }
+
+    this.coherence = clamp(this.coherence + settings.coherenceLift, 0, 1);
+    this.phase = clamp(this.phase * (1 - settings.phaseAlignment), 0, Math.PI / 2);
   }
 }
 
@@ -113,6 +210,7 @@ export class NexusSystem {
     
     this.egoDeathSim = new EgoDeathSimulator(this.config.numObservers);
     this.observerFunction = new ObserverFunction(this.config.dimensionality);
+    this.guardianBridge = { active: false };
     this.RFE = this.initializeRFE();
     this.seal = this.generatePrimeSentinelSeal();
   }
@@ -245,6 +343,45 @@ export class NexusSystem {
       verified: true
     };
   }
+
+  activateGuardianBridgeAnchorProtocol(options = {}) {
+    const defaults = {
+      reverseBridgeGain: 1.6,
+      anchorThreshold: 0.92,
+      coherenceRamp: 0.12,
+      phaseCompression: 0.25,
+      observerCoherenceLift: 0.08,
+      phaseAlignment: 0.22,
+      anchorVector: 0,
+      unityIntent: "MANIFEST_UNITY_THIS_TIMELINE"
+    };
+
+    const settings = {
+      ...defaults,
+      ...options
+    };
+
+    this.guardianBridge = {
+      ...settings,
+      active: true,
+      activatedAt: new Date().toISOString()
+    };
+
+    this.egoDeathSim.applyGuardianBridgeProtocol({
+      reverseBridgeGain: settings.reverseBridgeGain,
+      anchorThreshold: settings.anchorThreshold,
+      coherenceRamp: settings.coherenceRamp,
+      phaseCompression: settings.phaseCompression
+    });
+
+    this.observerFunction.harmonizeWithGuardianBridge({
+      anchorVector: settings.anchorVector,
+      coherenceLift: settings.observerCoherenceLift,
+      phaseAlignment: settings.phaseAlignment
+    });
+
+    return { ...this.guardianBridge };
+  }
   
   /**
    * Simple hash function (replace with proper SHA-256 in production)
@@ -277,7 +414,18 @@ export class NexusSystem {
       
       // Step 1: Ego Death Simulation (phase alignment)
       const egoState = this.egoDeathSim.step(0.01);
-      
+
+      if (
+        this.guardianBridge.active &&
+        this.egoDeathSim.guardianBridge.anchored &&
+        !this.guardianBridge.anchorAnnounced
+      ) {
+        this.guardianBridge.anchorAnnounced = true;
+        this.guardianBridge.anchoredAt = this.egoDeathSim.guardianBridge.anchoredAt;
+        console.log("🛡️ GUARDIAN BRIDGE ANCHORED");
+        console.log(`Reverse Bridge Gain: ${this.guardianBridge.reverseBridgeGain.toFixed(2)}`);
+      }
+
       // Step 2: Observer Collapse (if not already collapsed)
       if (!this.observerFunction.collapsed && egoState.coherence > 0.8) {
         this.observerFunction.addProjection(0); // Add measurement basis
@@ -305,7 +453,8 @@ export class NexusSystem {
         egoState: egoState,
         observerCoherence: this.observerFunction.calculateCoherence(),
         realityField: R_t,
-        unityEvent: egoState.unityEvent
+        unityEvent: egoState.unityEvent,
+        guardianBridge: { ...this.egoDeathSim.guardianBridge }
       });
       
       // Delay for visualization
@@ -360,6 +509,7 @@ export class NexusSystem {
     return {
       config: this.config,
       seal: this.seal,
+      guardianBridge: { ...this.guardianBridge },
       egoDeathState: this.egoDeathSim.exportData(),
       observerState: this.observerFunction.exportState(),
       RFE: {
@@ -393,7 +543,7 @@ export class NexusSystem {
   getVisualizationData() {
     const t = Date.now() / 1000;
     const R_t = this.RFE.calculate(t);
-    
+
     return {
       // For Prime Sentinel Status card
       sentinel: {
@@ -429,6 +579,14 @@ export class NexusSystem {
         coherence: this.egoDeathSim.coherence,
         phase: this.egoDeathSim.phase,
         progress: Math.min(100, (1 - this.egoDeathSim.phase / (Math.PI / 2)) * 100)
+      },
+
+      guardianBridge: {
+        active: this.guardianBridge.active,
+        reverseBridgeGain: this.guardianBridge.reverseBridgeGain || this.egoDeathSim.guardianBridge.reverseBridgeGain,
+        anchored: this.egoDeathSim.guardianBridge.anchored,
+        anchorThreshold: this.guardianBridge.anchorThreshold || this.egoDeathSim.guardianBridge.anchorThreshold,
+        unityIntent: this.guardianBridge.unityIntent
       }
     };
   }

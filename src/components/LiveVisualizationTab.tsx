@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+
 export type VisualizationMetric = {
   label: string;
   value: string;
@@ -50,8 +51,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
       {modules.map((module) => (
         <div key={module.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-[1px]">
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 transition duration-500 group-hover:opacity-100" />
-          <div className="relative flex h-full flex-col rounded-[calc(1rem-2px)] bg-slate-950/80 p-5">
-            <div className="pointer-events-none absolute inset-0 rounded-[calc(1rem-2px)] bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_65%)] opacity-0 transition duration-500 group-hover:opacity-100" />
+
             <div className="relative z-10 flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white">{module.title}</div>
@@ -65,8 +65,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
             </div>
             <dl className="relative z-10 mt-5 space-y-4 text-sm">
               {module.metrics.map((metric) => (
-                <div key={metric.label} className="group/metric relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-3">
-                  <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition duration-500 group-hover/metric:opacity-100" style={{ backgroundImage: `linear-gradient(135deg, rgba(56,189,248,0.22), rgba(236,72,153,0.2))` }} />
+
                   <div className="relative z-10 flex items-baseline justify-between gap-3">
                     <dt className="text-[11px] uppercase tracking-[0.28em] text-slate-300/75">{metric.label}</dt>
                     <dd className="text-right text-sm font-semibold text-white">
@@ -86,7 +85,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
                   </div>
                   {metric.tone ? (
                     <div className="relative z-10 mt-3 h-1.5 rounded-full bg-slate-800/80">
-                      <div className={cn('h-1.5 rounded-full shadow-[0_0_18px_rgba(236,72,153,0.35)]', `bg-gradient-to-r ${gradientByTone[metric.tone]}`)} />
+
                     </div>
                   ) : null}
                 </div>

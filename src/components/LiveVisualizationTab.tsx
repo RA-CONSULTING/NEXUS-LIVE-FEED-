@@ -1,7 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-
 
 export type VisualizationMetric = {
   label: string;
@@ -25,18 +23,12 @@ const badgeVariant = (tone?: 'stable' | 'watch' | 'alert') => {
   return 'destructive' as const;
 };
 
+const metricLabel = (tone: 'stable' | 'watch' | 'alert') =>
+  tone === 'stable' ? 'Stable' : tone === 'watch' ? 'Watch' : 'Alert';
+
 type LiveVisualizationTabProps = {
   modules: VisualizationModule[];
 };
-
-const gradientByTone: Record<'stable' | 'watch' | 'alert', string> = {
-  stable: 'from-emerald-500/45 via-teal-400/25 to-transparent',
-  watch: 'from-amber-500/45 via-orange-400/25 to-transparent',
-  alert: 'from-rose-500/45 via-fuchsia-500/35 to-transparent',
-};
-
-const metricLabel = (tone: 'stable' | 'watch' | 'alert') =>
-  tone === 'stable' ? 'Stable' : tone === 'watch' ? 'Watch' : 'Alert';
 
 const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
   <Card className="relative overflow-hidden border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_0_45px_rgba(236,72,153,0.22)]">
@@ -49,10 +41,13 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
     </CardHeader>
     <CardContent className="relative z-10 grid gap-4 lg:grid-cols-3">
       {modules.map((module) => (
-        <div key={module.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-[1px]">
+        <div
+          key={module.id}
+          className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-[1px]"
+        >
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 transition duration-500 group-hover:opacity-100" />
-
-            <div className="relative z-10 flex items-start justify-between gap-3">
+          <div className="relative z-10 flex flex-col gap-5 rounded-[1.05rem] bg-slate-950/80 p-6">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white">{module.title}</div>
                 <p className="mt-1 text-xs text-slate-300/80">{module.summary}</p>
@@ -63,10 +58,10 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
                 </Badge>
               ) : null}
             </div>
-            <dl className="relative z-10 mt-5 space-y-4 text-sm">
+            <dl className="space-y-5 text-sm">
               {module.metrics.map((metric) => (
-
-                  <div className="relative z-10 flex items-baseline justify-between gap-3">
+                <div key={metric.label} className="space-y-2">
+                  <div className="flex items-baseline justify-between gap-3">
                     <dt className="text-[11px] uppercase tracking-[0.28em] text-slate-300/75">{metric.label}</dt>
                     <dd className="text-right text-sm font-semibold text-white">
                       <div className="flex items-center justify-end gap-2">
@@ -83,11 +78,6 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
                       <div className="mt-1 text-[11px] font-normal text-slate-300/80">{metric.hint}</div>
                     </dd>
                   </div>
-                  {metric.tone ? (
-                    <div className="relative z-10 mt-3 h-1.5 rounded-full bg-slate-800/80">
-
-                    </div>
-                  ) : null}
                 </div>
               ))}
             </dl>

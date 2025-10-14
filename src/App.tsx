@@ -46,6 +46,7 @@ const Layout: React.FC = () => {
               Harmonia Nexus Live Interface
             </span>
 
+            <h1 className="text-3xl font-semibold tracking-[0.4em] text-white sm:text-4xl">
               NEXUS · LIVE · FEED
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300/85 sm:text-base">
@@ -54,6 +55,7 @@ const Layout: React.FC = () => {
             </p>
           </div>
 
+          <nav className="rounded-3xl border border-white/10 bg-white/5 p-2 backdrop-blur">
             <ul className="relative z-10 flex flex-wrap justify-center gap-2 md:justify-between">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname === item.to;

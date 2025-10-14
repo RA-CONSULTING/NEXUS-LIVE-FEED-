@@ -207,11 +207,59 @@ const BioResonanceInterface: React.FC = () => {
     );
   };
 
-  const renderResonance = () => (
-    <div className="space-y-3">
+  const renderResonance = () => {
+    if (!bioResonanceData.length) {
+      return (
+        <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-6 text-xs text-slate-300/70">
+          Awaiting resonance stream synchronization. Connect to a guardian relay to receive active signatures.
+        </p>
+      );
+    }
 
-    </div>
-  );
+    return (
+      <div className="space-y-4">
+        {bioResonanceData.map((entry) => (
+          <article
+            key={`${entry.species}-${entry.location}-${entry.updatedAt ?? 'pending'}`}
+            className="group relative overflow-hidden rounded-2xl border border-emerald-400/20 bg-slate-950/60 p-[1px]"
+          >
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-0 bg-gradient-to-r opacity-70 transition-opacity group-hover:opacity-90',
+                resonanceTone(entry.resonanceFactor)
+              )}
+            />
+            <div className="relative rounded-[calc(1rem-2px)] bg-slate-950/85 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-emerald-200/80">Species</p>
+                  <p className="mt-1 text-base font-semibold uppercase tracking-[0.24em] text-white">{entry.species}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-emerald-200/80">Resonance</p>
+                  <p className="mt-1 text-lg font-semibold tracking-[0.2em] text-emerald-100">
+                    {entry.resonanceFactor.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-300">Location</p>
+                  <p className="mt-2 text-sm uppercase tracking-[0.2em] text-white">{entry.location}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-300">Last Update</p>
+                  <p className="mt-2 text-sm uppercase tracking-[0.2em] text-emerald-100/90">
+                    {entry.updatedAt ? new Date(entry.updatedAt).toLocaleTimeString() : 'Pending'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    );
+  };
 
   const renderDiagnostics = () => {
     if (!latestMetrics) {
@@ -320,6 +368,37 @@ const BioResonanceInterface: React.FC = () => {
         </button>
       </header>
 
+      <div className="relative z-10 space-y-6">
+        {harmonizationResult && (
+          <div
+            className={cn(
+              'rounded-2xl border px-4 py-3 text-xs uppercase tracking-[0.26em]',
+              harmonizationResult.status === 'success'
+                ? 'border-emerald-400/50 bg-emerald-500/10 text-emerald-100'
+                : 'border-rose-500/50 bg-rose-500/10 text-rose-100'
+            )}
+          >
+            {harmonizationResult.message}
+          </div>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
+            {renderSnapshot()}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300/70">Vital Metrics</h4>
+              <div className="mt-4">{renderVitals()}</div>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300/70">Resonance Stream</h4>
+              <div className="mt-4">{renderResonance()}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300/70">Diagnostics</h4>
+              <div className="mt-4">{renderDiagnostics()}</div>
+            </div>
           </div>
         </div>
       </div>

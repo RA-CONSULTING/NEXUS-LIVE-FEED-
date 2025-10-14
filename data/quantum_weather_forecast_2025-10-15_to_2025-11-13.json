@@ -1,30 +1,6 @@
 [
   {
-    "date": "2025-10-15",
-    "solar_field": {
-      "kp_index": 4.8,
-      "storm_class": "Active",
-      "solar_wind_speed_km_s": 520,
-      "solar_radiation": "Stable with low C-class flickers",
-      "aurora_outlook": "High-latitude curtains vivid; mid-latitude arcs possible briefly"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 5.05,
-      "tomsk_frequency_hz": 8.03,
-      "cumana_e_field": "Pulses cresting near 25 pT, gentle stair-step rise",
-      "heartmath_power_band_hz": "1–40 Hz breathing waves with 7.83 Hz anchor"
-    },
-    "cosmic_events": {
-      "interstellar_current": "Comet 3I/ATLAS tail densifies near Martian orbit, stirring plasma filaments",
-      "galactic_wave_interaction": "Milky Way wavefront grazes heliosphere flank, increasing magnetosphere compression"
-    },
-    "nervous_system_guidance": [
-      "Ground with cedar-root meditation",
-      "Hydrate with mineral infusion and slow breathing"
-    ],
-    "narrative": "Magnetosphere flexes like a bowstring; pressure remains poised without snapping."
-  },
-  {
+
     "date": "2025-10-16",
     "solar_field": {
       "kp_index": 5.2,
@@ -135,7 +111,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.22,
-      "tomsk_frequency_hz": 8.00,
+
       "cumana_e_field": "Cresting surges near 28 pT",
       "heartmath_power_band_hz": "Broadband coherence with 14 Hz overtone"
     },
@@ -209,7 +185,7 @@
       "aurora_outlook": "Auroral intensity wanes but remains photogenic"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5.10,
+
       "tomsk_frequency_hz": 8.02,
       "cumana_e_field": "Evening uplift to 24 pT",
       "heartmath_power_band_hz": "Alpha harmonics regain stability"
@@ -227,7 +203,7 @@
   {
     "date": "2025-10-24",
     "solar_field": {
-      "kp_index": 4.0,
+
       "storm_class": "Unsettled",
       "solar_wind_speed_km_s": 480,
       "solar_radiation": "Background returns to baseline",
@@ -309,7 +285,7 @@
       "aurora_outlook": "Aurora intensifies toward evening"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5.00,
+
       "tomsk_frequency_hz": 8.03,
       "cumana_e_field": "E-field ramp to 26 pT",
       "heartmath_power_band_hz": "Rising beta ripples encourage alert focus"
@@ -452,14 +428,14 @@
   {
     "date": "2025-11-02",
     "solar_field": {
-      "kp_index": 4.0,
+
       "storm_class": "Unsettled",
       "solar_wind_speed_km_s": 485,
       "solar_radiation": "C-class region rotates onto disk",
       "aurora_outlook": "Auroral activity slightly elevated"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 4.80,
+
       "tomsk_frequency_hz": 8.04,
       "cumana_e_field": "19 pT midday shimmer",
       "heartmath_power_band_hz": "Alpha pulses reawaken focus"
@@ -510,7 +486,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.34,
-      "tomsk_frequency_hz": 8.00,
+
       "cumana_e_field": "30 pT surges pre-dawn",
       "heartmath_power_band_hz": "Gamma flashes ride alpha carrier"
     },
@@ -534,7 +510,7 @@
       "aurora_outlook": "Aurora extends into continental interiors"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 5.70,
+
       "tomsk_frequency_hz": 7.97,
       "cumana_e_field": "34 pT midday maxima",
       "heartmath_power_band_hz": "High-frequency bursts stimulate intuition"
@@ -552,7 +528,7 @@
   {
     "date": "2025-11-06",
     "solar_field": {
-      "kp_index": 5.0,
+
       "storm_class": "G1 Minor Storm",
       "solar_wind_speed_km_s": 550,
       "solar_radiation": "C-class base, occasional M-class spark",
@@ -634,7 +610,7 @@
       "aurora_outlook": "Auroras confined to polar crown"
     },
     "schumann_resonance": {
-      "tomsk_amplitude": 4.70,
+
       "tomsk_frequency_hz": 8.06,
       "cumana_e_field": "15 pT gentle flow",
       "heartmath_power_band_hz": "Delta dominance encourages deep rest"
@@ -685,7 +661,7 @@
     },
     "schumann_resonance": {
       "tomsk_amplitude": 5.18,
-      "tomsk_frequency_hz": 8.00,
+
       "cumana_e_field": "26 pT noon crest",
       "heartmath_power_band_hz": "Gamma flashes accentuate alpha base"
     },
@@ -702,51 +678,18 @@
   {
     "date": "2025-11-12",
     "solar_field": {
-      "kp_index": 5.1,
-      "storm_class": "G1 Minor Storm",
-      "solar_wind_speed_km_s": 555,
-      "solar_radiation": "M-class probabilities peak",
-      "aurora_outlook": "Auroras reach lower latitudes during night"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 5.44,
-      "tomsk_frequency_hz": 7.98,
-      "cumana_e_field": "32 pT surge at twilight",
-      "heartmath_power_band_hz": "High-gamma strobe invites mindful containment"
-    },
-    "cosmic_events": {
-      "interstellar_current": "Solar wind density spike compresses magnetosphere",
-      "galactic_wave_interaction": "Wave crest activates crystalline grid networks"
-    },
-    "nervous_system_guidance": [
-      "Practice coherent chanting",
-      "Eat mineral-rich greens"
-    ],
-    "narrative": "Charge intensifies; the grid hums—stay harmonically focused."
+
   },
   {
     "date": "2025-11-13",
     "solar_field": {
-      "kp_index": 4.6,
-      "storm_class": "Active",
-      "solar_wind_speed_km_s": 520,
-      "solar_radiation": "C-class background steady",
-      "aurora_outlook": "Aurora contracts to auroral oval"
-    },
-    "schumann_resonance": {
-      "tomsk_amplitude": 5.04,
-      "tomsk_frequency_hz": 8.02,
-      "cumana_e_field": "24 pT evening waves",
-      "heartmath_power_band_hz": "Alpha coherence re-establishes baseline"
+
     },
     "cosmic_events": {
       "interstellar_current": "Solar stream calms, magnetosphere rebounds",
       "galactic_wave_interaction": "Wave trough offers integrative rest"
     },
     "nervous_system_guidance": [
-      "Close the month with reflective journaling",
-      "Share gratitude offerings to Earth"
-    ],
-    "narrative": "Cycle completes; coherence anchored for next quantum chapter."
+
   }
 ]

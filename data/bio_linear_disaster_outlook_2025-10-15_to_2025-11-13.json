@@ -1,61 +1,23 @@
 [
   {
-    "date": "2025-10-15",
-    "synoptic_overview": "Pacific trough pulls moisture into Cascadia while Rockies ridge tightens gradients.",
-    "hazard_ratings": {
-      "storm": {
-        "level": "Moderate",
-        "confidence": 0.62,
-        "notes": "Frontal band brings 40\u201355 kt gusts along exposed capes."
-      },
-      "flood": {
-        "level": "Guarded",
-        "confidence": 0.48,
-        "notes": "Rivers rising but within banks."
-      },
-      "heat": {
-        "level": "Low",
-        "confidence": 0.35,
-        "notes": "Cool marine influence dominates."
-      },
-      "wildfire": {
-        "level": "Low",
-        "confidence": 0.3,
-        "notes": "Widespread rainfall limits ignition."
-      },
-      "seismic": {
-        "level": "Background",
-        "confidence": 0.28,
-        "notes": "No unusual swarm signatures detected."
-      }
-    },
-    "alerts": [
-      "Issue coastal gale watch for Pacific Northwest capes.",
-      "Advise marine operators on steep wave sets by evening."
-    ],
-    "preparedness_actions": [
-      "Secure loose coastal infrastructure and check harbor moorings.",
-      "Distribute wet-weather kits to field teams."
-    ]
-  },
-  {
+
     "date": "2025-10-16",
     "synoptic_overview": "Slow-moving cold front drifts inland; jet streak overhead supports organized convection.",
     "hazard_ratings": {
       "storm": {
         "level": "Moderate",
-        "confidence": 0.65,
+        "confidence": 0.65
         "notes": "Embedded thunderstorms produce brief hail cores."
       },
       "flood": {
         "level": "Moderate",
         "confidence": 0.57,
-        "notes": "Rainfall rates 20\u201330 mm/hr in urban basins."
+
       },
       "heat": {
         "level": "Low",
         "confidence": 0.3,
-        "notes": "Surface temps 8\u201310\u00b0C below seasonal norm."
+
       },
       "wildfire": {
         "level": "Low",
@@ -89,7 +51,7 @@
       "flood": {
         "level": "High",
         "confidence": 0.66,
-        "notes": "Soils saturating with 75\u201390 mm cumulative totals."
+
       },
       "heat": {
         "level": "Low",
@@ -167,7 +129,7 @@
       "flood": {
         "level": "High",
         "confidence": 0.73,
-        "notes": "Rapid river rises 0.6\u20131.2 m expected."
+
       },
       "heat": {
         "level": "Low",
@@ -357,7 +319,6 @@
       "storm": {
         "level": "Severe",
         "confidence": 0.78,
-        "notes": "Gusts 75\u201385 kt and 5\u20137 m surf expected."
       },
       "flood": {
         "level": "High",
@@ -406,7 +367,7 @@
       "heat": {
         "level": "Low",
         "confidence": 0.27,
-        "notes": "Temperatures 5\u00b0C below average."
+
       },
       "wildfire": {
         "level": "Low",
@@ -435,7 +396,7 @@
       "storm": {
         "level": "Moderate",
         "confidence": 0.56,
-        "notes": "Residual gusts 35\u201345 kt in higher terrain."
+
       },
       "flood": {
         "level": "High",
@@ -562,7 +523,7 @@
       "heat": {
         "level": "Guarded",
         "confidence": 0.46,
-        "notes": "Daytime highs 6\u00b0C below average, frost pockets forming."
+
       },
       "wildfire": {
         "level": "Low",
@@ -601,7 +562,7 @@
       "heat": {
         "level": "Moderate",
         "confidence": 0.54,
-        "notes": "Wind chills drop below -10\u00b0C in highlands."
+
       },
       "wildfire": {
         "level": "Low",
@@ -679,8 +640,7 @@
       "heat": {
         "level": "Moderate",
         "confidence": 0.58,
-        "notes": "Subfreezing lows for 2\u20133 consecutive nights."
-      },
+
       "wildfire": {
         "level": "Low",
         "confidence": 0.21,
@@ -786,7 +746,7 @@
       "storm": {
         "level": "High",
         "confidence": 0.68,
-        "notes": "40\u201350 kt low-level jet enhances orographic rain."
+
       },
       "flood": {
         "level": "High",
@@ -796,7 +756,7 @@
       "heat": {
         "level": "Guarded",
         "confidence": 0.49,
-        "notes": "Daytime highs spike 7\u00b0C above average before cold front."
+
       },
       "wildfire": {
         "level": "Low",
@@ -913,7 +873,7 @@
       "heat": {
         "level": "Guarded",
         "confidence": 0.45,
-        "notes": "Daytime highs rebound 6\u00b0C above normal."
+
       },
       "wildfire": {
         "level": "Guarded",
@@ -952,7 +912,7 @@
       "heat": {
         "level": "Moderate",
         "confidence": 0.52,
-        "notes": "Highs reach 10\u00b0C above average in lee zones."
+
       },
       "wildfire": {
         "level": "Moderate",
@@ -1093,71 +1053,7 @@
   },
   {
     "date": "2025-11-12",
-    "synoptic_overview": "Southern stream low lifts north; atmospheric river aimed at northern California brushes Oregon south coast.",
-    "hazard_ratings": {
-      "storm": {
-        "level": "Moderate",
-        "confidence": 0.5,
-        "notes": "Heavy rain grazes south coast ranges."
-      },
-      "flood": {
-        "level": "Guarded",
-        "confidence": 0.45,
-        "notes": "Small stream rises likely in Curry and Josephine counties."
-      },
-      "heat": {
-        "level": "Low",
-        "confidence": 0.35,
-        "notes": "Near-normal temps."
-      },
-      "wildfire": {
-        "level": "Low",
-        "confidence": 0.34,
-        "notes": "Moisture limits fire activity."
-      },
-      "seismic": {
-        "level": "Background",
-        "confidence": 0.33,
-        "notes": "Stable."
-      }
-    },
-    "alerts": [
-      "Post flood advisory for south coast burn scars.",
-      "Alert transportation agencies about debris flow risk on Highway 199."
-    ],
-    "preparedness_actions": [
-      "Stage road crews with loaders and signage near slide-prone zones.",
-      "Coordinate with tribes on river monitoring along Smith and Chetco basins."
-    ]
-  },
-  {
-    "date": "2025-11-13",
-    "synoptic_overview": "Upper-level disturbance rotates inland; scattered thunderstorms possible statewide.",
-    "hazard_ratings": {
-      "storm": {
-        "level": "Moderate",
-        "confidence": 0.53,
-        "notes": "Small hail and gusty outflows in afternoon cells."
-      },
-      "flood": {
-        "level": "Guarded",
-        "confidence": 0.4,
-        "notes": "Brief heavy downpours could pond on roads."
-      },
-      "heat": {
-        "level": "Low",
-        "confidence": 0.33,
-        "notes": "Temperatures hover near average."
-      },
-      "wildfire": {
-        "level": "Guarded",
-        "confidence": 0.43,
-        "notes": "Lightning may spark grass fires where fuels remain dry."
-      },
-      "seismic": {
-        "level": "Background",
-        "confidence": 0.33,
-        "notes": "No deviation."
+
       }
     },
     "alerts": [
@@ -1167,6 +1063,6 @@
     "preparedness_actions": [
       "Prepare rapid-response fire crews for potential holdover strikes.",
       "Brief public on safe sheltering during lightning."
-    ]
+
   }
 ]

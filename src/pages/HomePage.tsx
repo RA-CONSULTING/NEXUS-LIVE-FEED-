@@ -12,6 +12,7 @@ import BioProfilePanel from '../components/BioProfilePanel';
 import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 import LiveVisualizationTab, { type VisualizationModule } from '../components/LiveVisualizationTab';
 import CelestialCalendarTab from '../components/CelestialCalendarTab';
+import ForecastTabs from '../components/ForecastTabs';
 import OutputCommandTab from '../components/OutputCommandTab';
 import ProcessingCoreTab from '../components/ProcessingCoreTab';
 import RecordingSystemsTab, { type RecordingChannel } from '../components/RecordingSystemsTab';
@@ -635,7 +636,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <BioProfilePanel profile={bioProfile} />
+
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />

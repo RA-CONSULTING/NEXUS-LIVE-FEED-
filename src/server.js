@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { sampleMetrics } from './metrics.js';
 import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
 import { generateContent } from './geminiClient.js'; // Import the new Gemini client
+import { loadForecastSummary } from '../core/forecastAnalyzer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -202,6 +203,16 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(status));
+  } else if (req.method === 'GET' && req.url?.startsWith('/api/forecasts')) {
+    try {
+      const payload = await loadForecastSummary();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(payload));
+    } catch (error) {
+      console.error('Failed to load forecast summary', error);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to load forecast window.' }));
+    }
   } else if (req.method === 'GET') {
     serveAppAsset(req, res);
   } else {

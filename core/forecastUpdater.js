@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
-const DEFAULT_WINDOW_DAYS = 30;
+const DEFAULT_WINDOW_DAYS = 7;
 
 const ensureDirectory = async (targetPath) => {
   const dir = path.dirname(targetPath);

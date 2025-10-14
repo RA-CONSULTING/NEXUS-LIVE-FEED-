@@ -1,12 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ScrollsPage from './pages/ScrollsPage';
 import RitualPage from './pages/RitualPage'; // Import the new RitualPage component
-import LoginPage from './pages/LoginPage';
-
 import Chronicles from './components/Chronicles';
 import NexusIntelligence from './components/NexusIntelligence';
 import Actuation from './components/Actuation';
@@ -126,26 +124,13 @@ const Layout: React.FC = () => {
   );
 };
 
-const ProtectedApp: React.FC = () => {
-  const { user } = useAuth();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Layout />;
-};
-
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <SeroProvider>
         <LiveNexusDataProvider>
           <Router>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/*" element={<ProtectedApp />} />
-            </Routes>
+            <Layout />
           </Router>
         </LiveNexusDataProvider>
       </SeroProvider>

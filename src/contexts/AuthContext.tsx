@@ -15,9 +15,31 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const STORAGE_KEY = 'nexus-auth-user';
+export const DEFAULT_USER: AuthUser = {
+  name: 'Gary Leckey',
+  dateOfBirth: '1991-11-02',
+  placeOfBirth: 'Belfast, Northern Ireland',
+};
+
+const readStoredUser = (): AuthUser | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storedUser = localStorage.getItem(STORAGE_KEY);
+    if (storedUser) {
+      return JSON.parse(storedUser) as AuthUser;
+    }
+  } catch (error) {
+    console.warn('Failed to restore Nexus login state:', error);
+  }
+
+  return null;
+};
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser() ?? DEFAULT_USER);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -25,9 +47,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
 
     try {
-      const storedUser = localStorage.getItem(STORAGE_KEY);
+      const storedUser = readStoredUser();
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        setUser(storedUser);
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USER));
       }
     } catch (error) {
       console.warn('Failed to restore Nexus login state:', error);

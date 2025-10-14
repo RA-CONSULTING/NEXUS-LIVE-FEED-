@@ -30,19 +30,12 @@ type HarmonizationResult =
       message: string;
     };
 
-type TelemetryTab = 'vitals' | 'resonance' | 'diagnostics';
-
-const TAB_LABELS: Record<TelemetryTab, string> = {
-  vitals: 'Bio Vitals',
-  resonance: 'Resonance Grid',
-  diagnostics: 'Diagnostics',
-};
 
 const BioResonanceInterface: React.FC = () => {
   const [bioResonanceData, setBioResonanceData] = useState<BioResonanceData[]>([]);
   const [harmonizationResult, setHarmonizationResult] = useState<HarmonizationResult | null>(null);
   const [isHarmonizing, setIsHarmonizing] = useState(false);
-  const [activeTab, setActiveTab] = useState<TelemetryTab>('vitals');
+
 
   useEffect(() => {
     const eventSource = new EventSource('/bio-resonance-stream');
@@ -216,50 +209,7 @@ const BioResonanceInterface: React.FC = () => {
 
   const renderResonance = () => (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/80">Live Bio-Resonance Data</h4>
-      <div className="space-y-3">
-        {bioResonanceData.length ? (
-          bioResonanceData.map((data, index) => (
-            <div key={index} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-[1px]">
-              <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 transition duration-500 group-hover:opacity-100" />
-              <div className="relative rounded-[calc(1rem-2px)] bg-slate-950/80 p-4">
-                <div className={cn('pointer-events-none absolute inset-0 rounded-[calc(1rem-2px)] opacity-70 blur-2xl transition duration-500 group-hover:opacity-100', `bg-gradient-to-br ${resonanceTone(data.resonanceFactor)}`)} />
-                <div className="relative z-10 flex items-center justify-between">
-                  <span className="text-sm font-semibold uppercase tracking-[0.22em] text-white">{data.species}</span>
-                  <span className="text-xs uppercase tracking-[0.3em] text-slate-200">
-                    Resonance {data.resonanceFactor.toFixed(2)}
-                  </span>
-                </div>
-                <div className="relative z-10 mt-3 flex items-center justify-between text-[11px] uppercase tracking-[0.28em] text-slate-300/80">
-                  <span>Location</span>
-                  <span>{data.location}</span>
-                </div>
-                <div className="relative z-10 mt-4 h-1.5 rounded-full bg-slate-800/80">
-                  <div
-                    className="h-1.5 rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-sky-400 shadow-[0_0_18px_rgba(16,185,129,0.4)]"
-                    style={{ width: `${Math.min(100, Math.round(data.resonanceFactor * 100))}%` }}
-                  />
-                </div>
-                {data.metrics?.auricFieldStrength !== undefined && (
-                  <div className="relative z-10 mt-4 flex items-center justify-between text-[11px] uppercase tracking-[0.24em] text-slate-300/70">
-                    <span>Auric Field Strength</span>
-                    <span>{Math.round(data.metrics.auricFieldStrength)}%</span>
-                  </div>
-                )}
-                {data.updatedAt && (
-                  <p className="relative z-10 mt-4 text-[10px] uppercase tracking-[0.28em] text-slate-400/70">
-                    Updated {new Date(data.updatedAt).toLocaleTimeString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-6 text-xs text-slate-300/70">
-            Awaiting resonance telemetry. Connection established but no allied species streaming yet.
-          </p>
-        )}
-      </div>
+
     </div>
   );
 
@@ -369,52 +319,7 @@ const BioResonanceInterface: React.FC = () => {
           {isHarmonizing ? 'Harmonizing…' : 'Harmonize Bio-Resonance'}
         </button>
       </header>
-      <div className="relative z-10">
-        <nav className="mb-6 flex flex-wrap items-center gap-2">
-          {(Object.keys(TAB_LABELS) as TelemetryTab[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                'relative overflow-hidden rounded-2xl border border-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] transition',
-                activeTab === tab
-                  ? 'bg-emerald-500/20 text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,0.35)]'
-                  : 'bg-white/5 text-slate-300 hover:bg-white/10'
-              )}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </nav>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)]">
-          <div className="space-y-6">
-            {renderSnapshot()}
-            {activeTab === 'vitals' && renderVitals()}
-            {activeTab === 'resonance' && renderResonance()}
-            {activeTab === 'diagnostics' && renderDiagnostics()}
-          </div>
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.28em] text-slate-300/80">Harmonization Result</h4>
-            {harmonizationResult ? (
-              <div
-                className={cn(
-                  'space-y-2 rounded-2xl border p-4 text-xs uppercase tracking-[0.24em] transition',
-                  harmonizationResult.status === 'success'
-                    ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100'
-                    : 'border-rose-400/40 bg-rose-500/10 text-rose-100'
-                )}
-              >
-                <p className="font-semibold">{harmonizationResult.status === 'success' ? 'Harmonization Complete' : 'Harmonization Failed'}</p>
-                <p className="text-[11px] tracking-[0.2em] text-slate-100/80">
-                  {harmonizationResult.message}
-                </p>
-              </div>
-            ) : (
-              <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-6 text-xs text-slate-300/70">
-                Awaiting harmonization request. Initiate the ritual to synchronize bio-fields.
-              </p>
-            )}
           </div>
         </div>
       </div>

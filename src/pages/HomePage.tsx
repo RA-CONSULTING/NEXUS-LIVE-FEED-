@@ -11,6 +11,7 @@ import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/
 import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 import LiveVisualizationTab, { type VisualizationModule } from '../components/LiveVisualizationTab';
 import CelestialCalendarTab from '../components/CelestialCalendarTab';
+import ForecastTabs from '../components/ForecastTabs';
 import OutputCommandTab from '../components/OutputCommandTab';
 import ProcessingCoreTab from '../components/ProcessingCoreTab';
 import RecordingSystemsTab, { type RecordingChannel } from '../components/RecordingSystemsTab';
@@ -413,13 +414,24 @@ const HomePage = () => {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
       <div className="relative z-10 space-y-10">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h1 className="bg-gradient-to-r from-sky-200 via-fuchsia-200 to-amber-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
               Nexus Live Feed
             </h1>
             <p className="max-w-xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
               Witness the Harmonia Nexus breathing in real time—sensor choirs, quantum analysts, and command pillars weaving a living tapestry of celestial insight.
             </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="#forecast-console"
+                className="inline-flex items-center rounded-full border border-sky-400/50 bg-sky-500/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-100 shadow-[0_0_25px_rgba(56,189,248,0.3)] transition hover:border-sky-300/60 hover:bg-sky-500/30 hover:text-white"
+              >
+                View Rolling Forecast Console
+              </a>
+              <span className="text-[11px] uppercase tracking-[0.28em] text-slate-300/70">
+                Quantum + bio-linear outlook · 30-day lead
+              </span>
+            </div>
           </div>
           <div className="flex flex-col items-start gap-2 text-xs text-slate-300/80 lg:items-end">
             <Badge
@@ -433,6 +445,8 @@ const HomePage = () => {
             </span>
           </div>
         </div>
+
+        <ForecastTabs />
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />

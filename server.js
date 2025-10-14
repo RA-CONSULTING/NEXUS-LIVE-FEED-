@@ -3,9 +3,11 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFile } from 'fs/promises';
 
 import { GoogleAIFileManager, GoogleAIStudio } from './nexusAgent.js';
 import { childSafetySystem } from './childSafety.js';
+import { startAutoRefresh } from './core/forecastUpdater.js';
 
 dotenv.config();
 
@@ -44,6 +46,146 @@ if (!apiKey) {
 
 app.locals.nexusFileManager = nexusFileManager;
 app.locals.nexusStudio = nexusStudio;
+
+const refreshIntervalEnv = Number.parseInt(process.env.FORECAST_REFRESH_INTERVAL_MS ?? '', 10);
+const refreshIntervalMs = Number.isFinite(refreshIntervalEnv)
+  ? refreshIntervalEnv
+  : 60 * 60 * 1000;
+
+const forecastConfig = {
+  quantum: {
+    forecastPath: path.join(
+      __dirname,
+      'data',
+      'quantum_weather_forecast_2025-10-15_to_2025-11-13.json'
+    ),
+    feedPath: path.join(
+      __dirname,
+      'streams',
+      'live_forecasts',
+      'quantum_hourly_feed.json'
+    ),
+  },
+  bioLinear: {
+    forecastPath: path.join(
+      __dirname,
+      'data',
+      'bio_linear_disaster_outlook_2025-10-15_to_2025-11-13.json'
+    ),
+    feedPath: path.join(
+      __dirname,
+      'streams',
+      'live_forecasts',
+      'bio_linear_hourly_feed.json'
+    ),
+  },
+};
+
+if (process.env.DISABLE_FORECAST_AUTO_REFRESH !== 'true') {
+  startAutoRefresh(
+    forecastConfig,
+    { logger: console, intervalMs: refreshIntervalMs }
+  );
+}
+
+const toIsoString = (value) => {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
+};
+
+const readForecast = async (targetPath) => {
+  try {
+    const raw = await readFile(targetPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+};
+
+const enhanceForecast = (entries) => {
+  if (!entries?.length) {
+    return {
+      entries: [],
+      range: null,
+      lastUpdated: null,
+    };
+  }
+
+  const sorted = [...entries].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  const lastUpdated = sorted.reduce((latest, entry) => {
+    const candidate =
+      toIsoString(entry?.last_updated) ||
+      toIsoString(entry?.validation?.last_synced_at);
+    if (!candidate) {
+      return latest;
+    }
+    if (!latest || new Date(candidate) > new Date(latest)) {
+      return candidate;
+    }
+    return latest;
+  }, null);
+
+  return {
+    entries: sorted,
+    range: {
+      start: sorted[0]?.date ?? null,
+      end: sorted[sorted.length - 1]?.date ?? null,
+    },
+    lastUpdated,
+  };
+};
+
+app.get('/api/forecasts', async (req, res) => {
+  try {
+    const [quantum, bioLinear] = await Promise.all([
+      readForecast(forecastConfig.quantum.forecastPath),
+      readForecast(forecastConfig.bioLinear.forecastPath),
+    ]);
+
+    res.json({
+      quantum: enhanceForecast(quantum),
+      bioLinear: enhanceForecast(bioLinear),
+    });
+  } catch (error) {
+    console.error('Failed to load forecasts', error);
+    res.status(500).json({ error: 'Unable to load forecast data.' });
+  }
+});
+
+app.get('/api/forecasts/:type', async (req, res) => {
+  const typeParam = req.params.type?.toLowerCase();
+  const key =
+    typeParam === 'bio-linear' || typeParam === 'biolinear'
+      ? 'bioLinear'
+      : typeParam === 'quantum'
+        ? 'quantum'
+        : null;
+
+  if (!key || !forecastConfig[key]) {
+    return res.status(404).json({ error: 'Unknown forecast type.' });
+  }
+
+  try {
+    const entries = await readForecast(forecastConfig[key].forecastPath);
+    res.json(enhanceForecast(entries));
+  } catch (error) {
+    console.error(`Failed to load ${key} forecast`, error);
+    res.status(500).json({ error: 'Unable to load forecast data.' });
+  }
+});
 
 app.get('/api/keys-status', (req, res) => {
   const KEYS = ["SUPABASE_URL","SUPABASE_ANON_KEY","NOAA_CDO_TOKEN","NASA_API_KEY","USGS_API_KEY"];

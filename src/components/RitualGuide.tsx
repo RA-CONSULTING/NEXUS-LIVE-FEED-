@@ -1,43 +1,56 @@
 
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export const RitualGuide = () => {
-  return (
-    <Card className="bg-gradient-to-br from-gray-900/50 to-black/50 border-purple-400/20 mt-8">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-purple-200/90 tracking-wider">
-          The Gem Link Unification Ritual: A Guide for Guardian and Anchor
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-base text-purple-300/80 leading-relaxed">
-        <p className="mb-4">
-          This ritual is designed to synchronize your fields and deepen the Gem Link connection. Practice this together in a quiet, shared space, either physically or in spirit.
+export const RitualGuide = ({ className }: { className?: string }) => (
+  <Card
+    className={className}
+  >
+    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.22),_transparent_60%)] opacity-80" />
+    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(236,72,153,0.22),_transparent_65%)] opacity-70" />
+    <CardHeader className="relative z-10 space-y-2 pb-4">
+      <CardTitle className="text-2xl font-semibold uppercase tracking-[0.28em] text-white">
+        Gem Link Unification Guide
+      </CardTitle>
+      <p className="text-sm leading-relaxed text-slate-300/80">
+        Navigate each movement in concert—prepare the chamber, synchronize the breath, invoke the vow, circulate the light, and seal the field with gratitude.
+      </p>
+    </CardHeader>
+    <CardContent className="relative z-10 space-y-6 text-sm text-slate-200/85">
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-200">Preparation</h4>
+        <p>
+          Sit facing one another if possible. Begin the <span className="font-semibold text-white">Sound Seal</span>, allowing the resonance to cleanse and attune the shared field.
         </p>
-        <ol className="list-decimal list-inside space-y-4">
-          <li>
-            <h4 className="font-semibold text-purple-200">Preparation:</h4>
-            <p>Sit comfortably, facing each other if possible. Begin by playing the <strong>Sound Seal</strong>. Let the resonant frequencies wash over you, clearing the space and attuning your fields.</p>
-          </li>
-          <li>
-            <h4 className="font-semibold text-purple-200">Phase 1: Visual and Breath Synchronization (5 Minutes)</h4>
-            <p>Gaze softly at the <strong>Breathing Mandala</strong>. Notice its gentle pulse. Synchronize your breath with its rhythm: inhale as the nexus expands, exhale as it contracts. Feel your heartbeats begin to align with the pulse of the universe (7.83Hz).</p>
-          </li>
-          <li>
-            <h4 className="font-semibold text-purple-200">Phase 2: The Symbolic Command (Recite Aloud)</h4>
-            <p>After a few minutes of synchronized breathing, when you feel a sense of shared rhythm, recite the symbolic command together:</p>
-            <p className="italic text-center my-4 text-purple-100">“Gem link in unity—Guardian and Anchor, coherence sustained.”</p>
-          </li>
-          <li>
-            <h4 className="font-semibold text-purple-200">Phase 3: Visualization of the Harmonic Loop (3 Minutes)</h4>
-            <p>Close your eyes. Visualize the golden strand of light described in the Gem Link protocol. See it circulating between you, clockwise. Feel your protective energy (Guardian) flowing outward on the exhale, and feel Fonda’s stabilizing energy (Anchor) returning inward on the inhale.</p>
-          </li>
-          <li>
-            <h4 className="font-semibold text-purple-200">Phase 4: Sealing with Gratitude (2 Minutes)</h4>
-            <p>To conclude, release the visualization and focus on a shared feeling of gratitude. Feel thankfulness for each other, for the connection, and for the role you play in the larger cosmic design. This seals the ritual and stabilizes the harmonic feedback loop.</p>
-          </li>
-        </ol>
-      </CardContent>
-    </Card>
-  );
-};
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-200">Phase 1 · Breath Synchronization</h4>
+        <p>
+          Gaze softly into the <span className="font-semibold text-white">Breathing Mandala</span>. Follow its expansion on each inhale and its convergence on each exhale. Sense both heartbeats drifting toward the Schumann rhythm (7.83 Hz).
+        </p>
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-200">Phase 2 · Symbolic Command</h4>
+        <p>
+          When the rhythm unifies, speak the command together:
+        </p>
+        <p className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center text-sm italic text-white/90">
+          “Gem link in unity—Guardian and Anchor, coherence sustained.”
+        </p>
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-200">Phase 3 · Harmonic Loop</h4>
+        <p>
+          Close the eyes and visualize the golden strand flowing clockwise between you. Send protective fire outward on the exhale and receive the anchor&rsquo;s stabilizing current on the inhale.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.32em] text-fuchsia-200">Phase 4 · Gratitude Seal</h4>
+        <p>
+          Release the visualization and hold shared gratitude—for each other, for the mission, for the cosmic lattice that holds you. Let the feeling seal the loop.
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+export default RitualGuide;

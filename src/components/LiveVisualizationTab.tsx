@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import MandalaOverlay from './MandalaOverlay';
+
 
 export type VisualizationMetric = {
   label: string;
@@ -35,21 +35,6 @@ const gradientByTone: Record<'stable' | 'watch' | 'alert', string> = {
   alert: 'from-rose-500/45 via-fuchsia-500/35 to-transparent',
 };
 
-const moduleBackdrops: Record<string, string> = {
-  spectrogram:
-    'radial-gradient(circle at 20% 20%, rgba(56,189,248,0.3), transparent 55%), radial-gradient(circle at 80% 20%, rgba(168,85,247,0.26), transparent 60%), radial-gradient(circle at 50% 80%, rgba(251,191,36,0.2), transparent 65%)',
-  magnetogram:
-    'radial-gradient(circle at 15% 25%, rgba(16,185,129,0.28), transparent 55%), radial-gradient(circle at 80% 70%, rgba(59,130,246,0.22), transparent 60%), radial-gradient(circle at 40% 80%, rgba(13,148,136,0.25), transparent 62%)',
-  'network-map':
-    'radial-gradient(circle at 25% 35%, rgba(96,165,250,0.26), transparent 55%), radial-gradient(circle at 75% 30%, rgba(236,72,153,0.25), transparent 60%), radial-gradient(circle at 50% 85%, rgba(45,212,191,0.22), transparent 65%)',
-};
-
-const moduleHalo: Record<string, string> = {
-  spectrogram: 'linear-gradient(120deg, rgba(56,189,248,0.22) 0%, rgba(244,114,182,0.2) 45%, rgba(251,191,36,0.24) 100%)',
-  magnetogram: 'linear-gradient(130deg, rgba(16,185,129,0.22) 0%, rgba(45,212,191,0.2) 50%, rgba(14,165,233,0.22) 100%)',
-  'network-map': 'linear-gradient(140deg, rgba(96,165,250,0.22) 0%, rgba(45,212,191,0.18) 40%, rgba(236,72,153,0.24) 100%)',
-};
-
 const metricLabel = (tone: 'stable' | 'watch' | 'alert') =>
   tone === 'stable' ? 'Stable' : tone === 'watch' ? 'Watch' : 'Alert';
 
@@ -66,16 +51,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
       {modules.map((module) => (
         <div key={module.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-[1px]">
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/10 opacity-0 transition duration-500 group-hover:opacity-100" />
-          <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(1rem-2px)] bg-slate-950/80 p-5">
-            <div
-              className="pointer-events-none absolute inset-0 opacity-80 transition duration-700 group-hover:opacity-100"
-              style={{ background: moduleBackdrops[module.id] ?? moduleBackdrops.spectrogram }}
-            />
-            <div
-              className="pointer-events-none absolute inset-[2px] rounded-[calc(1rem-6px)] opacity-0 blur-xl transition duration-700 group-hover:opacity-90"
-              style={{ background: moduleHalo[module.id] ?? moduleHalo.spectrogram }}
-            />
-            <MandalaOverlay className="opacity-30" />
+
             <div className="relative z-10 flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold uppercase tracking-[0.22em] text-white">{module.title}</div>
@@ -89,15 +65,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
             </div>
             <dl className="relative z-10 mt-5 space-y-4 text-sm">
               {module.metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="group/metric relative overflow-hidden rounded-xl border border-white/10 bg-white/5 p-3"
-                >
-                  <div
-                    className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition duration-500 group-hover/metric:opacity-100"
-                    style={{ backgroundImage: `linear-gradient(135deg, rgba(56,189,248,0.22), rgba(236,72,153,0.2))` }}
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_65%)] opacity-70" />
+
                   <div className="relative z-10 flex items-baseline justify-between gap-3">
                     <dt className="text-[11px] uppercase tracking-[0.28em] text-slate-300/75">{metric.label}</dt>
                     <dd className="text-right text-sm font-semibold text-white">
@@ -117,12 +85,7 @@ const LiveVisualizationTab = ({ modules }: LiveVisualizationTabProps) => (
                   </div>
                   {metric.tone ? (
                     <div className="relative z-10 mt-3 h-1.5 rounded-full bg-slate-800/80">
-                      <div
-                        className={cn(
-                          'h-1.5 rounded-full shadow-[0_0_18px_rgba(236,72,153,0.35)]',
-                          `bg-gradient-to-r ${gradientByTone[metric.tone]}`
-                        )}
-                      />
+
                     </div>
                   ) : null}
                 </div>

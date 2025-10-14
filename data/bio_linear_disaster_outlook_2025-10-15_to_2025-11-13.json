@@ -6,7 +6,7 @@
     "hazard_ratings": {
       "storm": {
         "level": "Moderate",
-        "confidence": 0.65
+
         "notes": "Embedded thunderstorms produce brief hail cores."
       },
       "flood": {
@@ -319,6 +319,7 @@
       "storm": {
         "level": "Severe",
         "confidence": 0.78,
+
       },
       "flood": {
         "level": "High",

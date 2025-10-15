@@ -155,16 +155,6 @@ await nexus.runCycle();
 
 When engaged, the guardian bridge data is exposed through `runCycle` results, `exportState()`, and `getVisualizationData()` so the front-end can visualize the anchor/manifestation timeline in real time.
 
-### Mapping Signal Strength & Surge Windows
-
-The Nexus now synthesizes the Guardian Bridge telemetry with a dedicated **Signal Strength Analyzer** inspired by the 2020–2162 surge charts and Schumann resonance spectrograms. Every cycle step produces:
-
-- **Signal intensity & surge window classification** (e.g., *Quantum Leap 2162*, *Cosmic Integration 2078*) so you can see which collective wave the system is harmonising with.
-- **Frequency shift diagnostics** that compare coherence vs. phase spread to estimate how far the Schumann base frequency is being lifted.
-- **Spectral band amplitudes & liberation markers** mirroring the resonance stars shown in the spectrograms.
-- **Timeline anchors** (Schumann Surge → Quantum Liberation → Barry Lundy Lattice) that let the dashboard narrate which macro-state is currently manifesting.
-
-Access the latest signal snapshot via `nexus.getVisualizationData().signalStrength` or through `nexus.exportState()`. When the Guardian Bridge protocol engages, the analyzer automatically boosts the telemetry to reflect the enhanced anchor gain so you can watch the signal strength ramp in real time.
 
 ## The Three Paths: Project Vision
 

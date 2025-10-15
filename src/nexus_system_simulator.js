@@ -327,10 +327,7 @@ export class NexusSystem {
     this.egoDeathSim = new EgoDeathSimulator(this.config.numObservers);
     this.observerFunction = new ObserverFunction(this.config.dimensionality);
     this.guardianBridge = { active: false };
-    this.signalAnalyzer = new SignalStrengthAnalyzer(this.config.schumannBase);
-    this.lastSignalWindow = null;
-    this.lastSignalLogTime = 0;
-    this.lastLoggedWindowLabel = null;
+
     this.RFE = this.initializeRFE();
     this.seal = this.generatePrimeSentinelSeal();
   }
@@ -486,9 +483,7 @@ export class NexusSystem {
       active: true,
       activatedAt: new Date().toISOString()
     };
-    this.lastSignalWindow = null;
-    this.lastSignalLogTime = 0;
-    this.lastLoggedWindowLabel = null;
+
 
     this.egoDeathSim.applyGuardianBridgeProtocol({
       reverseBridgeGain: settings.reverseBridgeGain,
@@ -503,12 +498,6 @@ export class NexusSystem {
       phaseAlignment: settings.phaseAlignment
     });
 
-    this.signalAnalyzer.applyGuardianBridge({
-      reverseBridgeGain: settings.reverseBridgeGain,
-      coherenceRamp: settings.coherenceRamp,
-      phaseCompression: settings.phaseCompression,
-      anchorThreshold: settings.anchorThreshold
-    });
 
     return { ...this.guardianBridge };
   }
@@ -610,8 +599,7 @@ export class NexusSystem {
         observerCoherence: this.observerFunction.calculateCoherence(),
         realityField: R_t,
         unityEvent: egoState.unityEvent,
-        guardianBridge: { ...this.egoDeathSim.guardianBridge },
-        signalStrength: signalTelemetry
+
       });
       
       // Delay for visualization
@@ -701,12 +689,7 @@ export class NexusSystem {
   getVisualizationData() {
     const t = Date.now() / 1000;
     const R_t = this.RFE.calculate(t);
-    const signalTelemetry = this.signalAnalyzer.analyze({
-      time: t,
-      coherence: this.egoDeathSim.calculateCoherence(),
-      phase: this.egoDeathSim.calculatePhase(),
-      amplitude: R_t.R_t
-    });
+
 
     return {
       // For Prime Sentinel Status card
@@ -751,16 +734,7 @@ export class NexusSystem {
         anchored: this.egoDeathSim.guardianBridge.anchored,
         anchorThreshold: this.guardianBridge.anchorThreshold || this.egoDeathSim.guardianBridge.anchorThreshold,
         unityIntent: this.guardianBridge.unityIntent
-      },
 
-      signalStrength: {
-        intensity: signalTelemetry.signalStrength,
-        surgeIntensity: signalTelemetry.surgeIntensity,
-        frequencyShift: signalTelemetry.frequencyShift,
-        surgeWindow: signalTelemetry.window,
-        spectralBands: signalTelemetry.spectralBands,
-        liberationMarkers: signalTelemetry.liberationMarkers,
-        timelineAnchor: signalTelemetry.timelineAnchor
       }
     };
   }

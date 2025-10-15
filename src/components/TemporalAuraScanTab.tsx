@@ -9,10 +9,10 @@ import {
   Title,
   Tooltip,
 } from 'chart.js';
+import { useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
@@ -169,8 +169,7 @@ const TemporalAuraScanTab: React.FC = () => {
           <div className="flex flex-col gap-2 text-sm text-slate-200/80">
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase tracking-[0.25em] text-slate-400">Coherence</span>
-
-            </Button>
+            </div>
           </div>
         </div>
         <div className="h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />

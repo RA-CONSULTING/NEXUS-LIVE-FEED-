@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -75,6 +75,7 @@ const baseLineOptions = (options: { min?: number; max?: number; stepSize?: numbe
   },
 });
 
+
 const TemporalAuraScanTab: React.FC = () => {
   const labels = useMemo(buildTemporalLabels, []);
   const coherenceSeries = useMemo(generateCoherenceSeries, []);
@@ -82,6 +83,7 @@ const TemporalAuraScanTab: React.FC = () => {
 
   const coherenceReading = coherenceSeries[coherenceSeries.length - 1];
   const schumannReading = schumannSeries[schumannSeries.length - 1];
+
 
   const coherenceData = useMemo(
     () => ({
@@ -149,6 +151,7 @@ const TemporalAuraScanTab: React.FC = () => {
     [],
   );
 
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-amber-500/20 bg-slate-900/60 p-6 shadow-[0_0_45px_rgba(251,191,36,0.18)] backdrop-blur">
@@ -166,14 +169,7 @@ const TemporalAuraScanTab: React.FC = () => {
           <div className="flex flex-col gap-2 text-sm text-slate-200/80">
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase tracking-[0.25em] text-slate-400">Coherence</span>
-              <span className="text-lg font-semibold text-amber-200">{coherenceReading.toFixed(3)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-[0.25em] text-slate-400">Schumann</span>
-              <span className="text-lg font-semibold text-sky-200">{schumannReading.toFixed(3)} Hz</span>
-            </div>
-            <Button variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20">
-              Initiate Live Scan
+
             </Button>
           </div>
         </div>
@@ -181,22 +177,11 @@ const TemporalAuraScanTab: React.FC = () => {
         <div className="grid gap-4 text-xs text-slate-300/80 sm:grid-cols-2">
           <div>
             <span className="text-slate-400">Scan Status</span>
-            <p className="text-sm font-semibold text-amber-200">Standing by · Synthetic reference</p>
-          </div>
-          <div>
-            <span className="text-slate-400">Calibration Window</span>
-            <p className="text-sm font-semibold text-slate-200">Last synchronized 42s ago</p>
-          </div>
-          <div>
-            <span className="text-slate-400">Signal Gain</span>
-            <p className="text-sm font-semibold text-slate-200">+12.4 dB · Auto compensated</p>
-          </div>
-          <div>
-            <span className="text-slate-400">Entanglement Link</span>
-            <p className="text-sm font-semibold text-slate-200">Secure · Quantum handshake nominal</p>
+
           </div>
         </div>
       </div>
+
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border border-amber-400/20 bg-slate-950/60">

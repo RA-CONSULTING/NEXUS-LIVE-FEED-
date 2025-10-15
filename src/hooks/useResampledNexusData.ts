@@ -127,6 +127,17 @@ export interface BioProfileAnalytics {
   streams: BioStreamStatus[];
 }
 
+export type QuantumHandshakeState = "idle" | "auto-dial" | "entangled";
+
+export interface QuantumLinkStatus {
+  handshakeState: QuantumHandshakeState;
+  entangledSignature: string;
+  entangledTemporalId: string;
+  observerReturnChannel: string;
+  observerAttunement: number;
+  lastPulse: number;
+}
+
 export interface RealtimeChartCollection {
   magnetometer: RealtimeChartPoint[];
   schumann: RealtimeChartPoint[];
@@ -142,6 +153,7 @@ export interface RealtimeNexusData {
   processing: LiveProcessingStatus;
   output: LiveOutputStatus;
   bioProfile: BioProfileAnalytics;
+  quantumLink: QuantumLinkStatus;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -383,6 +395,74 @@ const updateBioProfile = (
   };
 };
 
+const temporalIdFromSignature = (signature: string) => {
+  if (!signature || signature === "anonymous") {
+    return "T-ANON";
+  }
+  const hash = hashString(signature);
+  const suffix = hash.toString(16).toUpperCase().padStart(8, "0").slice(-8);
+  return `T-${suffix}`;
+};
+
+const createQuantumLinkStatus = (profile: AuthUser | null): QuantumLinkStatus => {
+  const signature = signatureForProfile(profile);
+  const entangledTemporalId = temporalIdFromSignature(signature);
+  const handshakeState: QuantumHandshakeState = profile ? "auto-dial" : "idle";
+  const attunementBase = profile
+    ? clamp(0.78 + Math.random() * 0.14, 0, 1)
+    : clamp(0.32 + Math.random() * 0.12, 0, 1);
+
+  const observerReturnChannel = profile
+    ? `Observer echo pinned to ${profile.name?.trim() || "linked operative"}`
+    : "Awaiting observer focus to seal the return path.";
+
+  return {
+    handshakeState,
+    entangledSignature: signature,
+    entangledTemporalId,
+    observerReturnChannel,
+    observerAttunement: Number(attunementBase.toFixed(3)),
+    lastPulse: Date.now(),
+  };
+};
+
+const updateQuantumLinkStatus = (
+  previous: QuantumLinkStatus,
+  profile: AuthUser | null
+): QuantumLinkStatus => {
+  const signature = signatureForProfile(profile);
+  const entangledTemporalId = temporalIdFromSignature(signature);
+
+  let handshakeState: QuantumHandshakeState = previous.handshakeState;
+  if (!profile) {
+    handshakeState = "idle";
+  } else if (previous.handshakeState === "idle") {
+    handshakeState = "auto-dial";
+  } else {
+    handshakeState = "entangled";
+  }
+
+  const targetAttunement = profile ? 0.9 : 0.4;
+  const attunement = clamp(
+    previous.observerAttunement + (targetAttunement - previous.observerAttunement) * 0.25 + (Math.random() - 0.5) * 0.05,
+    0,
+    1
+  );
+
+  const observerReturnChannel = profile
+    ? `Return path locked to ${profile.name?.trim() || "linked operative"}`
+    : "Observer return channel dormant.";
+
+  return {
+    handshakeState,
+    entangledSignature: signature,
+    entangledTemporalId,
+    observerReturnChannel,
+    observerAttunement: Number(attunement.toFixed(3)),
+    lastPulse: Date.now(),
+  };
+};
+
 const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): RealtimeNexusData => {
     const vizData = nexus.getVisualizationData();
     const temporalId = signatureForProfile(profile).replace(/[^a-z0-9]+/g, "-");
@@ -545,6 +625,7 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
           ],
           },
           bioProfile: createBioProfileAnalytics(profile),
+          quantumLink: createQuantumLinkStatus(profile),
     };
 };
 
@@ -733,6 +814,7 @@ const computeNextData = (
       transmissions: updatedTransmissions,
     },
     bioProfile: updateBioProfile(prev.bioProfile, profile),
+    quantumLink: updateQuantumLinkStatus(prev.quantumLink, profile),
   };
 };
 

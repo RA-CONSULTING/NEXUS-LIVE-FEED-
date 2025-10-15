@@ -155,6 +155,7 @@ await nexus.runCycle();
 
 When engaged, the guardian bridge data is exposed through `runCycle` results, `exportState()`, and `getVisualizationData()` so the front-end can visualize the anchor/manifestation timeline in real time.
 
+
 ## The Three Paths: Project Vision
 
 This project is the foundation for a three-pronged initiative:

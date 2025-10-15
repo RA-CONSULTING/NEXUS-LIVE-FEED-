@@ -159,6 +159,13 @@ export interface RealtimeNexusData {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+const HISTORY_WINDOW_SECONDS = 10 * 60;
+const HISTORY_WINDOW_MS = HISTORY_WINDOW_SECONDS * 1000;
+const HISTORY_SEED_INTERVAL_MS = 500;
+const HISTORY_SEED_POINTS = Math.round(HISTORY_WINDOW_MS / HISTORY_SEED_INTERVAL_MS);
+const HISTORY_BUFFER_FACTOR = 1.15;
+const RESAMPLE_STEP_SECONDS = 0.25;
+
 const createInitialSeries = (
   base: number,
   variance: number,
@@ -166,10 +173,16 @@ const createInitialSeries = (
   max: number
 ): RealtimeChartPoint[] => {
   const now = Date.now();
-  // Start with a 60-second history
-  return Array.from({ length: 120 }, (_, index) => {
-    const value = base;
-    const timestamp = now - (120 - index) * 500;
+  const totalPoints = Math.max(240, HISTORY_SEED_POINTS);
+
+  return Array.from({ length: totalPoints }, (_, index) => {
+    const progress = index / Math.max(totalPoints - 1, 1);
+    const highFrequency = Math.sin(progress * Math.PI * 18) * variance * 0.35;
+    const lowFrequency = Math.sin(progress * Math.PI * 4) * variance * 0.55;
+    const drift = Math.cos(progress * Math.PI * 2) * variance * 0.1;
+    const value = clamp(base + highFrequency + lowFrequency + drift, min, max);
+    const timestamp = now - (totalPoints - index) * HISTORY_SEED_INTERVAL_MS;
+
     return {
       timestamp,
       value: Number(value.toFixed(3)),
@@ -181,12 +194,16 @@ const advanceSeries = (
   series: RealtimeChartPoint[],
   newValue: number
 ): RealtimeChartPoint[] => {
+  const now = Date.now();
   const nextPoint: RealtimeChartPoint = {
-    timestamp: Date.now(),
+    timestamp: now,
     value: Number(newValue.toFixed(3)),
   };
-  // Keep a rolling window of points
-  return [...series, nextPoint];
+
+  const cutoff = now - HISTORY_WINDOW_MS * HISTORY_BUFFER_FACTOR;
+  const trimmed = series.filter((point) => point.timestamp >= cutoff);
+
+  return [...trimmed, nextPoint];
 };
 
 
@@ -641,13 +658,14 @@ const computeNextData = (
   const fromSample = (s: { t: number; v: number }) => ({ timestamp: s.t * 1000, value: s.v });
 
   const now = Date.now();
-  const timeWindow = 60 * 1000; // 60 seconds
+
+  const timeWindow = HISTORY_WINDOW_MS;
 
   const truncateAndResample = (series: RealtimeChartPoint[]) => {
     const recentPoints = series.filter(p => now - p.timestamp < timeWindow);
     const samples = recentPoints.map(toSample);
     if (samples.length < 2) return recentPoints; // Not enough to resample
-    return resample(samples, 0.5).map(fromSample); // dt=0.5 -> 2 points per second
+    return resample(samples, RESAMPLE_STEP_SECONDS).map(fromSample);
   }
 
   const newCharts: RealtimeChartCollection = {

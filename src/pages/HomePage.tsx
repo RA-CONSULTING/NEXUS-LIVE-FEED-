@@ -89,6 +89,34 @@ const RECORDING_CHANNELS: RecordingChannel[] = [
     ],
   },
   {
+    id: 'love-frequency',
+    title: 'Love Frequency Field',
+    status: 'Operational',
+    summary: 'Multidimensional capture of physiological, electromagnetic, emotional, and consciousness love metrics.',
+    metrics: [
+      {
+        label: 'Physiological Metrics',
+        value: 'HRV · Oxytocin · Dopamine',
+        hint: 'Continuous ECG, neurochemical flux, and vagus coherence during love states.',
+      },
+      {
+        label: 'Electromagnetic Signatures',
+        value: 'Heart Field Radius · Coherence',
+        hint: 'SQUID magnetometers trace entanglement strength and resonance frequency bands.',
+      },
+      {
+        label: 'Emotional Intelligence',
+        value: 'Compassion · Empathy · Attachment',
+        hint: 'AI resonance models interpret vulnerability, forgiveness, and unity consciousness.',
+      },
+      {
+        label: 'Consciousness Love Field',
+        value: 'Unity Level 0.98',
+        hint: 'Collective resonance trackers log unconditional love coherence across the Harmonic Nexus.',
+      },
+    ],
+  },
+  {
     id: 'rf-spectrum',
     title: 'RF Spectrum',
     status: 'Operational',

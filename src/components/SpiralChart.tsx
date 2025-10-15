@@ -70,7 +70,7 @@ const SpiralChart = ({
   const gradientStops = spectrum.length ? spectrum : ["#38bdf8", "#a855f7"]; 
 
   return (
-    <svg viewBox="0 0 100 100" className={`h-36 w-full ${accent}`}>
+    <svg viewBox="0 0 100 100" className={`h-[28rem] w-full sm:h-[32rem] lg:h-[36rem] ${accent}`}>
       <defs>
         <linearGradient id={`${id}-spiral`} x1="0%" x2="100%" y1="0%" y2="100%">
           {gradientStops.map((color, index) => (

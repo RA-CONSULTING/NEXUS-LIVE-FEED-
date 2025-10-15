@@ -19,6 +19,7 @@ import RecordingSystemsTab, { type RecordingChannel } from '../components/Record
 import SensoryLayerTab from '../components/SensoryLayerTab';
 import DimensionalDialerTab from '../components/DimensionalDialerTab';
 import VisualRelayTab from '../components/VisualRelayTab';
+import LiveStreamShowcase from '../components/LiveStreamShowcase';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -29,6 +30,9 @@ type SensorStream = {
   intensity: number; // percentage 0-100
   state: SensorState;
   note: string;
+  rate: number;
+  unit: string;
+  capacity: number;
 };
 
 type ProcessingStatus = 'Nominal' | 'Balancing' | 'Calibrating';
@@ -223,7 +227,15 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 
 const HomePage = () => {
   const { audit } = useSero();
-  const { metrics: liveMetrics, sensory, processing: processingData, output, timestamp, bioProfile } = useLiveNexusData();
+  const {
+    metrics: liveMetrics,
+    sensory,
+    processing: processingData,
+    output,
+    timestamp,
+    bioProfile,
+    schumannProtocol,
+  } = useLiveNexusData();
 
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
@@ -264,6 +276,9 @@ const HomePage = () => {
         intensity: Number(normalized.toFixed(1)),
         state,
         note: NOTE_BY_SENSOR_STATE[state],
+        rate: Number(stream.rate.toFixed(1)),
+        unit: stream.unit,
+        capacity: meta.capacity,
       };
     });
   }, [sensory]);
@@ -320,62 +335,86 @@ const HomePage = () => {
   }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
-    if (!sensors.length || !processing.length) {
-      return [];
+    const summaries: MetricSummary[] = [];
+
+    const monitoringSession = schumannProtocol?.monitoringSession;
+    if (monitoringSession) {
+      const averageCoherence = monitoringSession.trendAnalysis.averageCoherence ?? 0;
+      const anomalyRate = monitoringSession.trendAnalysis.anomalyRate ?? 0;
+      const fundamentalPower =
+        monitoringSession.trendAnalysis.harmonicTrends.fundamental?.averagePower ?? 0;
+      const snapshotCount = monitoringSession.totalSnapshots;
+      const tone: MetricSummary['status'] =
+        averageCoherence >= 0.8 ? 'stable' : averageCoherence >= 0.6 ? 'watch' : 'alert';
+      const anomalyPercent = Math.round(anomalyRate * 100);
+
+      summaries.push({
+        id: 'schumann-coherence',
+        label: 'Schumann Coherence',
+        value: `${(averageCoherence * 100).toFixed(1)}%`,
+        status: tone,
+        hint: `Snapshots ${snapshotCount} · Fundamental ${(fundamentalPower * 100).toFixed(0)}% · Anomaly ${anomalyPercent}%`,
+      });
     }
-    const stableSensors = sensors.filter((stream) => stream.state === 'Stable').length;
-    const sensorIntegrity = stableSensors / sensors.length;
-    const averageIntensity = sensors.reduce((sum, stream) => sum + stream.intensity, 0) / sensors.length;
-    const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
-    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
-    const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
-    const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
-    const coherence = coherenceMetric ? coherenceMetric.value : 0;
-    const resonance = resonanceMetric ? resonanceMetric.value : 0;
-    const nexusHealth = (sensorIntegrity * 0.3) + (coherence * 0.4) + (resonance * 0.3);
+    if (sensors.length && processing.length) {
+      const stableSensors = sensors.filter((stream) => stream.state === 'Stable').length;
+      const sensorIntegrity = stableSensors / sensors.length;
+      const averageIntensity =
+        sensors.reduce((sum, stream) => sum + stream.intensity, 0) / sensors.length;
+      const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
+      const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
-    return [
-      {
-        id: 'nexus-health',
-        label: 'Nexus Health',
-        value: `${Math.round(nexusHealth * 100)}%`,
-        status: nexusHealth > 0.88 ? 'stable' : nexusHealth > 0.72 ? 'watch' : 'alert',
-        hint: 'Overall system stability and coherence'
-      },
-      {
-        id: 'sensor-integrity',
-        label: 'Sensor Integrity',
-        value: `${Math.round(sensorIntegrity * 100)}%`,
-        status: sensorIntegrity === 1 ? 'stable' : sensorIntegrity > 0.75 ? 'watch' : 'alert',
-        hint:
-          sensorIntegrity === 1
-            ? 'All stations synchronized'
-            : 'Attractors balancing minor variance',
-      },
-      {
-        id: 'field-intensity',
-        label: 'Average Field Intensity',
-        value: `${averageIntensity.toFixed(1)}%`,
-        status: averageIntensity > 86 ? 'alert' : averageIntensity > 74 ? 'watch' : 'stable',
-        hint: 'Magnetometer and ionosphere composite',
-      },
-      {
-        id: 'processing-load',
-        label: 'Processing Load',
-        value: `${Math.round(averageLoad * 100)}%`,
-        status: averageLoad > 0.86 ? 'alert' : averageLoad > 0.76 ? 'watch' : 'stable',
-        hint: 'Quantum synchronizers utilization',
-      },
-      {
-        id: 'open-commands',
-        label: 'Open Command Paths',
-        value: `${activeTransmissions}`,
-        status: activeTransmissions > 2 ? 'watch' : activeTransmissions > 0 ? 'stable' : 'stable',
-        hint: 'Sessions awaiting completion',
-      },
-    ];
-  }, [processing, sensors, transmissions, liveMetrics]);
+      const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
+      const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
+      const coherence = coherenceMetric ? coherenceMetric.value : 0;
+      const resonance = resonanceMetric ? resonanceMetric.value : 0;
+      const nexusHealth = sensorIntegrity * 0.3 + coherence * 0.4 + resonance * 0.3;
+
+      summaries.push(
+        {
+          id: 'nexus-health',
+          label: 'Nexus Health',
+          value: `${Math.round(nexusHealth * 100)}%`,
+          status: nexusHealth > 0.88 ? 'stable' : nexusHealth > 0.72 ? 'watch' : 'alert',
+          hint: 'Overall system stability and coherence',
+        },
+        {
+          id: 'sensor-integrity',
+          label: 'Sensor Integrity',
+          value: `${Math.round(sensorIntegrity * 100)}%`,
+          status: sensorIntegrity === 1 ? 'stable' : sensorIntegrity > 0.75 ? 'watch' : 'alert',
+          hint:
+            sensorIntegrity === 1
+              ? 'All stations synchronized'
+              : 'Attractors balancing minor variance',
+        },
+        {
+          id: 'field-intensity',
+          label: 'Average Field Intensity',
+          value: `${averageIntensity.toFixed(1)}%`,
+          status: averageIntensity > 86 ? 'alert' : averageIntensity > 74 ? 'watch' : 'stable',
+          hint: 'Magnetometer and ionosphere composite',
+        },
+        {
+          id: 'processing-load',
+          label: 'Processing Load',
+          value: `${Math.round(averageLoad * 100)}%`,
+          status: averageLoad > 0.86 ? 'alert' : averageLoad > 0.76 ? 'watch' : 'stable',
+          hint: 'Quantum synchronizers utilization',
+        },
+        {
+          id: 'open-commands',
+          label: 'Open Command Paths',
+          value: `${activeTransmissions}`,
+          status: activeTransmissions > 2 ? 'watch' : 'stable',
+          hint: 'Sessions awaiting completion',
+        }
+      );
+    }
+
+    return summaries;
+  }, [processing, sensors, transmissions, liveMetrics, schumannProtocol]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
     const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
@@ -769,6 +808,7 @@ const HomePage = () => {
                 </CardContent>
               </Card>
               <LiveRealtimeCharts />
+              <LiveStreamShowcase streams={sensors} updatedAt={updatedAt} />
             </TabsContent>
             <TabsContent
               value="sensory-layer"

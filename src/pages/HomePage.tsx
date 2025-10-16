@@ -21,6 +21,7 @@ import DimensionalDialerTab from '../components/DimensionalDialerTab';
 import VisualRelayTab from '../components/VisualRelayTab';
 import LiveStreamShowcase from '../components/LiveStreamShowcase';
 import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
+import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -744,6 +745,12 @@ const HomePage = () => {
                 Temporal Aura Scan
               </TabsTrigger>
               <TabsTrigger
+                value="temporal-biofield"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-400/35 data-[state=active]:via-sky-500/30 data-[state=active]:to-violet-500/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(16,185,129,0.4)]"
+              >
+                Temporal Biofield Scan
+              </TabsTrigger>
+              <TabsTrigger
                 value="celestial-calendar"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500/35 data-[state=active]:via-violet-500/35 data-[state=active]:to-amber-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(59,130,246,0.45)]"
               >
@@ -851,6 +858,15 @@ const HomePage = () => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/20 via-transparent to-sky-500/20 opacity-70" />
               <div className="relative z-10">
                 <TemporalAuraScanTab />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="temporal-biofield"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.24)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-transparent to-violet-500/20 opacity-70" />
+              <div className="relative z-10">
+                <TemporalBiofieldScanTab />
               </div>
             </TabsContent>
             <TabsContent

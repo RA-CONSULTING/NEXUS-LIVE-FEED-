@@ -542,6 +542,48 @@ const updateSchumannProtocol = (
   };
 };
 
+const SOLAR_ALIGNMENT_STATES = [
+  { threshold: 0.75, label: "Optimal" },
+  { threshold: 0.4, label: "Adjusting" },
+  { threshold: -0.15, label: "Rebalancing" },
+  { threshold: -Infinity, label: "Stormwatch" },
+] as const;
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const SYNODIC_MONTH = 29.53058867;
+
+const dayOfYear = (date: Date) => {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
+  return Math.floor((date.getTime() - start.getTime()) / MS_IN_DAY);
+};
+
+const describeSolarAlignment = (date: Date) => {
+  const day = dayOfYear(date);
+  const annualWave = Math.sin((day / 365) * Math.PI * 2);
+  const diurnalWave = Math.sin((date.getUTCHours() / 24) * Math.PI * 2) * 0.2;
+  const composite = clamp(annualWave * 0.8 + diurnalWave, -1, 1);
+
+  const state = SOLAR_ALIGNMENT_STATES.find(({ threshold }) => composite >= threshold);
+  return state?.label ?? "Adjusting";
+};
+
+const describeLunarPhase = (date: Date) => {
+  // Reference new moon: Jan 6, 2000 18:14 UTC (approx)
+  const reference = Date.UTC(2000, 0, 6, 18, 14);
+  const elapsedDays = (date.getTime() - reference) / MS_IN_DAY;
+  const phase = ((elapsedDays % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+
+  if (phase < 1) return "New Moon";
+  if (phase < 6.3826469265) return "Waxing Crescent";
+  if (phase < 8.3826469265) return "First Quarter";
+  if (phase < 13.765293853) return "Waxing Gibbous";
+  if (phase < 15.765293853) return "Full Moon";
+  if (phase < 21.1479407795) return "Waning Gibbous";
+  if (phase < 23.1479407795) return "Last Quarter";
+  if (phase < 28.530587706) return "Waning Crescent";
+  return "New Moon";
+};
+
 const createInitialSeries = (
   base: number,
   variance: number,
@@ -1220,50 +1262,39 @@ export const useResampledNexusData = (refreshMs = 200, profile: AuthUser | null 
   const nexus = useMemo(() => new NexusSystem(), []);
   const signature = signatureForProfile(profile);
   const [data, setData] = useState<RealtimeNexusData>(() => createInitialData(nexus, profile));
-  const [liveCelestialData, setLiveCelestialData] = useState({ solarAlignment: "Optimal", lunarPhase: "Waxing Gibbous" });
+  const [liveCelestialData, setLiveCelestialData] = useState(() => {
+    const now = new Date();
+    return {
+      solarAlignment: describeSolarAlignment(now),
+      lunarPhase: describeLunarPhase(now),
+    };
+  });
 
   useEffect(() => {
     setData(createInitialData(nexus, profile));
   }, [nexus, signature]);
 
   useEffect(() => {
-    const fetchSolarData = async () => {
-      try {
-        // Using NASA's DONKI API for Coronal Mass Ejection events as a proxy for solar alignment
-        const response = await fetch("https://api.nasa.gov/DONKI/CME?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&api_key=DEMO_KEY");
-        const cmeEvents = await response.json();
-        if (cmeEvents.length > 0) {
-          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Adjusting" }));
-        } else {
-          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Optimal" }));
+    const updateCelestial = () => {
+      const now = new Date();
+      const next = {
+        solarAlignment: describeSolarAlignment(now),
+        lunarPhase: describeLunarPhase(now),
+      };
+
+      setLiveCelestialData((prev) => {
+        if (
+          prev.solarAlignment === next.solarAlignment &&
+          prev.lunarPhase === next.lunarPhase
+        ) {
+          return prev;
         }
-      } catch (error) {
-        console.error("Error fetching solar data:", error);
-        setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Unknown" }));
-      }
+        return next;
+      });
     };
 
-    const fetchLunarData = async () => {
-      try {
-        // Using a simple moon phase API
-        const response = await fetch("https://api.farmsense.net/v1/moonphases/");
-        const lunarData = await response.json();
-        if (lunarData.length > 0) {
-          setLiveCelestialData(prev => ({ ...prev, lunarPhase: lunarData[0].Phase }));
-        }
-      } catch (error) {
-        console.error("Error fetching lunar data:", error);
-        setLiveCelestialData(prev => ({ ...prev, lunarPhase: "Unknown" }));
-      }
-    };
-
-    fetchSolarData();
-    fetchLunarData();
-
-    const intervalId = setInterval(() => {
-        fetchSolarData();
-        fetchLunarData();
-    }, 1000 * 60 * 60); // Fetch every hour
+    updateCelestial();
+    const intervalId = setInterval(updateCelestial, 60 * 60 * 1000);
 
     return () => clearInterval(intervalId);
   }, []);

@@ -14,6 +14,7 @@ import { Line } from 'react-chartjs-2';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { earthPalette } from '@/theme/palette';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
@@ -54,22 +55,22 @@ const baseLineOptions = (options: { min?: number; max?: number; stepSize?: numbe
   scales: {
     x: {
       ticks: {
-        color: 'rgba(226,232,240,0.65)',
+        color: 'rgba(233, 221, 207, 0.7)',
         maxTicksLimit: 8,
       },
       grid: {
-        color: 'rgba(148,163,184,0.15)',
+        color: 'rgba(214, 172, 121, 0.18)',
       },
     },
     y: {
       ticks: {
-        color: 'rgba(226,232,240,0.75)',
+        color: 'rgba(240, 230, 218, 0.82)',
         stepSize: options.stepSize,
       },
       min: options.min,
       max: options.max,
       grid: {
-        color: 'rgba(148,163,184,0.12)',
+        color: 'rgba(214, 172, 121, 0.14)',
       },
     },
   },
@@ -109,24 +110,24 @@ const TemporalAuraScanTab: React.FC = () => {
         label: 'Coherence Integrity',
         value: `${(coherenceReading * 100).toFixed(1)}%`,
         detail: `Field convergence ${formatDelta(coherenceDelta * 100, 2)} over last 30 frames.`,
-        accent: 'text-amber-200',
-        border: 'border-amber-400/30',
+        accent: 'text-[#d9b48f]',
+        border: 'border-[rgba(217,155,84,0.32)]',
       },
       {
         id: 'schumann',
         label: 'Schumann Sync',
         value: `${schumannReading.toFixed(2)} Hz`,
         detail: `Entrainment delta ${formatDelta(schumannDelta, 3)} Hz from baseline.`,
-        accent: 'text-sky-200',
-        border: 'border-sky-400/30',
+        accent: 'text-[#8faa72]',
+        border: 'border-[rgba(107,138,94,0.3)]',
       },
       {
         id: 'stability',
         label: 'Field Stability',
         value: 'Primed',
         detail: 'Temporal buffers locked · No flare indicators detected.',
-        accent: 'text-emerald-200',
-        border: 'border-emerald-400/30',
+        accent: 'text-[#c16a4a]',
+        border: 'border-[rgba(193,106,74,0.32)]',
       },
     ],
     [coherenceDelta, coherenceReading, schumannDelta, schumannReading],
@@ -177,10 +178,10 @@ const TemporalAuraScanTab: React.FC = () => {
           data: coherenceSeries,
           fill: {
             target: 'origin',
-            above: 'rgba(250, 204, 21, 0.22)',
+            above: 'rgba(217, 155, 84, 0.22)',
           },
-          borderColor: '#f59e0b',
-          backgroundColor: 'rgba(250, 204, 21, 0.22)',
+          borderColor: earthPalette.sunrise,
+          backgroundColor: 'rgba(217, 155, 84, 0.22)',
           borderWidth: 2,
           tension: 0.35,
           pointRadius: 0,
@@ -199,10 +200,10 @@ const TemporalAuraScanTab: React.FC = () => {
           data: schumannSeries,
           fill: {
             target: 'origin',
-            above: 'rgba(56, 189, 248, 0.18)',
+            above: 'rgba(107, 138, 94, 0.2)',
           },
-          borderColor: '#38bdf8',
-          backgroundColor: 'rgba(56, 189, 248, 0.18)',
+          borderColor: earthPalette.grove,
+          backgroundColor: 'rgba(107, 138, 94, 0.2)',
           borderWidth: 2,
           tension: 0.35,
           pointRadius: 0,
@@ -237,16 +238,16 @@ const TemporalAuraScanTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 rounded-3xl border border-amber-500/20 bg-slate-900/60 p-6 shadow-[0_0_45px_rgba(251,191,36,0.18)] backdrop-blur">
+      <div className="flex flex-col gap-6 rounded-3xl border border-[rgba(214,172,121,0.24)] bg-[#1f160f]/75 p-6 shadow-[0_0_45px_rgba(169,129,90,0.22)] backdrop-blur">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-2xl">
-            <Badge className="rounded-full border border-amber-400/60 bg-amber-400/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-200">
+            <Badge className="rounded-full border border-[rgba(214,172,121,0.35)] bg-[rgba(214,172,121,0.15)] px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f6e9d9]">
               Temporal Aura Scan
             </Badge>
-            <h2 className="mt-3 text-2xl font-semibold text-white">AURIS Temporal Coherence Console</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-300/85">
+            <h2 className="mt-3 text-2xl font-semibold text-[#f6f1e8]">AURIS Temporal Coherence Console</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#e6d9c9]/85">
               Live calibration stream focused on the temporal aura of{' '}
-              <span className="text-amber-200">{subjectProfile.name}</span>. Belfast node instrumentation is running a reference
+              <span className="text-[#d9b48f]">{subjectProfile.name}</span>. Belfast node instrumentation is running a reference
               sweep to verify coherence stability against the Harmonic Nexus baseline.
             </p>
           </div>
@@ -254,24 +255,24 @@ const TemporalAuraScanTab: React.FC = () => {
             {summaryMetrics.map((metric) => (
               <div
                 key={metric.id}
-                className={`rounded-2xl border ${metric.border} bg-slate-950/40 p-4 shadow-inner shadow-slate-900/40 backdrop-blur-sm`}
+                className={`rounded-2xl border ${metric.border} bg-[#21160f]/60 p-4 shadow-inner shadow-[rgba(44,33,22,0.45)] backdrop-blur-sm`}
               >
-                <span className="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400/80">{metric.label}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#c7b29d]/80">{metric.label}</span>
                 <p className={`mt-2 text-xl font-semibold ${metric.accent}`}>{metric.value}</p>
-                <p className="mt-1 text-xs text-slate-300/80">{metric.detail}</p>
+                <p className="mt-1 text-xs text-[#e6d9c9]/80">{metric.detail}</p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5">
+          <div className="space-y-4 rounded-2xl border border-[rgba(214,172,121,0.28)] bg-[rgba(214,172,121,0.12)] p-5 text-[#3a2a1b]">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-amber-200/80">Subject Profile</p>
-              <h3 className="mt-2 text-lg font-semibold text-amber-50">{subjectProfile.name}</h3>
-              <p className="text-sm text-amber-50/80">{subjectProfile.origin}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[rgba(120,85,48,0.75)]">Subject Profile</p>
+              <h3 className="mt-2 text-lg font-semibold text-[#5b402c]">{subjectProfile.name}</h3>
+              <p className="text-sm text-[rgba(91,64,44,0.85)]">{subjectProfile.origin}</p>
             </div>
-            <dl className="grid gap-4 text-sm text-amber-50/90 sm:grid-cols-2">
+            <dl className="grid gap-4 text-sm text-[#5b402c] sm:grid-cols-2">
               {[
                 { label: 'Birth Date', value: subjectProfile.birthDate },
                 { label: 'Temporal ID', value: subjectProfile.temporalId },
@@ -279,24 +280,24 @@ const TemporalAuraScanTab: React.FC = () => {
                 { label: 'Auric Tone', value: subjectProfile.auricTone },
               ].map((item) => (
                 <div key={item.label}>
-                  <dt className="text-[10px] uppercase tracking-[0.4em] text-amber-200/70">{item.label}</dt>
-                  <dd className="mt-1 text-base text-white">{item.value}</dd>
+                  <dt className="text-[10px] uppercase tracking-[0.4em] text-[rgba(120,85,48,0.7)]">{item.label}</dt>
+                  <dd className="mt-1 text-base text-[#3a2a1b]">{item.value}</dd>
                 </div>
               ))}
             </dl>
           </div>
-          <div className="space-y-4 rounded-2xl border border-slate-200/10 bg-slate-950/40 p-5">
+          <div className="space-y-4 rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/65 p-5">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400/70">Scan Timeline</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">Temporal Sweep Highlights</h3>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#c7b29d]/70">Scan Timeline</p>
+              <h3 className="mt-2 text-lg font-semibold text-[#f6f1e8]">Temporal Sweep Highlights</h3>
             </div>
             <ol className="space-y-3">
               {scanTimeline.map((entry) => (
                 <li key={entry.time} className="flex gap-3">
-                  <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.4em] text-amber-200/80">{entry.time}</span>
+                  <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#d9b48f]/85">{entry.time}</span>
                   <div>
-                    <p className="text-sm font-medium text-white">{entry.title}</p>
-                    <p className="text-xs text-slate-300/80">{entry.detail}</p>
+                    <p className="text-sm font-medium text-[#f4efe6]">{entry.title}</p>
+                    <p className="text-xs text-[#e6d9c9]/80">{entry.detail}</p>
                   </div>
                 </li>
               ))}
@@ -304,12 +305,12 @@ const TemporalAuraScanTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/10 bg-slate-950/40 p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400/70">Resonance Insights</p>
-          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-300/85">
+        <div className="rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/65 p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#c7b29d]/70">Resonance Insights</p>
+          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[#e6d9c9]/85">
             {resonanceInsights.map((insight) => (
               <li key={insight} className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-amber-300" />
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#d9b48f]" />
                 <span>{insight}</span>
               </li>
             ))}
@@ -319,10 +320,10 @@ const TemporalAuraScanTab: React.FC = () => {
 
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border border-amber-400/20 bg-slate-950/60">
+        <Card className="border border-[rgba(214,172,121,0.2)] bg-[#1f160f]/70">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-lg text-amber-100">AURIS Temporal Coherence (synthetic)</CardTitle>
-            <CardDescription className="text-slate-300/80">
+            <CardTitle className="text-lg text-[#f6f1e8]">AURIS Temporal Coherence (synthetic)</CardTitle>
+            <CardDescription className="text-[#e6d9c9]/80">
               Reference waveforms demonstrate expected coherence stability for a harmonized subject field.
             </CardDescription>
           </CardHeader>
@@ -333,10 +334,10 @@ const TemporalAuraScanTab: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-sky-400/20 bg-slate-950/60">
+        <Card className="border border-[rgba(107,138,94,0.28)] bg-[#1f160f]/70">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-lg text-sky-100">Schumann Frequency (synthetic baseline 7.83 Hz)</CardTitle>
-            <CardDescription className="text-slate-300/80">
+            <CardTitle className="text-lg text-[#e7efdf]">Schumann Frequency (synthetic baseline 7.83 Hz)</CardTitle>
+            <CardDescription className="text-[#d9c7b3]/80">
               Monitoring entrainment between terrestrial resonance and subject auric field dynamics.
             </CardDescription>
           </CardHeader>

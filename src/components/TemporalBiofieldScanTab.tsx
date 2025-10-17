@@ -12,6 +12,7 @@ import type {
   RealtimeChartPoint,
 } from '@/hooks/useResampledNexusData';
 import { cn } from '@/lib/utils';
+import { earthToneGroups, realtimeSpectrumOrder } from '@/theme/palette';
 
 type HistoryPoint = {
   timestamp: number;
@@ -68,41 +69,41 @@ const signalThemes: Record<
   { background: string; accent: string; colors: [string, string, string] }
 > = {
   cardiac: {
-    background: 'from-rose-500/20 via-red-500/10 to-transparent',
-    accent: 'text-rose-200',
-    colors: ['#fb7185', '#f472b6', '#facc15'],
+    background: 'from-[#c16a4a]/25 via-[#d99b54]/15 to-transparent',
+    accent: 'text-[#d9b48f]',
+    colors: earthToneGroups.vitality,
   },
   neural: {
-    background: 'from-indigo-500/25 via-fuchsia-500/10 to-transparent',
-    accent: 'text-indigo-200',
-    colors: ['#818cf8', '#a855f7', '#f472b6'],
+    background: 'from-[#735d4a]/25 via-[#8f5b34]/15 to-transparent',
+    accent: 'text-[#cfaf8a]',
+    colors: earthToneGroups.dusk,
   },
   aura: {
-    background: 'from-emerald-500/25 via-cyan-500/15 to-transparent',
-    accent: 'text-emerald-200',
-    colors: ['#34d399', '#22d3ee', '#60a5fa'],
+    background: 'from-[#4f6b40]/25 via-[#6b8a5e]/15 to-transparent',
+    accent: 'text-[#b7c59f]',
+    colors: earthToneGroups.horizon,
   },
   respiration: {
-    background: 'from-sky-500/20 via-emerald-500/10 to-transparent',
-    accent: 'text-sky-200',
-    colors: ['#38bdf8', '#22d3ee', '#14b8a6'],
+    background: 'from-[#6b8a5e]/25 via-[#8faa72]/15 to-transparent',
+    accent: 'text-[#a9c397]',
+    colors: earthToneGroups.resonance,
   },
   hydration: {
-    background: 'from-fuchsia-500/20 via-blue-500/10 to-transparent',
-    accent: 'text-fuchsia-200',
-    colors: ['#a855f7', '#38bdf8', '#fb7185'],
+    background: 'from-[#b9744f]/25 via-[#d9b48f]/15 to-transparent',
+    accent: 'text-[#f0e2cc]',
+    colors: earthToneGroups.flow,
   },
   chrono: {
-    background: 'from-amber-500/20 via-orange-500/10 to-transparent',
-    accent: 'text-amber-200',
-    colors: ['#facc15', '#fb923c', '#fb7185'],
+    background: 'from-[#d99b54]/25 via-[#c16a4a]/15 to-transparent',
+    accent: 'text-[#f6e5cf]',
+    colors: earthToneGroups.ember,
   },
 };
 
 const defaultTheme = {
-  background: 'from-sky-500/20 via-indigo-500/10 to-transparent',
-  accent: 'text-cyan-200',
-  colors: ['#38bdf8', '#818cf8', '#a855f7'] as [string, string, string],
+  background: 'from-[#735d4a]/20 via-[#8f5b34]/12 to-transparent',
+  accent: 'text-[#d9c7b3]',
+  colors: earthToneGroups.dusk,
 };
 
 const planetaryCharts: ChartConfig[] = [
@@ -111,18 +112,18 @@ const planetaryCharts: ChartConfig[] = [
     label: 'Magnetometer Field Strength',
     description: 'Flux density captured along the anchor-node lattice.',
     unit: 'µT',
-    background: 'from-sky-500/20 via-cyan-500/10 to-transparent',
-    accent: 'text-sky-200',
-    colors: ['#38bdf8', '#6366f1', '#a855f7'],
+    background: 'from-[#8f5b34]/22 via-[#c16a4a]/12 to-transparent',
+    accent: 'text-[#d9b48f]',
+    colors: realtimeSpectrumOrder[0],
   },
   {
     key: 'schumann',
     label: 'Schumann Resonance Envelope',
     description: 'Planetary heartbeat coupling amplitude across harmonics.',
     unit: 'Hz',
-    background: 'from-emerald-500/20 via-teal-500/10 to-transparent',
-    accent: 'text-emerald-200',
-    colors: ['#34d399', '#2dd4bf', '#22d3ee'],
+    background: 'from-[#4f6b40]/22 via-[#6b8a5e]/12 to-transparent',
+    accent: 'text-[#b7c59f]',
+    colors: realtimeSpectrumOrder[1],
     valueTransform: (value) => value,
   },
   {
@@ -130,9 +131,9 @@ const planetaryCharts: ChartConfig[] = [
     label: 'Unified Coherence Index',
     description: 'Composite field coherence derived from neural, cardiac, and Schumann alignment.',
     unit: '%',
-    background: 'from-amber-500/25 via-orange-500/10 to-transparent',
-    accent: 'text-amber-200',
-    colors: ['#facc15', '#fb7185', '#a855f7'],
+    background: 'from-[#d99b54]/25 via-[#b9744f]/12 to-transparent',
+    accent: 'text-[#f0e2cc]',
+    colors: realtimeSpectrumOrder[2],
     valueTransform: (value) => value * 100,
     valueFormatter: (value, unit) => `${value.toFixed(1)}${unit ? ` ${unit}` : ''}`,
   },
@@ -141,9 +142,9 @@ const planetaryCharts: ChartConfig[] = [
     label: 'Planetary Resonance Harmony',
     description: 'Stability ratio across the planetary resonance vectors.',
     unit: '%',
-    background: 'from-rose-500/25 via-fuchsia-500/10 to-transparent',
-    accent: 'text-rose-200',
-    colors: ['#fb7185', '#f472b6', '#60a5fa'],
+    background: 'from-[#735d4a]/25 via-[#8f5b34]/12 to-transparent',
+    accent: 'text-[#d9c7b3]',
+    colors: realtimeSpectrumOrder[3],
     valueTransform: (value) => value * 100,
     valueFormatter: (value, unit) => `${value.toFixed(1)}${unit ? ` ${unit}` : ''}`,
   },
@@ -339,7 +340,7 @@ const Section = ({
   badgeTone?: 'info' | BioSignalTone;
   children: React.ReactNode;
 }) => (
-  <Card className="group relative overflow-hidden border-white/10 bg-slate-900/65 text-slate-100 shadow-[0_0_45px_rgba(59,130,246,0.25)]">
+  <Card className="group relative overflow-hidden border-[rgba(214,172,121,0.2)] bg-[#1f160f]/75 text-[#f4efe6] shadow-[0_0_45px_rgba(169,129,90,0.24)]">
     <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/15 via-transparent to-fuchsia-500/15 opacity-60 transition duration-700 group-hover:opacity-80" />
     <div className="relative z-10">
       <CardHeader>
@@ -377,7 +378,7 @@ const BioSignalCard = ({ signal, history }: { signal: SignalDescriptor; history:
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950/70 p-5 shadow-[0_0_30px_rgba(14,165,233,0.25)] backdrop-blur',
+        'relative overflow-hidden rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-5 shadow-[0_0_30px_rgba(14,165,233,0.25)] backdrop-blur',
         `bg-gradient-to-br ${theme.background}`
       )}
     >
@@ -442,7 +443,7 @@ const TelemetryPanel = ({ config, points }: { config: ChartConfig; points: Realt
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-white/5 bg-slate-950/70 p-6 shadow-[0_0_35px_rgba(96,165,250,0.25)] backdrop-blur',
+        'relative overflow-hidden rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-6 shadow-[0_0_35px_rgba(96,165,250,0.25)] backdrop-blur',
         `bg-gradient-to-br ${config.background}`
       )}
     >
@@ -593,12 +594,12 @@ const TemporalBiofieldScanTab: React.FC = () => {
             </div>
             <p className="text-sm leading-relaxed text-slate-200/85">{bioProfile.summary}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4">
+              <div className="rounded-xl border border-[rgba(214,172,121,0.16)] bg-[#1f160f]/65 p-4">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-slate-300/60">Entangled Signature</p>
                 <p className="mt-2 text-sm font-semibold text-white">{quantumLink.entangledSignature}</p>
                 <p className="mt-1 text-xs text-slate-300/70">Temporal ID: {quantumLink.entangledTemporalId}</p>
               </div>
-              <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4">
+              <div className="rounded-xl border border-[rgba(214,172,121,0.16)] bg-[#1f160f]/65 p-4">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-slate-300/60">Observer Return Channel</p>
                 <p className="mt-2 text-sm font-semibold text-white leading-relaxed">
                   {quantumLink.observerReturnChannel}
@@ -607,12 +608,12 @@ const TemporalBiofieldScanTab: React.FC = () => {
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4 text-center">
+            <div className="rounded-xl border border-[rgba(214,172,121,0.16)] bg-[#1f160f]/65 p-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.3em] text-slate-300/60">Observer Attunement</p>
               <p className="mt-3 text-3xl font-semibold text-white">{(quantumLink.observerAttunement * 100).toFixed(1)}%</p>
               <p className="mt-2 text-xs text-slate-300/70">Harmonic alignment with operative field</p>
             </div>
-            <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4 text-center">
+            <div className="rounded-xl border border-[rgba(214,172,121,0.16)] bg-[#1f160f]/65 p-4 text-center">
               <p className="text-[11px] uppercase tracking-[0.3em] text-slate-300/60">Last Quantum Pulse</p>
               <p className="mt-3 text-2xl font-semibold text-white">{relativeTime(quantumLink.lastPulse)}</p>
               <p className="mt-2 text-xs text-slate-300/70">Pulse stream time-synced to current window</p>
@@ -666,7 +667,7 @@ const TemporalBiofieldScanTab: React.FC = () => {
         badge="Session Monitor"
       >
         <div className="grid gap-6 lg:grid-cols-[1.6fr,1fr]">
-          <div className="rounded-2xl border border-white/5 bg-slate-950/70 p-6 shadow-[0_0_35px_rgba(59,130,246,0.25)] backdrop-blur">
+          <div className="rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-6 shadow-[0_0_35px_rgba(59,130,246,0.25)] backdrop-blur">
             <h4 className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-200">
               Coherence Timeline
             </h4>
@@ -679,7 +680,7 @@ const TemporalBiofieldScanTab: React.FC = () => {
             </div>
           </div>
           <div className="space-y-4">
-            <div className="rounded-xl border border-white/5 bg-slate-950/70 p-5">
+            <div className="rounded-xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-slate-300/60">Session Duration</p>
               <p className="mt-2 text-2xl font-semibold text-white">
                 {schumannProtocol.monitoringSession.durationMinutes} minutes
@@ -688,7 +689,7 @@ const TemporalBiofieldScanTab: React.FC = () => {
                 Snapshots captured: {schumannProtocol.monitoringSession.totalSnapshots}
               </p>
             </div>
-            <div className="rounded-xl border border-white/5 bg-slate-950/70 p-5">
+            <div className="rounded-xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-slate-300/60">Coherence Metrics</p>
               <ul className="mt-2 space-y-2 text-sm text-slate-200/80">
                 <li>Average: {schumannStats.average.toFixed(1)}%</li>
@@ -696,7 +697,7 @@ const TemporalBiofieldScanTab: React.FC = () => {
                 <li>Anomaly rate: {(schumannProtocol.monitoringSession.trendAnalysis.anomalyRate * 100).toFixed(1)}%</li>
               </ul>
             </div>
-            <div className="rounded-xl border border-white/5 bg-slate-950/70 p-5">
+            <div className="rounded-xl border border-[rgba(214,172,121,0.18)] bg-[#21160f]/70 p-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-slate-300/60">Witness Statement</p>
               <p className="mt-2 text-sm font-semibold text-white">{schumannProtocol.witness.name}</p>
               <p className="text-xs text-slate-300/70">{schumannProtocol.witness.title}</p>

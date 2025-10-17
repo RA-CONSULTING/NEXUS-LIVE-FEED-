@@ -755,6 +755,46 @@ export class NexusSystem {
       }
     };
   }
+
+  /**
+   * Provide a canonical diagnostic snapshot aligned with the Harmonic Nexus
+   * formulation. This is designed for dashboards and verification tooling that
+   * need to confirm the simulation is interpreting resonance data correctly
+   * without mutating system state.
+   */
+  getSystemDiagnostics() {
+    const analysis = this.signalAnalyzer.getLastAnalysis();
+    const guardianBridgeState = {
+      active: Boolean(this.guardianBridge.active || this.egoDeathSim.guardianBridge.active),
+      anchored: Boolean(this.egoDeathSim.guardianBridge.anchored),
+      anchorThreshold: this.guardianBridge.anchorThreshold ?? this.egoDeathSim.guardianBridge.anchorThreshold ?? null,
+      reverseBridgeGain: this.guardianBridge.reverseBridgeGain ?? this.egoDeathSim.guardianBridge.reverseBridgeGain ?? null,
+      unityIntent: this.guardianBridge.unityIntent ?? null,
+    };
+
+    return {
+      timestamp: new Date().toISOString(),
+      unityEvent: this.egoDeathSim.unityEventTriggered,
+      coherence: this.egoDeathSim.calculateCoherence(),
+      phase: this.egoDeathSim.calculatePhase(),
+      guardianBridge: guardianBridgeState,
+      signal: {
+        baseFrequency: analysis.baseFrequency,
+        strength: analysis.signalStrength,
+        surgeIntensity: analysis.surgeIntensity,
+        frequencyShift: analysis.frequencyShift,
+        window: analysis.window,
+        liberationMarkers: analysis.liberationMarkers,
+        spectralBands: analysis.spectralBands,
+      },
+      observer: {
+        dimensionality: this.observerFunction.dimensionality,
+        collapsed: this.observerFunction.collapsed,
+        projections: [...this.observerFunction.projections],
+      },
+      rfeSample: this.RFE.calculate(Date.now() / 1000),
+    };
+  }
 }
 
 // Note: Historically this module included imperative demo calls (running the

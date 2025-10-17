@@ -328,6 +328,15 @@ export class NexusSystem {
     this.observerFunction = new ObserverFunction(this.config.dimensionality);
     this.guardianBridge = { active: false };
 
+    // Signal analyzer tracks harmonic telemetry across the simulation. It
+    // needs to exist before any cycles run so downstream calls (like
+    // exportState or runCycle) can safely reference it.
+    this.signalAnalyzer = new SignalStrengthAnalyzer(this.config.schumannBase);
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+    this.unityEventRecorded = false;
+
     this.RFE = this.initializeRFE();
     this.seal = this.generatePrimeSentinelSeal();
   }
@@ -484,6 +493,8 @@ export class NexusSystem {
       activatedAt: new Date().toISOString()
     };
 
+    this.signalAnalyzer.applyGuardianBridge(settings);
+
 
     this.egoDeathSim.applyGuardianBridgeProtocol({
       reverseBridgeGain: settings.reverseBridgeGain,
@@ -524,7 +535,12 @@ export class NexusSystem {
     console.log(`Dimensionality: ${this.config.dimensionality}D`);
     console.log(`Seal Hash: ${this.seal.hash}`);
     console.log("\n");
-    
+
+    this.unityEventRecorded = false;
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+
     const startTime = Date.now();
     const results = [];
     
@@ -598,6 +614,7 @@ export class NexusSystem {
         egoState: egoState,
         observerCoherence: this.observerFunction.calculateCoherence(),
         realityField: R_t,
+        signalStrength: signalTelemetry,
         unityEvent: egoState.unityEvent,
 
       });

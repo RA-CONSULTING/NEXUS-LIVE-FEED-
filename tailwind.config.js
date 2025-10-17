@@ -8,11 +8,11 @@ module.exports = {
     extend: {
       backgroundImage: {
         "cosmic-mesh":
-          "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.35), transparent 45%), radial-gradient(circle at 80% 30%, rgba(236,72,153,0.25), transparent 55%), radial-gradient(circle at 40% 80%, rgba(168,85,247,0.25), transparent 52%)",
+          "radial-gradient(circle at 20% 20%, rgba(166,124,82,0.35), transparent 45%), radial-gradient(circle at 80% 30%, rgba(79,107,64,0.28), transparent 55%), radial-gradient(circle at 40% 80%, rgba(217,180,143,0.25), transparent 52%)",
       },
       boxShadow: {
-        cosmic: "0 0 80px rgba(59,130,246,0.35)",
-        nebula: "0 0 120px rgba(236,72,153,0.25)",
+        cosmic: "0 0 80px rgba(140,98,57,0.25)",
+        nebula: "0 0 120px rgba(79,107,64,0.22)",
       },
       animation: {
         "cosmic-drift": "cosmic-drift 26s ease-in-out infinite",

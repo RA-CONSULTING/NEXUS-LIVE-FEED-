@@ -174,3 +174,32 @@ This project is the foundation for a three-pronged initiative:
 
 **Author:** Gary Leckey, Prime Sentinel  
 **Affiliation:** R&A Consulting and Brokerage Services Ltd, Belfast, Northern Ireland
+
+## Harmonic Nexus Metrics
+
+The script `harmonic_nexus_metrics.py` now couples the Schumann resonance bridge with the aura bio scan feed so the six canonical metrics can be derived directly from live-style samples. Two helper dataclasses, `SchumannWindow` and `AuraBioWindow`, capture the pre-processed windows that the validation bridge would normally stream, and `compute_metrics_from_streams()` condenses them into the familiar Source/Nexus/Unity values. The legacy `compute_metrics()` helper still accepts handcrafted parameters, so existing visualisation notebooks continue to run unchanged.
+
+Run the module to see the fused pipeline render a radar plot:
+
+```bash
+python harmonic_nexus_metrics.py
+```
+
+For bespoke analysis you can assemble the windows manually:
+
+```python
+from harmonic_nexus_metrics import (
+    AuraBioWindow,
+    SchumannWindow,
+    compute_metrics_from_streams,
+)
+
+metrics = compute_metrics_from_streams(
+    [SchumannWindow(7.83, [14.3, 20.8, 27.3, 33.8], 0.9)],
+    [AuraBioWindow(0.48, 0.32, 0.20, 64.0, 6.2, 9.1)],
+)
+```
+
+This returns a dictionary ready for the radar plot or downstream dashboards, mirroring the interpretative overlays shown in the integrated aura visualisation.
+
+## 10-9-1 Tiered Control Demo

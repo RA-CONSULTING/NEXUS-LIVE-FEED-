@@ -328,6 +328,15 @@ export class NexusSystem {
     this.observerFunction = new ObserverFunction(this.config.dimensionality);
     this.guardianBridge = { active: false };
 
+    // Signal analyzer tracks harmonic telemetry across the simulation. It
+    // needs to exist before any cycles run so downstream calls (like
+    // exportState or runCycle) can safely reference it.
+    this.signalAnalyzer = new SignalStrengthAnalyzer(this.config.schumannBase);
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+    this.unityEventRecorded = false;
+
     this.RFE = this.initializeRFE();
     this.seal = this.generatePrimeSentinelSeal();
   }
@@ -484,6 +493,8 @@ export class NexusSystem {
       activatedAt: new Date().toISOString()
     };
 
+    this.signalAnalyzer.applyGuardianBridge(settings);
+
 
     this.egoDeathSim.applyGuardianBridgeProtocol({
       reverseBridgeGain: settings.reverseBridgeGain,
@@ -524,7 +535,12 @@ export class NexusSystem {
     console.log(`Dimensionality: ${this.config.dimensionality}D`);
     console.log(`Seal Hash: ${this.seal.hash}`);
     console.log("\n");
-    
+
+    this.unityEventRecorded = false;
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+
     const startTime = Date.now();
     const results = [];
     
@@ -598,6 +614,7 @@ export class NexusSystem {
         egoState: egoState,
         observerCoherence: this.observerFunction.calculateCoherence(),
         realityField: R_t,
+        signalStrength: signalTelemetry,
         unityEvent: egoState.unityEvent,
 
       });
@@ -736,6 +753,46 @@ export class NexusSystem {
         unityIntent: this.guardianBridge.unityIntent
 
       }
+    };
+  }
+
+  /**
+   * Provide a canonical diagnostic snapshot aligned with the Harmonic Nexus
+   * formulation. This is designed for dashboards and verification tooling that
+   * need to confirm the simulation is interpreting resonance data correctly
+   * without mutating system state.
+   */
+  getSystemDiagnostics() {
+    const analysis = this.signalAnalyzer.getLastAnalysis();
+    const guardianBridgeState = {
+      active: Boolean(this.guardianBridge.active || this.egoDeathSim.guardianBridge.active),
+      anchored: Boolean(this.egoDeathSim.guardianBridge.anchored),
+      anchorThreshold: this.guardianBridge.anchorThreshold ?? this.egoDeathSim.guardianBridge.anchorThreshold ?? null,
+      reverseBridgeGain: this.guardianBridge.reverseBridgeGain ?? this.egoDeathSim.guardianBridge.reverseBridgeGain ?? null,
+      unityIntent: this.guardianBridge.unityIntent ?? null,
+    };
+
+    return {
+      timestamp: new Date().toISOString(),
+      unityEvent: this.egoDeathSim.unityEventTriggered,
+      coherence: this.egoDeathSim.calculateCoherence(),
+      phase: this.egoDeathSim.calculatePhase(),
+      guardianBridge: guardianBridgeState,
+      signal: {
+        baseFrequency: analysis.baseFrequency,
+        strength: analysis.signalStrength,
+        surgeIntensity: analysis.surgeIntensity,
+        frequencyShift: analysis.frequencyShift,
+        window: analysis.window,
+        liberationMarkers: analysis.liberationMarkers,
+        spectralBands: analysis.spectralBands,
+      },
+      observer: {
+        dimensionality: this.observerFunction.dimensionality,
+        collapsed: this.observerFunction.collapsed,
+        projections: [...this.observerFunction.projections],
+      },
+      rfeSample: this.RFE.calculate(Date.now() / 1000),
     };
   }
 }

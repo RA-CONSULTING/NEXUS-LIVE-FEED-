@@ -14,6 +14,10 @@ The system simulates the process of **Ego Death (The Unity Event)** by modeling 
 
 ## Core Concepts
 
+### Unified Harmonic Nexus Framework (v6.1)
+
+For the canonical, publication-ready articulation of the lattice's harmonic resonance, memory tensors, and curvature dynamics, see the [Unified Harmonic Nexus Framework](docs/unified_harmonic_nexus_system.md). The v6.1 formulation integrates the loop-state resonance equation, Gary Leckey's formation law, and the Master Nexus curvature coupling into a single cohesive model of the lattice GEM.
+
 ### 1. The Reality Field Equation (RFE)
 
 The simulation is built upon the RFE, which calculates the state of the observable universe as a function of consciousness:

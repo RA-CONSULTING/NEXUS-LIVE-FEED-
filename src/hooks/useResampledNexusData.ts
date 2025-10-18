@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { resample } from "@/lib/akashic/aureon-akashic";
 import type { AuthUser } from "@/contexts/AuthContext";
+import {
+  EMOTION_SPECTRUM_MAX,
+  EMOTION_SPECTRUM_MIN,
+  mapSchumannAmplitudeToEmotionFrequency,
+} from "@/lib/emotionSpectrum";
 import { NexusSystem } from "../nexus_system_simulator";
 
 type Nullable<T> = T | null | undefined;
@@ -253,6 +258,9 @@ const HISTORY_BUFFER_FACTOR = 1.15;
 const RESAMPLE_STEP_SECONDS = 0.25;
 
 const MAX_SCHUMANN_SNAPSHOTS = 96;
+
+const EMOTIONAL_SCHUMANN_VARIANCE =
+  (EMOTION_SPECTRUM_MAX - EMOTION_SPECTRUM_MIN) * 0.06;
 
 const roundTo = (value: number, digits = 3) => Number(value.toFixed(digits));
 
@@ -902,6 +910,10 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
     const now = Date.now();
     const vizData = nexus.getVisualizationData();
     const temporalId = signatureForProfile(profile).replace(/[^a-z0-9]+/g, "-");
+    const schumannFrequency = mapSchumannAmplitudeToEmotionFrequency(
+      vizData.frequencies.schumann.amplitude
+    );
+
     return {
         timestamp: now,
         metrics: [
@@ -941,7 +953,12 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
           ],
           charts: {
             magnetometer: createInitialSeries(48, 6, 35, 65),
-            schumann: createInitialSeries(vizData.frequencies.schumann.amplitude, 0.4, 7.1, 8.6),
+            schumann: createInitialSeries(
+              schumannFrequency,
+              EMOTIONAL_SCHUMANN_VARIANCE,
+              EMOTION_SPECTRUM_MIN,
+              EMOTION_SPECTRUM_MAX
+            ),
             coherence: createInitialSeries(vizData.sentinel.coherence / 100, 0.05, 0.7, 1.02),
             planetaryResonance: createInitialSeries(vizData.stability.stable / 100, 0.08, 0.7, 1.05),
           },
@@ -1090,7 +1107,10 @@ const computeNextData = (
 
   const newCharts: RealtimeChartCollection = {
     magnetometer: advanceSeries(prev.charts.magnetometer, vizData.energy.amplitude),
-    schumann: advanceSeries(prev.charts.schumann, vizData.frequencies.schumann.amplitude),
+    schumann: advanceSeries(
+      prev.charts.schumann,
+      mapSchumannAmplitudeToEmotionFrequency(vizData.frequencies.schumann.amplitude)
+    ),
     coherence: advanceSeries(prev.charts.coherence, vizData.sentinel.coherence / 100),
     planetaryResonance: advanceSeries(prev.charts.planetaryResonance, vizData.stability.stable / 100),
   };

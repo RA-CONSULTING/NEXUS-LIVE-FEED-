@@ -17,20 +17,16 @@ import MandalaOverlay from "./MandalaOverlay";
 import SpiralChart from "./SpiralChart";
 import QuantumSpectrogramPanel from "./QuantumSpectrogramPanel";
 import { ArrowRightLeft } from "lucide-react"; // Import the ArrowRightLeft icon
+import {
+  EMOTION_FREQUENCY_TICKS,
+  EMOTION_SPECTRUM_MAX,
+  EMOTION_SPECTRUM_MIN,
+  EMOTION_ZONES,
+  emotionZoneForFrequency,
+  formatFrequency,
+} from "@/lib/emotionSpectrum";
+import type { EmotionZone } from "@/lib/emotionSpectrum";
 import { earthPalette, realtimeSpectrumOrder } from "@/theme/palette";
-
-const SCHUMANN_REFERENCE_MODES = [
-  { id: "mode-1", label: "Mode 1 · Fundamental", frequency: 7.83 },
-  { id: "mode-2", label: "Mode 2", frequency: 14.2 },
-  { id: "mode-3", label: "Mode 3", frequency: 20.03 },
-  { id: "mode-4", label: "Mode 4", frequency: 25.9 },
-  { id: "mode-5", label: "Mode 5", frequency: 32.0 },
-  { id: "mode-6", label: "Mode 6", frequency: 38.5 },
-  { id: "mode-7", label: "Mode 7", frequency: 44.5 },
-  { id: "mode-8", label: "Mode 8", frequency: 59.9 },
-] as const;
-
-const EARTH_CAVITY_FUNDAMENTAL = SCHUMANN_REFERENCE_MODES[0].frequency;
 
 const chartConfigs: Array<{
   key: keyof RealtimeChartCollection;
@@ -40,6 +36,9 @@ const chartConfigs: Array<{
   glow: string;
   spectrum: string[];
   aurora: string;
+  valueDomain?: { min: number; max: number };
+  emotionZones?: EmotionZone[];
+  valueTicks?: number[];
 }> = [
   {
     key: "magnetometer",
@@ -58,6 +57,9 @@ const chartConfigs: Array<{
     glow: "from-[#4FB6FF]/35 via-[#57E3FF]/25 to-transparent",
     spectrum: realtimeSpectrumOrder[1],
     aurora: "linear-gradient(140deg, rgba(63,163,255,0.28) 0%, rgba(95,205,255,0.24) 40%, rgba(149,219,255,0.26) 100%)",
+    valueDomain: { min: EMOTION_SPECTRUM_MIN, max: EMOTION_SPECTRUM_MAX },
+    emotionZones: EMOTION_ZONES,
+    valueTicks: EMOTION_FREQUENCY_TICKS,
   },
   {
     key: "coherence",
@@ -182,12 +184,22 @@ const RealtimeLineChart = ({
   unit,
   accent,
   spectrum,
+  valueDomain,
+  emotionZones,
+  valueTicks,
+  highlightColor,
+  activeZoneId,
 }: {
   id: string;
   points: RealtimeChartPoint[];
   unit: string;
   accent: string;
   spectrum: string[];
+  valueDomain?: { min: number; max: number };
+  emotionZones?: EmotionZone[];
+  valueTicks?: number[];
+  highlightColor?: string;
+  activeZoneId?: string;
 }) => {
   const finitePoints = points.filter((point) => Number.isFinite(point.value));
 
@@ -202,27 +214,73 @@ const RealtimeLineChart = ({
   const values = finitePoints.map((point) => point.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
-  const range = max - min || 1;
+
+  const domainMin = valueDomain?.min ?? min;
+  const domainMax = valueDomain?.max ?? max;
+  const domainRange = domainMax - domainMin || 1;
+
+  const mapValueToY = (value: number) => {
+    const clamped = Math.min(domainMax, Math.max(domainMin, value));
+    return 100 - ((clamped - domainMin) / domainRange) * 100;
+  };
+
   const coordinates = finitePoints.map((point, index) => {
     const x = (index / Math.max(finitePoints.length - 1, 1)) * 100;
-    const y = 100 - ((point.value - min) / range) * 100;
+    const y = mapValueToY(point.value);
     return { x, y };
   });
+
   const polyline = coordinates.map(({ x, y }) => `${x},${y}`).join(" ");
   const smoothPath = buildSmoothPath(coordinates);
   const areaPath = smoothPath
     ? `${smoothPath} L ${coordinates[coordinates.length - 1].x},100 L ${coordinates[0].x},100 Z`
     : `M 0,${coordinates[0]?.y ?? 100} ${polyline} L ${coordinates.at(-1)?.x ?? 100},100 L 0,100 Z`;
+
   const fillId = `${id}-fill`;
   const strokeId = `${id}-stroke`;
   const gridId = `${id}-grid`;
   const glowId = `${id}-glow`;
   const haloId = `${id}-halo`;
+
   const highlight = coordinates.at(-1) ?? { x: 100, y: 50 };
   const gradientStops = spectrum.length ? spectrum : ["#38bdf8", "#a855f7"];
   const markerStep = Math.max(1, Math.floor(coordinates.length / 48));
-  const horizontalGuides = Array.from({ length: 4 }, (_, index) => ((index + 1) / 5) * 100);
+
   const verticalGuides = Array.from({ length: 5 }, (_, index) => ((index + 1) / 6) * 100);
+
+  const tickPositions =
+    valueTicks
+      ?.filter((tick) => tick >= domainMin && tick <= domainMax)
+      .map((value) => ({ value, y: mapValueToY(value) })) ?? [];
+
+  const horizontalGuides =
+    tickPositions.length > 0
+      ? tickPositions.map((tick) => tick.y)
+      : Array.from({ length: 4 }, (_, index) => ((index + 1) / 5) * 100);
+
+  const axisTicks =
+    tickPositions.length > 0
+      ? tickPositions.filter((tick, index, array) => {
+          if (tick.value === domainMin || tick.value === domainMax) {
+            return true;
+          }
+          const matchesZone =
+            emotionZones?.some((zone) =>
+              zone.frequencies.some((frequency) => Math.abs(frequency - tick.value) < 0.1)
+            ) ?? false;
+          if (matchesZone) {
+            return true;
+          }
+          if (index === 0 || index === array.length - 1) {
+            return true;
+          }
+          const prev = array[index - 1];
+          return Math.abs(prev.y - tick.y) > 3.2;
+        })
+      : [];
+
+  const highlightFill = highlightColor ?? gradientStops[gradientStops.length - 1];
+  const highlightStroke = valueDomain ? "rgba(15,23,42,0.65)" : "rgba(255,255,255,0.55)";
 
   return (
     <div className="space-y-6">
@@ -277,13 +335,52 @@ const RealtimeLineChart = ({
           </linearGradient>
         </defs>
         <rect x="0" y="0" width="100" height="100" fill={`url(#${haloId})`} />
+        {emotionZones?.map((zone, index) => {
+          const yTop = mapValueToY(zone.range[1]);
+          const yBottom = mapValueToY(zone.range[0]);
+          const height = Math.max(0, yBottom - yTop);
+          if (height <= 0) {
+            return null;
+          }
+          const isActiveZone = zone.id === activeZoneId;
+          return (
+            <g key={`${id}-${zone.id}`}>
+              <rect
+                x={0}
+                y={yTop}
+                width={96}
+                height={height}
+                fill={zone.color}
+                opacity={isActiveZone ? 0.22 : 0.12}
+              />
+              <rect
+                x={0}
+                y={yTop}
+                width={1.2}
+                height={height}
+                fill={zone.color}
+                opacity={isActiveZone ? 0.8 : 0.45}
+              />
+              {index > 0 ? (
+                <line
+                  x1={0}
+                  x2={96}
+                  y1={yTop}
+                  y2={yTop}
+                  stroke="rgba(248,250,252,0.14)"
+                  strokeWidth={0.18}
+                />
+              ) : null}
+            </g>
+          );
+        })}
         <rect x="0" y="0" width="100" height="100" fill={`url(#${gridId})`} opacity={0.45} />
         {horizontalGuides.map((y) => (
           <line
             key={`h-${y}`}
             x1="0"
             y1={y}
-            x2="100"
+            x2="96"
             y2={y}
             stroke="rgba(99,82,221,0.2)"
             strokeWidth={0.2}
@@ -335,6 +432,31 @@ const RealtimeLineChart = ({
             filter={`url(#${glowId})`}
           />
         )}
+        {valueDomain ? (
+          <line
+            x1={96}
+            y1={0}
+            x2={96}
+            y2={100}
+            stroke="rgba(255,255,255,0.24)"
+            strokeWidth={0.35}
+          />
+        ) : null}
+        {axisTicks.map(({ value, y }) => (
+          <g key={`${id}-tick-${value}`}>
+            <line x1={96} x2={100} y1={y} y2={y} stroke="rgba(255,255,255,0.35)" strokeWidth={0.35} />
+            <text
+              x={95}
+              y={y}
+              textAnchor="end"
+              alignmentBaseline="middle"
+              fontSize={3.2}
+              fill="rgba(231,239,223,0.85)"
+            >
+              {formatFrequency(value)}
+            </text>
+          </g>
+        ))}
         {coordinates.map((point, index) =>
           index % markerStep === 0 ? (
             <circle
@@ -352,8 +474,8 @@ const RealtimeLineChart = ({
           cx={highlight.x}
           cy={highlight.y}
           r={1.9}
-          fill={gradientStops[gradientStops.length - 1]}
-          stroke="rgba(255,255,255,0.55)"
+          fill={highlightFill}
+          stroke={highlightStroke}
           strokeWidth={0.65}
         />
       </svg>
@@ -371,99 +493,99 @@ const RealtimeLineChart = ({
   );
 };
 
-const SchumannModeReference = ({
-  fundamental,
-  stdev,
-  windowSeconds,
+const EmotionSpectrumLegend = ({
+  activeZoneId,
   sampleCount,
+  windowSeconds,
 }: {
-  fundamental: number;
-  stdev: number;
-  windowSeconds: number;
+  activeZoneId?: string;
   sampleCount: number;
+  windowSeconds: number;
 }) => {
-  const deltaFromReference = fundamental - EARTH_CAVITY_FUNDAMENTAL;
-  const adjustedModes = SCHUMANN_REFERENCE_MODES.map((mode, index) => {
-    const observed = mode.frequency + deltaFromReference;
-    const previous = SCHUMANN_REFERENCE_MODES[index - 1];
-    const observedPrevious = previous ? previous.frequency + deltaFromReference : null;
-    const spacing = observedPrevious != null ? observed - observedPrevious : null;
-    return {
-      ...mode,
-      observed,
-      deviation: observed - mode.frequency,
-      spacing,
-    };
-  });
-
-  const qualityFactor = stdev > 0 ? fundamental / (2 * stdev) : null;
   const windowLabel = windowSeconds > 0 ? `${Math.round(windowSeconds)} s` : "Realtime";
+  const activeZone = activeZoneId
+    ? EMOTION_ZONES.find((zone) => zone.id === activeZoneId) ?? null
+    : null;
 
   return (
-    <div className="grid gap-6 rounded-2xl border border-[rgba(99,82,221,0.24)] bg-[#09102a]/75 p-6 text-left lg:grid-cols-[1.1fr_1fr]">
+    <div className="grid gap-6 rounded-2xl border border-[rgba(99,82,221,0.24)] bg-[#09102a]/75 p-6 text-left lg:grid-cols-[1.05fr_1fr]">
       <div className="space-y-4">
         <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#8DA2FF]">
-          Schumann Resonance Context
+          Emotion Frequency Reference
         </p>
         <p className="text-sm leading-relaxed text-[#E8F1FF]/90">
-          Lightning strikes excite standing waves within the Earth–ionosphere cavity. The fundamental mode is expected at
-          {" "}
-          {EARTH_CAVITY_FUNDAMENTAL.toFixed(2)} Hz, with higher modes spaced by roughly 6.5–8 Hz. Displayed values apply the
-          measured deviation from the fundamental across each overtone so the physics behind the visualization remains
-          explicit.
+          The Schumann resonance stream is mapped across the Rainbow Bridge spectrum (100–1150 Hz). Each color band encodes an
+          emotional–matter state so the live trace immediately shows whether we are grounded in fear, rising through hope, or
+          radiating awe.
         </p>
-        <div className="grid gap-2 text-[11px] text-[#A7B5FF]/80 sm:grid-cols-2">
+        <div className="grid gap-3 text-[11px] text-[#A7B5FF]/85 sm:grid-cols-2">
           <div>
             <span className="font-semibold uppercase tracking-[0.3em] text-[#8DA2FF]">Observation Window</span>
             <p className="font-mono text-base text-[#E8F1FF]">{windowLabel}</p>
             <p>Samples analysed: {sampleCount}</p>
           </div>
           <div>
-            <span className="font-semibold uppercase tracking-[0.3em] text-[#8DA2FF]">Quality Factor</span>
-            <p className="font-mono text-base text-[#E8F1FF]">
-              {qualityFactor ? qualityFactor.toFixed(2) : "—"}
+            <span className="font-semibold uppercase tracking-[0.3em] text-[#8DA2FF]">Dominant Resonance</span>
+            <p className="font-mono text-base text-[#E8F1FF]">{activeZone ? activeZone.label : "—"}</p>
+            <p>
+              {activeZone
+                ? `${activeZone.frequencyLabel} • ${activeZone.element}`
+                : "Awaiting spectral lock"}
             </p>
-            <p>Approximate cavity sharpness (f₀ / 2σ).</p>
           </div>
         </div>
         <p className="text-[11px] text-[#A7B5FF]/80">
-          The spectral width of each mode is typically ~20% of its center frequency; compare the observed spread above to
-          confirm the resonance is physical rather than decorative.
+          Use the legend to translate peaks into emotional resonance. As the trace climbs, we pass from dense survival tones
+          (anger, sadness) into expansive coherence (joy, compassion, wonder, awe).
         </p>
       </div>
       <div className="overflow-hidden rounded-xl border border-[rgba(99,82,221,0.2)] bg-[#101c46]/80">
         <table className="w-full border-collapse text-left text-sm">
           <thead className="bg-[rgba(99,82,221,0.16)] text-[11px] uppercase tracking-[0.28em] text-[#8DA2FF]">
             <tr>
-              <th className="px-4 py-3">Mode</th>
-              <th className="px-4 py-3 text-right">Reference (Hz)</th>
-              <th className="px-4 py-3 text-right">Adjusted (Hz)</th>
-              <th className="px-4 py-3 text-right">Δ (Hz)</th>
-              <th className="px-4 py-3 text-right">Spacing (Hz)</th>
+              <th className="px-4 py-3">Emotion</th>
+              <th className="px-4 py-3 text-right">Signature</th>
+              <th className="px-4 py-3 text-right">Band</th>
+              <th className="px-4 py-3 text-right">Element</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[rgba(99,82,221,0.18)] text-[#E8F1FF]/90">
-            {adjustedModes.map(({ id, label, frequency, observed, deviation, spacing }) => (
-              <tr key={id}>
-                <td className="px-4 py-3 font-semibold uppercase tracking-[0.18em] text-[#A7B5FF]">{label}</td>
-                <td className="px-4 py-3 text-right font-mono">{frequency.toFixed(2)}</td>
-                <td className="px-4 py-3 text-right font-mono">{observed.toFixed(2)}</td>
-                <td className="px-4 py-3 text-right font-mono text-[#57E3FF]">
-                  {deviation >= 0 ? "+" : ""}
-                  {deviation.toFixed(2)}
-                </td>
-                <td className="px-4 py-3 text-right font-mono text-[#A7B5FF]">
-                  {spacing != null ? spacing.toFixed(2) : "—"}
-                </td>
-              </tr>
-            ))}
+            {EMOTION_ZONES.map((zone) => {
+              const isActive = zone.id === activeZoneId;
+              const rowStyle = isActive ? { backgroundColor: `${zone.color}26` } : undefined;
+              const swatchShadow =
+                zone.id === "awe"
+                  ? "0 0 12px rgba(248,250,252,0.55)"
+                  : `0 0 12px ${zone.color}55`;
+              return (
+                <tr
+                  key={zone.id}
+                  className={cn(
+                    "transition-colors",
+                    "hover:bg-[rgba(91,139,255,0.08)]",
+                    isActive ? "ring-1 ring-[rgba(91,139,255,0.35)]" : undefined
+                  )}
+                  style={rowStyle}
+                >
+                  <td className="flex items-center gap-3 px-4 py-3 font-semibold uppercase tracking-[0.18em] text-[#A7B5FF]">
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: zone.color, boxShadow: swatchShadow }}
+                    />
+                    {zone.label}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">{zone.frequencyLabel}</td>
+                  <td className="px-4 py-3 text-right font-mono text-[#A7B5FF]">{zone.rangeLabel}</td>
+                  <td className="px-4 py-3 text-right text-[#C8D4FF]/80">{zone.element}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
     </div>
   );
 };
-
 const LiveRealtimeCharts = () => {
   const { charts } = useLiveNexusData();
   const [chartViews, setChartViews] = useState<Record<string, "line" | "spiral">>({});
@@ -477,7 +599,18 @@ const LiveRealtimeCharts = () => {
 
   return (
     <div className="flex flex-col gap-16">
-      {chartConfigs.map(({ key, label, unit, accent, glow, spectrum, aurora }) => {
+      {chartConfigs.map(({
+        key,
+        label,
+        unit,
+        accent,
+        glow,
+        spectrum,
+        aurora,
+        valueDomain,
+        emotionZones,
+        valueTicks,
+      }) => {
         const rawPoints = charts[key] ?? [];
         const points = rawPoints.filter((point) => Number.isFinite(point.value));
         const delta =
@@ -496,6 +629,11 @@ const LiveRealtimeCharts = () => {
         const statistics = computeStatistics(points);
         const hasSignal = points.length > 0;
         const isSchumann = key === "schumann";
+        const activeZone =
+          isSchumann && hasSignal
+            ? emotionZoneForFrequency(latest?.value ?? EMOTION_SPECTRUM_MIN)
+            : null;
+        const highlightColor = activeZone?.color;
 
         const volatilityRatio =
           statistics.average !== 0 ? Math.min((statistics.stdev / Math.abs(statistics.average)) * 100, 999) : 0;
@@ -523,23 +661,21 @@ const LiveRealtimeCharts = () => {
         ] satisfies Array<{ label: string; value: string; hint: string }>;
 
         if (isSchumann) {
-          const deltaFromReference = hasSignal ? (latest?.value ?? Number.NaN) - EARTH_CAVITY_FUNDAMENTAL : Number.NaN;
-          const qualityFactor = statistics.stdev > 0 ? (latest?.value ?? 0) / (2 * statistics.stdev) : Number.NaN;
           detailStats.push({
-            label: "Δ vs 7.83 Hz",
-            value: Number.isFinite(deltaFromReference) ? `${deltaFromReference >= 0 ? "+" : ""}${deltaFromReference.toFixed(2)} Hz` : "—",
-            hint: Number.isFinite(qualityFactor)
-              ? `Quality factor ≈ ${(qualityFactor as number).toFixed(2)} • Expected spacing 6.5–8 Hz`
-              : "Collect more samples to resolve Q-factor",
+            label: "Emotional Band",
+            value: activeZone ? activeZone.label : "—",
+            hint: activeZone
+              ? `${activeZone.frequencyLabel} • ${activeZone.rangeLabel} • ${activeZone.element}`
+              : "Awaiting emotional frequency lock",
           });
         }
 
         const detailGridColumns = isSchumann ? "md:grid-cols-4" : "md:grid-cols-3";
         const spreadHint = isSchumann
-          ? "Std. deviation approximates cavity bandwidth (≈20% spectral width)."
+          ? "Std. deviation shows how broadly the resonance spreads across emotional bands."
           : "Std. deviation of readings across the window";
         const sampleHint = isSchumann
-          ? "Lightning-excited resonance samples captured this window"
+          ? "Emotion-coded Schumann samples captured in this window"
           : "Resampled observations in current window";
 
         const badgeLabel = delta >= 0 ? "Δ ≥ 0" : "Δ < 0";
@@ -598,7 +734,18 @@ const LiveRealtimeCharts = () => {
                 </div>
               </div>
               {currentView === "line" ? (
-                <RealtimeLineChart id={key} points={points} unit={unit} accent={accent} spectrum={spectrum} />
+                <RealtimeLineChart
+                  id={key}
+                  points={points}
+                  unit={unit}
+                  accent={accent}
+                  spectrum={spectrum}
+                  valueDomain={valueDomain}
+                  emotionZones={emotionZones}
+                  valueTicks={valueTicks}
+                  highlightColor={highlightColor}
+                  activeZoneId={activeZone?.id}
+                />
               ) : (
                 <SpiralChart id={key} points={points} spectrum={spectrum} accent={accent} />
               )}
@@ -630,12 +777,11 @@ const LiveRealtimeCharts = () => {
                   <p className="text-[11px] text-[#A7B5FF]/75">{spreadHint}</p>
                 </div>
               </div>
-              {isSchumann && hasSignal ? (
-                <SchumannModeReference
-                  fundamental={latest?.value ?? EARTH_CAVITY_FUNDAMENTAL}
-                  stdev={statistics.stdev}
-                  windowSeconds={statistics.windowSeconds}
+              {isSchumann ? (
+                <EmotionSpectrumLegend
+                  activeZoneId={activeZone?.id}
                   sampleCount={points.length}
+                  windowSeconds={statistics.windowSeconds}
                 />
               ) : null}
             </CardContent>

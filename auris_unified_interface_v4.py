@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
+import importlib
 import json
 import os
 from pathlib import Path
@@ -28,6 +29,16 @@ DATA_DIR = Path("data")
 BIOSCAN_DIR = DATA_DIR / "bioscans"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BIOSCAN_DIR.mkdir(parents=True, exist_ok=True)
+
+_requests_spec = importlib.util.find_spec("requests")
+if _requests_spec:
+    import requests  # type: ignore
+else:  # pragma: no cover - requests is optional at runtime
+    requests = None  # type: ignore
+
+MESH_SERVICE_BASE_URL = os.environ.get("MESH_SERVICE_BASE_URL") or os.environ.get(
+    "AURIS_MESH_BASE_URL"
+) or os.environ.get("AURIS_BACKEND_BASE_URL")
 
 
 def clip01(value: float) -> float:
@@ -270,6 +281,11 @@ async def ingest_bioscan(
     os.makedirs(BIOSCAN_DIR, exist_ok=True)
     session_id = context.get("session_id") or "sess-" + _dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     context = {**context, "session_id": session_id}
+    raw_anchor = context.get("anchor_id") or data.get("anchor_id")
+    if raw_anchor is None:
+        raw_anchor = "gary.leckey"
+    anchor_id = str(raw_anchor).strip() or "gary.leckey"
+    context["anchor_id"] = anchor_id
     record = {
         "session_id": session_id,
         "mode": mode,
@@ -281,6 +297,43 @@ async def ingest_bioscan(
         "user": data.get("user"),
         "context": context,
     }
+    mesh_plan: Dict[str, Any]
+    if requests is None:
+        mesh_plan = {"error": "mesh_requests_unavailable"}
+    else:
+        mesh_base_url = (context.get("mesh_base_url") or MESH_SERVICE_BASE_URL or "").rstrip("/")
+        if not mesh_base_url:
+            mesh_plan = {"error": "mesh_service_unconfigured"}
+        else:
+            mesh_payload = {
+                "anchor_id": anchor_id,
+                "context": {
+                    "bci": bci,
+                    "layer_scores": layers,
+                    "mode": mode,
+                    "timestamp_utc": context.get("timestamp_utc"),
+                },
+            }
+            try:
+                response = requests.post(
+                    f"{mesh_base_url}/mesh/decide",
+                    json=mesh_payload,
+                    timeout=5.0,
+                )
+                response.raise_for_status()
+                mesh_plan = response.json()
+            except Exception:
+                mesh_plan = {"error": "mesh_decide_failed"}
+            else:
+                try:
+                    requests.post(
+                        f"{mesh_base_url}/mesh/execute",
+                        json={"anchor_id": anchor_id, "plan": mesh_plan},
+                        timeout=5.0,
+                    )
+                except Exception:
+                    pass
+    record["mesh_plan"] = mesh_plan
     record_path = BIOSCAN_DIR / f"{session_id}.json"
     with record_path.open("w", encoding="utf-8") as handle:
         json.dump(record, handle, indent=2)

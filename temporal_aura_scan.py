@@ -137,6 +137,95 @@ def _sanitize_for_filename(text: str) -> str:
     return safe.strip("_") or "scan"
 
 
+def _generate_spectrogram_matrix(
+    samples: np.ndarray,
+    baseline: float,
+    *,
+    freq_min: float = 5.0,
+    freq_max: float = 45.0,
+    freq_bins: int = 320,
+    max_time_bins: int = 720,
+) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+    """Create a pseudo-spectrogram matrix from fundamental Schumann readings.
+
+    The incoming Schumann feed typically provides only the dominant frequency
+    for each sample window. To emulate the multi-band readouts used by the
+    witness consoles we generate a harmonic ladder for every sample, shifting
+    the canonical harmonic set by the observed delta from the 7.83 Hz baseline.
+    Each harmonic contributes a gaussian ridge; summing them yields a heat-map
+    whose structure resembles the live spectrographs used by operators.
+    """
+
+    if samples.size < 2:
+        return None
+
+    trimmed = samples.astype(float)
+    if trimmed.size > max_time_bins:
+        window = int(np.ceil(trimmed.size / max_time_bins))
+        sections = int(np.ceil(trimmed.size / window))
+        trimmed = np.array([
+            float(np.mean(chunk))
+            for chunk in np.array_split(trimmed, sections)
+        ])
+
+    freq_axis = np.linspace(freq_min, freq_max, freq_bins)
+    heatmap = np.zeros((freq_bins, trimmed.size), dtype=float)
+
+    expected_harmonics = np.array([baseline, 14.3, 20.8, 27.3, 33.8])
+    intensities = np.linspace(1.0, 0.55, expected_harmonics.size)
+    bandwidth = 0.45
+
+    for idx, sample in enumerate(trimmed):
+        delta = sample - baseline
+        column = np.zeros(freq_bins, dtype=float)
+        for harmonic, scale in zip(expected_harmonics, intensities):
+            centre = harmonic + delta
+            profile = np.exp(-0.5 * ((freq_axis - centre) / bandwidth) ** 2)
+            column += profile * scale
+        heatmap[:, idx] = column
+
+    max_value = float(np.max(heatmap))
+    if max_value <= 0.0:
+        return None
+
+    heatmap /= max_value
+    return heatmap, freq_axis
+
+
+def _render_spectrogram(
+    samples: np.ndarray,
+    save_dir: Path,
+    operator_tag: str,
+    baseline: float,
+) -> Optional[Path]:
+    result = _generate_spectrogram_matrix(samples, baseline)
+    if result is None:
+        return None
+
+    heatmap, freq_axis = result
+    spectrogram_path = save_dir / f"{operator_tag}_spectrogram.png"
+
+    plt.figure(figsize=(10, 4))
+    extent = (0, heatmap.shape[1], freq_axis[0], freq_axis[-1])
+    plt.imshow(
+        heatmap,
+        aspect="auto",
+        origin="lower",
+        extent=extent,
+        cmap="turbo",
+    )
+    plt.colorbar(label="Relative Intensity")
+    plt.yticks([7.83, 14.3, 20.8, 27.3, 33.8])
+    plt.xlabel("Sample Window")
+    plt.ylabel("Frequency (Hz)")
+    plt.title("Schumann Harmonic Spectrogram")
+    plt.tight_layout()
+    plt.savefig(spectrogram_path)
+    plt.close()
+
+    return spectrogram_path
+
+
 def _plot_frequency_series(
     frequencies: np.ndarray,
     save_dir: Path,
@@ -144,7 +233,11 @@ def _plot_frequency_series(
     baseline: float,
 ) -> Dict[str, Optional[str]]:
     if frequencies.size == 0:
-        return {"frequency_plot": None, "coherence_plot": None}
+        return {
+            "frequency_plot": None,
+            "coherence_plot": None,
+            "spectrogram_plot": None,
+        }
 
     save_dir.mkdir(parents=True, exist_ok=True)
 
@@ -176,9 +269,12 @@ def _plot_frequency_series(
     plt.savefig(coherence_path)
     plt.close()
 
+    spectrogram_path = _render_spectrogram(frequencies, save_dir, operator_tag, baseline)
+
     return {
         "frequency_plot": str(freq_path),
         "coherence_plot": str(coherence_path),
+        "spectrogram_plot": str(spectrogram_path) if spectrogram_path else None,
     }
 
 

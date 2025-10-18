@@ -1,16 +1,16 @@
 export const earthPalette = {
-  soil: '#5b402c',
-  canyon: '#8f5b34',
-  ember: '#c16a4a',
-  sunrise: '#d99b54',
-  sandstone: '#d9b48f',
-  clay: '#b9744f',
-  grove: '#6b8a5e',
-  moss: '#4f6b40',
-  sage: '#8faa72',
-  mist: '#b7c59f',
-  dusk: '#735d4a',
-  shadow: '#2c2116',
+  soil: '#0d132f',
+  canyon: '#6D4BFF',
+  ember: '#7C3AED',
+  sunrise: '#5B8DFF',
+  sandstone: '#B7A5FF',
+  clay: '#9F5FFF',
+  grove: '#4FB6FF',
+  moss: '#3FA3FF',
+  sage: '#57E3FF',
+  mist: '#9AD7FF',
+  dusk: '#5A4BFF',
+  shadow: '#050b21',
 } as const;
 
 type PaletteKey = keyof typeof earthPalette;

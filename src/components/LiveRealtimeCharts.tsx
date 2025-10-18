@@ -46,36 +46,36 @@ const chartConfigs: Array<{
     label: "Magnetometer Field Strength",
     unit: "µT",
     accent: `text-[${earthPalette.sunrise}]`,
-    glow: "from-[#d99b54]/35 via-[#c16a4a]/20 to-transparent",
+    glow: "from-[#5B8DFF]/35 via-[#7C3AED]/20 to-transparent",
     spectrum: realtimeSpectrumOrder[0],
-    aurora: "linear-gradient(135deg, rgba(217,155,84,0.28) 0%, rgba(193,106,74,0.22) 45%, rgba(107,138,94,0.26) 100%)",
+    aurora: "linear-gradient(135deg, rgba(91,139,255,0.3) 0%, rgba(124,58,237,0.24) 45%, rgba(79,195,255,0.28) 100%)",
   },
   {
     key: "schumann",
     label: "Schumann Resonance",
     unit: "Hz",
     accent: `text-[${earthPalette.sage}]`,
-    glow: "from-[#6b8a5e]/35 via-[#8faa72]/25 to-transparent",
+    glow: "from-[#4FB6FF]/35 via-[#57E3FF]/25 to-transparent",
     spectrum: realtimeSpectrumOrder[1],
-    aurora: "linear-gradient(140deg, rgba(111,140,92,0.26) 0%, rgba(142,164,126,0.22) 40%, rgba(183,197,159,0.24) 100%)",
+    aurora: "linear-gradient(140deg, rgba(63,163,255,0.28) 0%, rgba(95,205,255,0.24) 40%, rgba(149,219,255,0.26) 100%)",
   },
   {
     key: "coherence",
     label: "System Coherence Index",
     unit: "",
     accent: `text-[${earthPalette.clay}]`,
-    glow: "from-[#c16a4a]/35 via-[#d99b54]/22 to-transparent",
+    glow: "from-[#7C3AED]/35 via-[#5B8DFF]/22 to-transparent",
     spectrum: realtimeSpectrumOrder[2],
-    aurora: "linear-gradient(150deg, rgba(193,106,74,0.28) 0%, rgba(217,155,84,0.24) 45%, rgba(217,180,143,0.22) 100%)",
+    aurora: "linear-gradient(150deg, rgba(124,58,237,0.3) 0%, rgba(91,139,255,0.26) 45%, rgba(180,165,255,0.24) 100%)",
   },
   {
     key: "planetaryResonance",
     label: "Planetary Resonance",
     unit: "",
     accent: `text-[${earthPalette.dusk}]`,
-    glow: "from-[#735d4a]/35 via-[#8f5b34]/25 to-transparent",
+    glow: "from-[#5A4BFF]/35 via-[#6D4BFF]/25 to-transparent",
     spectrum: realtimeSpectrumOrder[3],
-    aurora: "linear-gradient(160deg, rgba(147,110,78,0.28) 0%, rgba(169,129,90,0.22) 45%, rgba(214,172,121,0.2) 100%)",
+    aurora: "linear-gradient(160deg, rgba(90,72,219,0.3) 0%, rgba(126,89,255,0.24) 45%, rgba(99,82,221,0.26) 100%)",
   },
 ];
 
@@ -193,7 +193,7 @@ const RealtimeLineChart = ({
 
   if (!finitePoints.length) {
     return (
-      <div className="h-48 rounded-2xl border border-[rgba(214,172,121,0.18)] bg-[#1f160f]/70 p-6 text-sm text-[#e6d9c9]/80">
+      <div className="h-48 rounded-2xl border border-[rgba(99,82,221,0.28)] bg-[#0b1230]/70 p-6 text-sm text-[#C8D4FF]/80">
         Awaiting telemetry...
       </div>
     );
@@ -256,7 +256,7 @@ const RealtimeLineChart = ({
             <stop offset="100%" stopColor="rgba(35,25,17,0.0)" />
           </radialGradient>
           <pattern id={gridId} width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="rgba(214,172,121,0.12)" strokeWidth="0.22" />
+            <path d="M 8 0 L 0 0 0 8" fill="none" stroke="rgba(99,82,221,0.18)" strokeWidth="0.22" />
           </pattern>
           <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="glow" />
@@ -285,7 +285,7 @@ const RealtimeLineChart = ({
             y1={y}
             x2="100"
             y2={y}
-            stroke="rgba(214,172,121,0.14)"
+            stroke="rgba(99,82,221,0.2)"
             strokeWidth={0.2}
             strokeDasharray="1.5 2.5"
           />
@@ -297,7 +297,7 @@ const RealtimeLineChart = ({
             y1="0"
             x2={x}
             y2="100"
-            stroke="rgba(214,172,121,0.12)"
+            stroke="rgba(99,82,221,0.18)"
             strokeWidth={0.18}
             strokeDasharray="1 2"
           />
@@ -357,7 +357,7 @@ const RealtimeLineChart = ({
           strokeWidth={0.65}
         />
       </svg>
-      <div className="flex justify-between text-[11px] uppercase tracking-[0.28em] text-[#c7b29d]">
+      <div className="flex justify-between text-[11px] uppercase tracking-[0.28em] text-[#8DA2FF]">
         <span className="font-mono text-xs">
           min {min.toFixed(2)}
           {unit ? ` ${unit}` : ""}
@@ -400,40 +400,40 @@ const SchumannModeReference = ({
   const windowLabel = windowSeconds > 0 ? `${Math.round(windowSeconds)} s` : "Realtime";
 
   return (
-    <div className="grid gap-6 rounded-2xl border border-[rgba(214,172,121,0.16)] bg-[#1b140d]/75 p-6 text-left lg:grid-cols-[1.1fr_1fr]">
+    <div className="grid gap-6 rounded-2xl border border-[rgba(99,82,221,0.24)] bg-[#09102a]/75 p-6 text-left lg:grid-cols-[1.1fr_1fr]">
       <div className="space-y-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#c7b29d]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#8DA2FF]">
           Schumann Resonance Context
         </p>
-        <p className="text-sm leading-relaxed text-[#f4efe6]/90">
+        <p className="text-sm leading-relaxed text-[#E8F1FF]/90">
           Lightning strikes excite standing waves within the Earth–ionosphere cavity. The fundamental mode is expected at
           {" "}
           {EARTH_CAVITY_FUNDAMENTAL.toFixed(2)} Hz, with higher modes spaced by roughly 6.5–8 Hz. Displayed values apply the
           measured deviation from the fundamental across each overtone so the physics behind the visualization remains
           explicit.
         </p>
-        <div className="grid gap-2 text-[11px] text-[#d9c7b3]/80 sm:grid-cols-2">
+        <div className="grid gap-2 text-[11px] text-[#A7B5FF]/80 sm:grid-cols-2">
           <div>
-            <span className="font-semibold uppercase tracking-[0.3em] text-[#c7b29d]">Observation Window</span>
-            <p className="font-mono text-base text-[#f4efe6]">{windowLabel}</p>
+            <span className="font-semibold uppercase tracking-[0.3em] text-[#8DA2FF]">Observation Window</span>
+            <p className="font-mono text-base text-[#E8F1FF]">{windowLabel}</p>
             <p>Samples analysed: {sampleCount}</p>
           </div>
           <div>
-            <span className="font-semibold uppercase tracking-[0.3em] text-[#c7b29d]">Quality Factor</span>
-            <p className="font-mono text-base text-[#f4efe6]">
+            <span className="font-semibold uppercase tracking-[0.3em] text-[#8DA2FF]">Quality Factor</span>
+            <p className="font-mono text-base text-[#E8F1FF]">
               {qualityFactor ? qualityFactor.toFixed(2) : "—"}
             </p>
             <p>Approximate cavity sharpness (f₀ / 2σ).</p>
           </div>
         </div>
-        <p className="text-[11px] text-[#d9c7b3]/80">
+        <p className="text-[11px] text-[#A7B5FF]/80">
           The spectral width of each mode is typically ~20% of its center frequency; compare the observed spread above to
           confirm the resonance is physical rather than decorative.
         </p>
       </div>
-      <div className="overflow-hidden rounded-xl border border-[rgba(214,172,121,0.14)] bg-[#251a10]/80">
+      <div className="overflow-hidden rounded-xl border border-[rgba(99,82,221,0.2)] bg-[#101c46]/80">
         <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-[rgba(214,172,121,0.08)] text-[11px] uppercase tracking-[0.28em] text-[#c7b29d]">
+          <thead className="bg-[rgba(99,82,221,0.16)] text-[11px] uppercase tracking-[0.28em] text-[#8DA2FF]">
             <tr>
               <th className="px-4 py-3">Mode</th>
               <th className="px-4 py-3 text-right">Reference (Hz)</th>
@@ -442,17 +442,17 @@ const SchumannModeReference = ({
               <th className="px-4 py-3 text-right">Spacing (Hz)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[rgba(214,172,121,0.12)] text-[#f4efe6]/90">
+          <tbody className="divide-y divide-[rgba(99,82,221,0.18)] text-[#E8F1FF]/90">
             {adjustedModes.map(({ id, label, frequency, observed, deviation, spacing }) => (
               <tr key={id}>
-                <td className="px-4 py-3 font-semibold uppercase tracking-[0.18em] text-[#d9c7b3]">{label}</td>
+                <td className="px-4 py-3 font-semibold uppercase tracking-[0.18em] text-[#A7B5FF]">{label}</td>
                 <td className="px-4 py-3 text-right font-mono">{frequency.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right font-mono">{observed.toFixed(2)}</td>
-                <td className="px-4 py-3 text-right font-mono text-[#8faa72]">
+                <td className="px-4 py-3 text-right font-mono text-[#57E3FF]">
                   {deviation >= 0 ? "+" : ""}
                   {deviation.toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-[#d9c7b3]">
+                <td className="px-4 py-3 text-right font-mono text-[#A7B5FF]">
                   {spacing != null ? spacing.toFixed(2) : "—"}
                 </td>
               </tr>
@@ -486,12 +486,12 @@ const LiveRealtimeCharts = () => {
             : 0;
         const badgeTone =
           delta >= 0
-            ? "border-[rgba(107,138,94,0.4)] bg-[rgba(107,138,94,0.22)] text-[#e6f1de]"
-            : "border-[rgba(193,106,74,0.4)] bg-[rgba(193,106,74,0.24)] text-[#fbe9e2]";
+            ? "border-[rgba(56,189,248,0.38)] bg-[rgba(56,189,248,0.18)] text-[#e6f9ff]"
+            : "border-[rgba(236,72,153,0.45)] bg-[rgba(124,58,237,0.18)] text-[#fde6ff]";
 
         const currentView = chartViews[key] || "line";
         const latest = points.at(-1) ?? null;
-        const deltaClass = delta >= 0 ? "text-[#8faa72]" : "text-[#c16a4a]";
+        const deltaClass = delta >= 0 ? "text-[#57E3FF]" : "text-[#F5D26A]";
 
         const statistics = computeStatistics(points);
         const hasSignal = points.length > 0;
@@ -547,7 +547,7 @@ const LiveRealtimeCharts = () => {
         return (
           <Card
             key={key}
-            className="group relative flex w-full min-h-[72vh] flex-col overflow-hidden border-[rgba(214,172,121,0.18)] bg-[#1f160f]/80 text-[#f4efe6] shadow-[0_0_60px_rgba(140,98,57,0.24)] backdrop-blur lg:min-h-[82vh]"
+            className="group relative flex w-full min-h-[72vh] flex-col overflow-hidden border-[rgba(99,82,221,0.28)] bg-[#0b1230]/80 text-[#E8F1FF] shadow-[0_0_60px_rgba(56,189,248,0.32)] backdrop-blur lg:min-h-[82vh]"
           >
             <MandalaOverlay />
             <div
@@ -560,10 +560,10 @@ const LiveRealtimeCharts = () => {
               className="pointer-events-none absolute inset-px rounded-[calc(1.5rem-2px)] opacity-0 blur-2xl transition duration-700 group-hover:opacity-80"
               style={{ background: aurora }}
             />
-            <div className="pointer-events-none absolute -inset-24 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(214,172,121,0.25),_transparent_60%)] opacity-0 group-hover:opacity-40" />
+            <div className="pointer-events-none absolute -inset-24 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(120,76,255,0.28),_transparent_60%)] opacity-0 group-hover:opacity-40" />
             <CardHeader className="relative z-10 pb-6 pt-10 lg:pb-8">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                <CardTitle className="max-w-4xl text-lg font-semibold uppercase tracking-[0.32em] text-[#f6f1e8]">
+                <CardTitle className="max-w-4xl text-lg font-semibold uppercase tracking-[0.32em] text-[#F3F7FF]">
                   {label}
                 </CardTitle>
                 <div className="flex items-center gap-3">
@@ -577,20 +577,20 @@ const LiveRealtimeCharts = () => {
                     onClick={() => toggleView(key)}
                     size="icon"
                     variant="ghost"
-                    className="h-9 w-9 text-[#d9c7b3] transition hover:bg-[rgba(87,64,43,0.45)] hover:text-[#f6f1e8]"
+                    className="h-9 w-9 text-[#A7B5FF] transition hover:bg-[rgba(76,114,255,0.35)] hover:text-[#F3F7FF]"
                   >
                     <ArrowRightLeft size={16} />
                     <span className="sr-only">Toggle Chart View</span>
                   </Button>
                 </div>
               </div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-[#d9c7b3]/75">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-[#A7B5FF]/75">
                 {detailStats[0].hint}
               </p>
             </CardHeader>
             <CardContent className="relative z-10 flex flex-1 flex-col gap-10 pb-14 pt-4">
               <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                <div className="font-mono text-4xl font-semibold text-[#f6f1e8] drop-shadow-[0_0_18px_rgba(214,172,121,0.22)] sm:text-5xl">
+                <div className="font-mono text-4xl font-semibold text-[#F3F7FF] drop-shadow-[0_0_18px_rgba(99,82,221,0.24)] sm:text-5xl">
                   {formatValueWithUnit(hasSignal ? latest?.value ?? Number.NaN : Number.NaN, unit)}
                 </div>
                 <div className={`font-mono text-xs font-semibold uppercase tracking-[0.22em] ${deltaClass}`}>
@@ -604,30 +604,30 @@ const LiveRealtimeCharts = () => {
               )}
               <div
                 className={cn(
-                  "grid gap-6 rounded-2xl border border-[rgba(214,172,121,0.16)] bg-[#241a11]/70 p-6 text-left",
+                  "grid gap-6 rounded-2xl border border-[rgba(99,82,221,0.24)] bg-[#0f1738]/70 p-6 text-left",
                   detailGridColumns
                 )}
               >
                 {detailStats.map(({ label, value, hint }) => (
                   <div key={label} className="space-y-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#c7b29d]">{label}</p>
-                    <p className="font-mono text-base font-semibold text-[#f4efe6]">{value}</p>
-                    <p className="text-[11px] leading-relaxed text-[#d9c7b3]/80">{hint}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#8DA2FF]">{label}</p>
+                    <p className="font-mono text-base font-semibold text-[#E8F1FF]">{value}</p>
+                    <p className="text-[11px] leading-relaxed text-[#A7B5FF]/80">{hint}</p>
                   </div>
                 ))}
               </div>
-              <div className="grid gap-4 rounded-2xl border border-[rgba(214,172,121,0.12)] bg-[#1f160f]/60 p-5 text-left sm:grid-cols-2">
+              <div className="grid gap-4 rounded-2xl border border-[rgba(99,82,221,0.18)] bg-[#0b1230]/60 p-5 text-left sm:grid-cols-2">
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#c7b29d]">Sample Count</p>
-                  <p className="font-mono text-lg text-[#f4efe6]">{points.length}</p>
-                  <p className="text-[11px] text-[#d9c7b3]/75">{sampleHint}</p>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#8DA2FF]">Sample Count</p>
+                  <p className="font-mono text-lg text-[#E8F1FF]">{points.length}</p>
+                  <p className="text-[11px] text-[#A7B5FF]/75">{sampleHint}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#c7b29d]">Spread</p>
-                  <p className="font-mono text-lg text-[#f4efe6]">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-[#8DA2FF]">Spread</p>
+                  <p className="font-mono text-lg text-[#E8F1FF]">
                     σ {formatValueWithUnit(hasSignal ? statistics.stdev : Number.NaN, unit)}
                   </p>
-                  <p className="text-[11px] text-[#d9c7b3]/75">{spreadHint}</p>
+                  <p className="text-[11px] text-[#A7B5FF]/75">{spreadHint}</p>
                 </div>
               </div>
               {isSchumann && hasSignal ? (

@@ -12,7 +12,15 @@ from typing import Any, Dict, Iterable, Mapping, Tuple
 
 import numpy as np
 from fastapi import FastAPI, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, root_validator
+
+from lattice_integration import (
+    LatticeIntegrationConfig,
+    LatticeIntegrator,
+    LatticeState,
+    SymbolicCompiler,
+    UnityTensorField,
+)
 
 # WebSocket broadcaster (from auris_ws_patch). Safe fallback if not present.
 try:
@@ -29,6 +37,35 @@ DATA_DIR = Path("data")
 BIOSCAN_DIR = DATA_DIR / "bioscans"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 BIOSCAN_DIR.mkdir(parents=True, exist_ok=True)
+
+UNITY_TENSOR_PATH = DATA_DIR / "unity_tensorfield_samples.json"
+UNITY_TENSOR_FIELD = UnityTensorField.from_path(UNITY_TENSOR_PATH)
+
+_SYMBOLIC_COMPILER = SymbolicCompiler(
+    keyword_map={
+        "stabilize": (432.0, 1.05),
+        "stabilise": (432.0, 1.05),
+        "harmonize": (528.0, 0.95),
+        "harmonise": (528.0, 0.95),
+        "protect": (396.0, 1.25),
+        "free": (639.0, 1.10),
+        "will": (741.0, 1.18),
+        "balance": (444.0, 1.02),
+        "love": (528.0, 0.92),
+        "prime": (936.0, 1.40),
+        "guardian": (384.0, 1.30),
+        "anchor": (672.0, 1.05),
+    }
+)
+
+_LATTICE_CONFIG = LatticeIntegrationConfig()
+LATTICE_INTEGRATOR = LatticeIntegrator(
+    compiler=_SYMBOLIC_COMPILER,
+    tensor_field=UNITY_TENSOR_FIELD,
+    config=_LATTICE_CONFIG,
+)
+
+LATTICE_LOG_PATH = DATA_DIR / "lattice_integration_log.jsonl"
 
 _requests_spec = importlib.util.find_spec("requests")
 if _requests_spec:
@@ -51,12 +88,62 @@ def clip01(value: float) -> float:
     return float(max(0.0, min(1.0, numeric)))
 
 
+def _append_lattice_log(entry: Mapping[str, Any]) -> None:
+    """Append ``entry`` to the lattice integration audit log."""
+
+    record = dict(entry)
+    record.setdefault(
+        "timestamp",
+        _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc).isoformat(),
+    )
+    try:
+        with LATTICE_LOG_PATH.open("a", encoding="utf-8") as handle:
+            json.dump(record, handle)
+            handle.write("\n")
+    except OSError:
+        return
+
+
 class BioScanPayload(BaseModel):
     """Canonical bioscan payload accepted by the unified interface."""
 
     user: Dict[str, Any] = Field(default_factory=dict)
     context: Dict[str, Any] = Field(default_factory=dict)
     streams: Dict[str, Any] = Field(default_factory=dict)
+
+
+class LatticeDriveRequest(BaseModel):
+    """Guardian–Anchor lattice drive payload."""
+
+    intent: str = Field(..., description="Intent string interpreted by the symbolic compiler.")
+    cp: float = Field(..., alias="C_p", description="Symbolic memory correlation C_p(t).")
+    lambda_value: float = Field(..., alias="lambda", description="Instant coherence Λ(t).")
+    phi_ga: float = Field(..., alias="Phi_GA", description="Guardian–Anchor phase gap Φ_GA(t).")
+    dissonance: float = Field(..., alias="D", description="Dissonance index D(t).")
+    x_norm: float = Field(..., description="Current lattice state norm |x|.")
+    x_safe: float | None = Field(None, description="Safe lattice state norm |x|_safe.")
+    phi: float = Field(..., description="Phase coordinate φ for tensor sampling.")
+    kappa: float = Field(..., description="Curvature coordinate κ for tensor sampling.")
+    psi: float = Field(..., description="Phase coordinate ψ for tensor sampling.")
+    psi_max: float = Field(..., alias="Psi_max", description="Observed Ψ_max envelope.")
+    psi_safe: float | None = Field(None, alias="Psi_safe", description="Safe Ψ threshold.")
+    previous_drive: float | None = Field(0.0, alias="u_prev", description="Previous drive sample.")
+    yield_metric: float | None = Field(None, alias="Y_c", description="Optional cumulative yield Y_c(t).")
+    timestamp: str | None = Field(None, description="Client provided timestamp for logging.")
+
+    @root_validator(pre=True)
+    def _normalise_aliases(cls, values: Dict[str, Any]) -> Dict[str, Any]:  # type: ignore[override]
+        if "Lambda" in values and "lambda" not in values:
+            values["lambda"] = values["Lambda"]
+        if "Psi" in values and "Psi_max" not in values:
+            values["Psi_max"] = values["Psi"]
+        if "u_previous" in values and "u_prev" not in values:
+            values["u_prev"] = values["u_previous"]
+        return values
+
+    class Config:
+        allow_population_by_field_name = True
+        allow_population_by_alias = True
 
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
@@ -251,6 +338,80 @@ def status() -> Dict[str, Any]:
         "uptime_utc": _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc).isoformat(),
         "bioscan_dir": str(BIOSCAN_DIR),
     }
+
+
+@app.post("/lattice/drive")
+async def lattice_drive(payload: LatticeDriveRequest) -> Dict[str, Any]:
+    """Compute a lattice drive update and broadcast it to subscribers."""
+
+    config = LATTICE_INTEGRATOR.config
+    original_x_safe = config.x_safe
+    original_psi_safe = config.psi_safe
+    if payload.x_safe is not None:
+        config.x_safe = float(payload.x_safe)
+    if payload.psi_safe is not None:
+        config.psi_safe = float(payload.psi_safe)
+
+    try:
+        state = LatticeState(
+            intent=payload.intent,
+            cp=clip01(payload.cp),
+            coherence=max(0.0, float(payload.lambda_value)),
+            phi_ga=float(payload.phi_ga),
+            dissonance=max(0.0, float(payload.dissonance)),
+            x_norm=max(0.0, float(payload.x_norm)),
+            phi=float(payload.phi),
+            kappa=float(payload.kappa),
+            psi=float(payload.psi),
+            psi_max=float(payload.psi_max),
+            previous_drive=float(payload.previous_drive or 0.0),
+            yield_metric=float(payload.yield_metric) if payload.yield_metric is not None else None,
+        )
+        result = LATTICE_INTEGRATOR.integrate(state)
+    finally:
+        config.x_safe = original_x_safe
+        config.psi_safe = original_psi_safe
+
+    timestamp = payload.timestamp or _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc).isoformat()
+
+    message_payload = {
+        "timestamp": timestamp,
+        "intent": payload.intent,
+        "drive": result.drive,
+        "waveform": result.waveform,
+        "gain": result.gain,
+        "tsv": result.tsv,
+        "balance": {"value": result.balance_value, "terms": result.balance_terms},
+        "sandbox": result.sandbox,
+        "yield_metric": result.yield_metric,
+        "cp": clip01(payload.cp),
+        "lambda": float(payload.lambda_value),
+        "phi_ga": float(payload.phi_ga),
+        "dissonance": float(payload.dissonance),
+    }
+
+    _append_lattice_log(
+        {
+            "timestamp": timestamp,
+            "intent": payload.intent,
+            "drive": result.drive,
+            "gain": result.gain,
+            "tsv": result.tsv,
+            "balance": result.balance_value,
+            "balance_terms": result.balance_terms,
+            "sandbox": result.sandbox,
+            "cp": clip01(payload.cp),
+            "lambda": float(payload.lambda_value),
+            "phi_ga": float(payload.phi_ga),
+            "dissonance": float(payload.dissonance),
+            "x_norm": float(payload.x_norm),
+            "psi_max": float(payload.psi_max),
+        }
+    )
+
+    message = {"channel": "lattice:drive", "payload": message_payload}
+    await emit_event(message)
+    return message
 
 
 @app.post("/bioscan/ingest")

@@ -6,14 +6,14 @@
 
 @layer base {
   :root {
-    --background: 6 10 24;
-    --foreground: 226 232 240;
-    --card: 12 18 38;
-    --card-foreground: 226 232 240;
-    --muted: 20 30 56;
-    --muted-foreground: 148 163 184;
-    --accent: 56 189 248;
-    --accent-foreground: 12 18 36;
+    --background: 8 10 32;
+    --foreground: 232 241 255;
+    --card: 16 20 56;
+    --card-foreground: 232 241 255;
+    --muted: 38 40 86;
+    --muted-foreground: 168 183 255;
+    --accent: 245 210 106;
+    --accent-foreground: 12 14 28;
     color-scheme: dark;
   }
 
@@ -22,13 +22,13 @@
   }
 
   body {
-    @apply min-h-screen bg-slate-950 text-slate-100;
+    @apply min-h-screen bg-[#050b21] text-[#e8f1ff];
     font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-image:
-      radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.15), transparent 55%),
-      radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.18), transparent 60%),
-      radial-gradient(circle at 50% 80%, rgba(251, 191, 36, 0.12), transparent 70%),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(2, 6, 23, 0.92) 60%, rgba(2, 6, 23, 1) 100%);
+      radial-gradient(circle at 20% 18%, rgba(68, 97, 234, 0.28), transparent 55%),
+      radial-gradient(circle at 76% 12%, rgba(103, 58, 183, 0.22), transparent 60%),
+      radial-gradient(circle at 52% 78%, rgba(25, 162, 255, 0.2), transparent 70%),
+      linear-gradient(195deg, rgba(5, 8, 27, 0.95) 0%, rgba(9, 16, 43, 0.96) 60%, rgba(6, 8, 24, 1) 100%);
     background-attachment: fixed;
   }
 
@@ -39,21 +39,21 @@
     inset: 0;
     pointer-events: none;
     mix-blend-mode: screen;
-    opacity: 0.45;
+    opacity: 0.4;
   }
 
   body::before {
     background:
-      radial-gradient(circle at 15% 10%, rgba(59, 130, 246, 0.2), transparent 55%),
-      radial-gradient(circle at 85% 15%, rgba(147, 51, 234, 0.15), transparent 60%);
-    filter: blur(60px);
+      radial-gradient(circle at 18% 12%, rgba(120, 76, 255, 0.24), transparent 55%),
+      radial-gradient(circle at 84% 20%, rgba(56, 189, 248, 0.2), transparent 60%);
+    filter: blur(80px);
   }
 
   body::after {
     background:
-      radial-gradient(circle at 50% 90%, rgba(45, 212, 191, 0.12), transparent 65%),
-      linear-gradient(160deg, rgba(56, 189, 248, 0.06), rgba(236, 72, 153, 0.04));
-    filter: blur(80px);
+      radial-gradient(circle at 48% 88%, rgba(72, 198, 255, 0.18), transparent 65%),
+      linear-gradient(160deg, rgba(245, 210, 106, 0.12), rgba(134, 93, 255, 0.1));
+    filter: blur(95px);
   }
 
   h1,
@@ -65,7 +65,7 @@
   }
 
   ::selection {
-    background: rgba(56, 189, 248, 0.45);
-    color: #f8fafc;
+    background: rgba(214, 172, 121, 0.45);
+    color: #1c140d;
   }
 }

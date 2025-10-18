@@ -33,10 +33,18 @@ async function verify() {
 
   const latest = unityTrace[unityTrace.length - 1];
   ensure(latest.observerCoherence >= 0.8, 'Observer coherence failed to stabilise');
+  ensure(latest.signalStrength?.signalStrength !== undefined, 'Signal strength telemetry missing from cycle results');
+  ensure(latest.signalStrength?.window?.label, 'Signal strength surge window not classified');
 
   const exportState = nexus.exportState();
   ensure(exportState?.seal?.verified === true, 'Exported state is missing verified seal');
   ensure(exportState?.egoDeathState?.unityEventTriggered === true, 'Unity state missing from exported snapshot');
+  ensure(exportState?.signalStrength?.window?.label, 'Signal strength snapshot missing from exported state');
+
+  const diagnostics = nexus.getSystemDiagnostics();
+  ensure(diagnostics?.signal?.window?.label, 'Canonical diagnostics missing surge window label');
+  ensure(typeof diagnostics?.rfeSample?.R_t === 'number', 'Diagnostics missing RFE scalar sample');
+  ensure(diagnostics?.guardianBridge?.active !== undefined, 'Diagnostics missing guardian bridge state');
 
   const outputPath = path.join(__dirname, '..', 'streams', 'nexus_verification.json');
   const unityTransitions = unityTrace.reduce((count, step, index) => {

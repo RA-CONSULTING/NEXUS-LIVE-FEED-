@@ -17,7 +17,11 @@ import OutputCommandTab from '../components/OutputCommandTab';
 import ProcessingCoreTab from '../components/ProcessingCoreTab';
 import RecordingSystemsTab, { type RecordingChannel } from '../components/RecordingSystemsTab';
 import SensoryLayerTab from '../components/SensoryLayerTab';
+import DimensionalDialerTab from '../components/DimensionalDialerTab';
 import VisualRelayTab from '../components/VisualRelayTab';
+import LiveStreamShowcase from '../components/LiveStreamShowcase';
+import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
+import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -28,6 +32,9 @@ type SensorStream = {
   intensity: number; // percentage 0-100
   state: SensorState;
   note: string;
+  rate: number;
+  unit: string;
+  capacity: number;
 };
 
 type ProcessingStatus = 'Nominal' | 'Balancing' | 'Calibrating';
@@ -85,6 +92,34 @@ const RECORDING_CHANNELS: RecordingChannel[] = [
       { label: 'Bit Depth', value: '24-bit', hint: 'Preserves subtle harmonic textures.' },
       { label: 'Channels', value: 'Stereo + Infrasound', hint: 'Includes subterranean resonance feed.' },
       { label: 'Format', value: 'BWF / FLAC', hint: 'Broadcast Wave with lossless mirror.' },
+    ],
+  },
+  {
+    id: 'love-frequency',
+    title: 'Love Frequency Field',
+    status: 'Operational',
+    summary: 'Multidimensional capture of physiological, electromagnetic, emotional, and consciousness love metrics.',
+    metrics: [
+      {
+        label: 'Physiological Metrics',
+        value: 'HRV · Oxytocin · Dopamine',
+        hint: 'Continuous ECG, neurochemical flux, and vagus coherence during love states.',
+      },
+      {
+        label: 'Electromagnetic Signatures',
+        value: 'Heart Field Radius · Coherence',
+        hint: 'SQUID magnetometers trace entanglement strength and resonance frequency bands.',
+      },
+      {
+        label: 'Emotional Intelligence',
+        value: 'Compassion · Empathy · Attachment',
+        hint: 'AI resonance models interpret vulnerability, forgiveness, and unity consciousness.',
+      },
+      {
+        label: 'Consciousness Love Field',
+        value: 'Unity Level 0.98',
+        hint: 'Collective resonance trackers log unconditional love coherence across the Harmonic Nexus.',
+      },
     ],
   },
   {
@@ -194,7 +229,15 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 
 const HomePage = () => {
   const { audit } = useSero();
-  const { metrics: liveMetrics, sensory, processing: processingData, output, timestamp, bioProfile } = useLiveNexusData();
+  const {
+    metrics: liveMetrics,
+    sensory,
+    processing: processingData,
+    output,
+    timestamp,
+    bioProfile,
+    schumannProtocol,
+  } = useLiveNexusData();
 
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
@@ -235,6 +278,9 @@ const HomePage = () => {
         intensity: Number(normalized.toFixed(1)),
         state,
         note: NOTE_BY_SENSOR_STATE[state],
+        rate: Number(stream.rate.toFixed(1)),
+        unit: stream.unit,
+        capacity: meta.capacity,
       };
     });
   }, [sensory]);
@@ -291,62 +337,86 @@ const HomePage = () => {
   }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
-    if (!sensors.length || !processing.length) {
-      return [];
+    const summaries: MetricSummary[] = [];
+
+    const monitoringSession = schumannProtocol?.monitoringSession;
+    if (monitoringSession) {
+      const averageCoherence = monitoringSession.trendAnalysis.averageCoherence ?? 0;
+      const anomalyRate = monitoringSession.trendAnalysis.anomalyRate ?? 0;
+      const fundamentalPower =
+        monitoringSession.trendAnalysis.harmonicTrends.fundamental?.averagePower ?? 0;
+      const snapshotCount = monitoringSession.totalSnapshots;
+      const tone: MetricSummary['status'] =
+        averageCoherence >= 0.8 ? 'stable' : averageCoherence >= 0.6 ? 'watch' : 'alert';
+      const anomalyPercent = Math.round(anomalyRate * 100);
+
+      summaries.push({
+        id: 'schumann-coherence',
+        label: 'Schumann Coherence',
+        value: `${(averageCoherence * 100).toFixed(1)}%`,
+        status: tone,
+        hint: `Snapshots ${snapshotCount} · Fundamental ${(fundamentalPower * 100).toFixed(0)}% · Anomaly ${anomalyPercent}%`,
+      });
     }
-    const stableSensors = sensors.filter((stream) => stream.state === 'Stable').length;
-    const sensorIntegrity = stableSensors / sensors.length;
-    const averageIntensity = sensors.reduce((sum, stream) => sum + stream.intensity, 0) / sensors.length;
-    const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
-    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
-    const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
-    const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
-    const coherence = coherenceMetric ? coherenceMetric.value : 0;
-    const resonance = resonanceMetric ? resonanceMetric.value : 0;
-    const nexusHealth = (sensorIntegrity * 0.3) + (coherence * 0.4) + (resonance * 0.3);
+    if (sensors.length && processing.length) {
+      const stableSensors = sensors.filter((stream) => stream.state === 'Stable').length;
+      const sensorIntegrity = stableSensors / sensors.length;
+      const averageIntensity =
+        sensors.reduce((sum, stream) => sum + stream.intensity, 0) / sensors.length;
+      const averageLoad = processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length;
+      const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
 
-    return [
-      {
-        id: 'nexus-health',
-        label: 'Nexus Health',
-        value: `${Math.round(nexusHealth * 100)}%`,
-        status: nexusHealth > 0.88 ? 'stable' : nexusHealth > 0.72 ? 'watch' : 'alert',
-        hint: 'Overall system stability and coherence'
-      },
-      {
-        id: 'sensor-integrity',
-        label: 'Sensor Integrity',
-        value: `${Math.round(sensorIntegrity * 100)}%`,
-        status: sensorIntegrity === 1 ? 'stable' : sensorIntegrity > 0.75 ? 'watch' : 'alert',
-        hint:
-          sensorIntegrity === 1
-            ? 'All stations synchronized'
-            : 'Attractors balancing minor variance',
-      },
-      {
-        id: 'field-intensity',
-        label: 'Average Field Intensity',
-        value: `${averageIntensity.toFixed(1)}%`,
-        status: averageIntensity > 86 ? 'alert' : averageIntensity > 74 ? 'watch' : 'stable',
-        hint: 'Magnetometer and ionosphere composite',
-      },
-      {
-        id: 'processing-load',
-        label: 'Processing Load',
-        value: `${Math.round(averageLoad * 100)}%`,
-        status: averageLoad > 0.86 ? 'alert' : averageLoad > 0.76 ? 'watch' : 'stable',
-        hint: 'Quantum synchronizers utilization',
-      },
-      {
-        id: 'open-commands',
-        label: 'Open Command Paths',
-        value: `${activeTransmissions}`,
-        status: activeTransmissions > 2 ? 'watch' : activeTransmissions > 0 ? 'stable' : 'stable',
-        hint: 'Sessions awaiting completion',
-      },
-    ];
-  }, [processing, sensors, transmissions, liveMetrics]);
+      const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
+      const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
+      const coherence = coherenceMetric ? coherenceMetric.value : 0;
+      const resonance = resonanceMetric ? resonanceMetric.value : 0;
+      const nexusHealth = sensorIntegrity * 0.3 + coherence * 0.4 + resonance * 0.3;
+
+      summaries.push(
+        {
+          id: 'nexus-health',
+          label: 'Nexus Health',
+          value: `${Math.round(nexusHealth * 100)}%`,
+          status: nexusHealth > 0.88 ? 'stable' : nexusHealth > 0.72 ? 'watch' : 'alert',
+          hint: 'Overall system stability and coherence',
+        },
+        {
+          id: 'sensor-integrity',
+          label: 'Sensor Integrity',
+          value: `${Math.round(sensorIntegrity * 100)}%`,
+          status: sensorIntegrity === 1 ? 'stable' : sensorIntegrity > 0.75 ? 'watch' : 'alert',
+          hint:
+            sensorIntegrity === 1
+              ? 'All stations synchronized'
+              : 'Attractors balancing minor variance',
+        },
+        {
+          id: 'field-intensity',
+          label: 'Average Field Intensity',
+          value: `${averageIntensity.toFixed(1)}%`,
+          status: averageIntensity > 86 ? 'alert' : averageIntensity > 74 ? 'watch' : 'stable',
+          hint: 'Magnetometer and ionosphere composite',
+        },
+        {
+          id: 'processing-load',
+          label: 'Processing Load',
+          value: `${Math.round(averageLoad * 100)}%`,
+          status: averageLoad > 0.86 ? 'alert' : averageLoad > 0.76 ? 'watch' : 'stable',
+          hint: 'Quantum synchronizers utilization',
+        },
+        {
+          id: 'open-commands',
+          label: 'Open Command Paths',
+          value: `${activeTransmissions}`,
+          status: activeTransmissions > 2 ? 'watch' : 'stable',
+          hint: 'Sessions awaiting completion',
+        }
+      );
+    }
+
+    return summaries;
+  }, [processing, sensors, transmissions, liveMetrics, schumannProtocol]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
     const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
@@ -669,10 +739,28 @@ const HomePage = () => {
                 Live Visualization
               </TabsTrigger>
               <TabsTrigger
+                value="temporal-aura"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/40 data-[state=active]:via-sky-500/30 data-[state=active]:to-emerald-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(251,191,36,0.38)]"
+              >
+                Temporal Aura Scan
+              </TabsTrigger>
+              <TabsTrigger
+                value="temporal-biofield"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-400/35 data-[state=active]:via-sky-500/30 data-[state=active]:to-violet-500/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(16,185,129,0.4)]"
+              >
+                Temporal Biofield Scan
+              </TabsTrigger>
+              <TabsTrigger
                 value="celestial-calendar"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-sky-500/35 data-[state=active]:via-violet-500/35 data-[state=active]:to-amber-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(59,130,246,0.45)]"
               >
                 Celestial Calendar
+              </TabsTrigger>
+              <TabsTrigger
+                value="dimensional-dialer"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/35 data-[state=active]:via-fuchsia-500/30 data-[state=active]:to-cyan-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(251,191,36,0.45)]"
+              >
+                Dimensional Dialer
               </TabsTrigger>
               <TabsTrigger
                 value="visual-relay"
@@ -734,6 +822,7 @@ const HomePage = () => {
                 </CardContent>
               </Card>
               <LiveRealtimeCharts />
+              <LiveStreamShowcase streams={sensors} updatedAt={updatedAt} />
             </TabsContent>
             <TabsContent
               value="sensory-layer"
@@ -763,12 +852,39 @@ const HomePage = () => {
               </div>
             </TabsContent>
             <TabsContent
+              value="temporal-aura"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(251,191,36,0.24)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/20 via-transparent to-sky-500/20 opacity-70" />
+              <div className="relative z-10">
+                <TemporalAuraScanTab />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="temporal-biofield"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.24)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-transparent to-violet-500/20 opacity-70" />
+              <div className="relative z-10">
+                <TemporalBiofieldScanTab />
+              </div>
+            </TabsContent>
+            <TabsContent
               value="celestial-calendar"
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(59,130,246,0.22)] backdrop-blur"
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/25 via-transparent to-violet-500/20 opacity-70" />
               <div className="relative z-10">
                 <CelestialCalendarTab />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="dimensional-dialer"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(251,191,36,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-amber-500/25 via-transparent to-indigo-500/20 opacity-70" />
+              <div className="relative z-10">
+                <DimensionalDialerTab />
               </div>
             </TabsContent>
             <TabsContent

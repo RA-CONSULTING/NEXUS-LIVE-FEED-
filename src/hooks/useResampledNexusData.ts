@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { resample } from "@/lib/akashic/aureon-akashic";
 import type { AuthUser } from "@/contexts/AuthContext";
+import {
+  EMOTION_SPECTRUM_MAX,
+  EMOTION_SPECTRUM_MIN,
+  mapSchumannAmplitudeToEmotionFrequency,
+} from "@/lib/emotionSpectrum";
 import { NexusSystem } from "../nexus_system_simulator";
+
+type Nullable<T> = T | null | undefined;
+type NexusVisualization = ReturnType<NexusSystem["getVisualizationData"]>;
 
 // Assuming the types are defined elsewhere and imported, but for simplicity, including them here.
 export type MetricFormat = "ratio" | "percent" | "count";
@@ -127,6 +135,99 @@ export interface BioProfileAnalytics {
   streams: BioStreamStatus[];
 }
 
+export type QuantumHandshakeState = "idle" | "auto-dial" | "entangled";
+
+export interface QuantumLinkStatus {
+  handshakeState: QuantumHandshakeState;
+  entangledSignature: string;
+  entangledTemporalId: string;
+  observerReturnChannel: string;
+  observerAttunement: number;
+  lastPulse: number;
+}
+
+const SCHUMANN_HARMONICS = [
+  { key: "fundamental", frequencyHz: 7.83 },
+  { key: "first_harmonic", frequencyHz: 14.07 },
+  { key: "second_harmonic", frequencyHz: 20.25 },
+  { key: "third_harmonic", frequencyHz: 26.41 },
+  { key: "fourth_harmonic", frequencyHz: 32.45 },
+  { key: "fifth_harmonic", frequencyHz: 38.45 },
+  { key: "sixth_harmonic", frequencyHz: 44.45 },
+] as const;
+
+type SchumannHarmonicKey = typeof SCHUMANN_HARMONICS[number]["key"];
+
+type SchumannAnomalyType =
+  | "AMPLITUDE_SPIKE"
+  | "WEAK_FUNDAMENTAL_FREQUENCY"
+  | "FREQUENCY_SHIFT";
+
+type SchumannAnomalySeverity = "low" | "medium" | "high";
+
+export interface SchumannAnomaly {
+  type: SchumannAnomalyType;
+  severity: SchumannAnomalySeverity;
+  value: number;
+  explanation: string;
+}
+
+export interface SchumannSnapshotRecord {
+  timestamp: string;
+  coherence: number;
+  normalizedPower: number;
+  frequencyVariationHz: number;
+  status: string;
+  anomalies: SchumannAnomaly[];
+  harmonicPowers: Record<SchumannHarmonicKey, number>;
+  powerDistribution: number[];
+}
+
+export interface SchumannHarmonicTrend {
+  averagePower: number;
+  powerVariation: number;
+}
+
+export interface SchumannTrendAnalysis {
+  averageCoherence: number;
+  coherenceVariation: number;
+  anomalyRate: number;
+  harmonicTrends: Record<SchumannHarmonicKey, SchumannHarmonicTrend>;
+}
+
+export interface SchumannMonitoringSession {
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  totalSnapshots: number;
+  trendAnalysis: SchumannTrendAnalysis;
+  snapshots: SchumannSnapshotRecord[];
+}
+
+export interface SchumannCoherenceScorecard {
+  dataComprehensiveness: number;
+  metricDiversity: number;
+  humanReadability: number;
+  trendAnalysisDepth: number;
+  anomalyTracking: number;
+  combinedCoherence: number;
+  status: string;
+}
+
+export interface SchumannPrimeSentinelWitness {
+  name: string;
+  title: string;
+  institution: string;
+  statement: string;
+  timestamp: string;
+}
+
+export interface SchumannResonanceProtocol {
+  monitoringSession: SchumannMonitoringSession;
+  coherenceReport: SchumannCoherenceScorecard;
+  witness: SchumannPrimeSentinelWitness;
+}
+
 export interface RealtimeChartCollection {
   magnetometer: RealtimeChartPoint[];
   schumann: RealtimeChartPoint[];
@@ -142,10 +243,354 @@ export interface RealtimeNexusData {
   processing: LiveProcessingStatus;
   output: LiveOutputStatus;
   bioProfile: BioProfileAnalytics;
+  schumannProtocol: SchumannResonanceProtocol;
+  quantumLink: QuantumLinkStatus;
 }
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+const HISTORY_WINDOW_SECONDS = 10 * 60;
+const HISTORY_WINDOW_MS = HISTORY_WINDOW_SECONDS * 1000;
+const HISTORY_SEED_INTERVAL_MS = 500;
+const HISTORY_SEED_POINTS = Math.round(HISTORY_WINDOW_MS / HISTORY_SEED_INTERVAL_MS);
+const HISTORY_BUFFER_FACTOR = 1.15;
+const RESAMPLE_STEP_SECONDS = 0.25;
+
+const MAX_SCHUMANN_SNAPSHOTS = 96;
+
+const EMOTIONAL_SCHUMANN_VARIANCE =
+  (EMOTION_SPECTRUM_MAX - EMOTION_SPECTRUM_MIN) * 0.06;
+
+const roundTo = (value: number, digits = 3) => Number(value.toFixed(digits));
+
+const mean = (values: number[]) =>
+  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+
+const standardDeviation = (values: number[]) => {
+  if (values.length <= 1) {
+    return 0;
+  }
+  const average = mean(values);
+  const variance =
+    values.reduce((sum, value) => sum + (value - average) ** 2, 0) / (values.length - 1);
+  return Math.sqrt(Math.max(variance, 0));
+};
+
+const statusFromCoherence = (coherence: number) => {
+  if (coherence >= 0.8) {
+    return "Normal planetary conditions";
+  }
+  if (coherence >= 0.6) {
+    return "Harmonic field within nominal range";
+  }
+  if (coherence >= 0.4) {
+    return "Geomagnetic turbulence rising";
+  }
+  return "Field stability compromised";
+};
+
+const shiftSeverity = (shift: number): SchumannAnomalySeverity => {
+  if (shift > 0.2) {
+    return "high";
+  }
+  if (shift > 0.14) {
+    return "medium";
+  }
+  return "low";
+};
+
+const createSchumannSnapshot = (
+  vizData: NexusVisualization,
+  now: number,
+  previous?: SchumannSnapshotRecord
+): SchumannSnapshotRecord => {
+  const amplitudeRaw = vizData?.frequencies?.schumann?.amplitude ?? 0;
+  const amplitudeNormalized = clamp(Math.abs(amplitudeRaw) / 100, 0, 1);
+  const sentinelCoherence = clamp((vizData?.sentinel?.coherence ?? 0) / 100, 0, 1);
+  const coherence = clamp(sentinelCoherence * 0.65 + amplitudeNormalized * 0.35, 0, 1);
+
+  const timeFactor = now / 1000;
+  const harmonicEntries = SCHUMANN_HARMONICS.map(({ key }, index) => {
+    const falloff = Math.exp(-index / 3.1);
+    const modulation = Math.sin(timeFactor / (32 - index * 2) + index) * 0.05;
+    const harmonized = clamp(
+      amplitudeNormalized * falloff + sentinelCoherence * 0.1 + modulation,
+      0,
+      1
+    );
+    return [key, harmonized] as const;
+  });
+
+  const totalPower = harmonicEntries.reduce((sum, [, value]) => sum + value, 0) || 1;
+  const harmonicPowers = Object.fromEntries(
+    harmonicEntries.map(([key, value]) => [key, roundTo(value / totalPower)])
+  ) as Record<SchumannHarmonicKey, number>;
+
+  const previousFundamental = previous?.harmonicPowers?.fundamental;
+  const fundamentalShift = previousFundamental != null
+    ? Math.abs(harmonicPowers.fundamental - previousFundamental)
+    : 0;
+  const baseFrequency = SCHUMANN_HARMONICS[0].frequencyHz;
+  const frequencyVariationHz = roundTo(fundamentalShift * baseFrequency, 3);
+
+  const anomalies: SchumannAnomaly[] = [];
+  if (amplitudeNormalized >= 0.85) {
+    anomalies.push({
+      type: "AMPLITUDE_SPIKE",
+      severity: amplitudeNormalized > 0.93 ? "high" : "medium",
+      value: roundTo(amplitudeNormalized * 3.5, 3),
+      explanation: "Unusual frequency spike detected",
+    });
+  }
+  if (coherence <= 0.4) {
+    anomalies.push({
+      type: "WEAK_FUNDAMENTAL_FREQUENCY",
+      severity: coherence < 0.25 ? "high" : "medium",
+      value: roundTo(coherence, 3),
+      explanation: "Fundamental resonance bandwidth weakening",
+    });
+  }
+  if (fundamentalShift > 0.1) {
+    anomalies.push({
+      type: "FREQUENCY_SHIFT",
+      severity: shiftSeverity(fundamentalShift),
+      value: roundTo(fundamentalShift * baseFrequency, 3),
+      explanation: "Harmonic distribution pivot detected",
+    });
+  }
+
+  const status = anomalies.length
+    ? `${statusFromCoherence(coherence)} · ${anomalies[0].explanation}`
+    : statusFromCoherence(coherence);
+
+  const powerDistribution = SCHUMANN_HARMONICS.map(({ key }) => harmonicPowers[key]);
+
+  return {
+    timestamp: new Date(now).toISOString(),
+    coherence: roundTo(coherence, 4),
+    normalizedPower: roundTo(amplitudeNormalized, 4),
+    frequencyVariationHz,
+    status,
+    anomalies,
+    harmonicPowers,
+    powerDistribution: powerDistribution.map((value) => roundTo(value, 4)),
+  };
+};
+
+const computeSchumannTrend = (
+  snapshots: SchumannSnapshotRecord[]
+): SchumannTrendAnalysis => {
+  if (!snapshots.length) {
+    const emptyTrends = Object.fromEntries(
+      SCHUMANN_HARMONICS.map(({ key }) => [key, { averagePower: 0, powerVariation: 0 }])
+    ) as Record<SchumannHarmonicKey, SchumannHarmonicTrend>;
+    return {
+      averageCoherence: 0,
+      coherenceVariation: 0,
+      anomalyRate: 0,
+      harmonicTrends: emptyTrends,
+    };
+  }
+
+  const coherenceValues = snapshots.map((snapshot) => snapshot.coherence);
+  const anomalyCount = snapshots.reduce(
+    (sum, snapshot) => sum + (snapshot.anomalies.length > 0 ? 1 : 0),
+    0
+  );
+
+  const harmonicTrends = Object.fromEntries(
+    SCHUMANN_HARMONICS.map(({ key }) => {
+      const values = snapshots.map((snapshot) => snapshot.harmonicPowers[key]);
+      return [
+        key,
+        {
+          averagePower: roundTo(mean(values), 4),
+          powerVariation: roundTo(standardDeviation(values), 4),
+        },
+      ];
+    })
+  ) as Record<SchumannHarmonicKey, SchumannHarmonicTrend>;
+
+  return {
+    averageCoherence: roundTo(mean(coherenceValues), 4),
+    coherenceVariation: roundTo(standardDeviation(coherenceValues), 4),
+    anomalyRate: roundTo(anomalyCount / snapshots.length, 4),
+    harmonicTrends,
+  };
+};
+
+const computeSchumannCoherenceReport = (
+  snapshots: SchumannSnapshotRecord[],
+  trend: SchumannTrendAnalysis
+): SchumannCoherenceScorecard => {
+  const snapshotCount = snapshots.length;
+  const engagedHarmonics = Object.values(trend.harmonicTrends).filter(
+    (entry) => entry.averagePower > 0
+  ).length;
+
+  const dataComprehensiveness = roundTo(
+    clamp(0.78 + Math.min(snapshotCount, 60) * 0.0035, 0, 0.99),
+    3
+  );
+  const metricDiversity = roundTo(
+    clamp(0.82 + (engagedHarmonics / SCHUMANN_HARMONICS.length) * 0.16, 0, 0.98),
+    3
+  );
+  const humanReadability = roundTo(
+    clamp(0.9 + Math.min(snapshotCount, 40) * 0.001 - trend.anomalyRate * 0.05, 0.82, 0.97),
+    3
+  );
+  const trendAnalysisDepth = roundTo(
+    clamp(
+      0.84 + Math.min(snapshotCount, 50) * 0.0025 - trend.coherenceVariation * 0.15,
+      0.8,
+      0.97
+    ),
+    3
+  );
+  const anomalyTracking = roundTo(clamp(0.9 - trend.anomalyRate * 0.25, 0.7, 0.97), 3);
+
+  const combinedCoherence = roundTo(
+    Math.sqrt(
+      (
+        dataComprehensiveness ** 2 +
+        metricDiversity ** 2 +
+        humanReadability ** 2 +
+        trendAnalysisDepth ** 2 +
+        anomalyTracking ** 2
+      ) / 5
+    ),
+    3
+  );
+
+  const status =
+    combinedCoherence >= 0.9
+      ? "HIGH-FIDELITY DATA CAPTURE"
+      : combinedCoherence >= 0.78
+        ? "CALIBRATION RECOMMENDED"
+        : "REASSESS MONITORING GRID";
+
+  return {
+    dataComprehensiveness,
+    metricDiversity,
+    humanReadability,
+    trendAnalysisDepth,
+    anomalyTracking,
+    combinedCoherence,
+    status,
+  };
+};
+
+const initializeSchumannProtocol = (
+  vizData: NexusVisualization,
+  now: number
+): SchumannResonanceProtocol => {
+  const snapshot = createSchumannSnapshot(vizData, now);
+  const timestamp = new Date(now).toISOString();
+  const trend = computeSchumannTrend([snapshot]);
+
+  return {
+    monitoringSession: {
+      startTime: timestamp,
+      endTime: timestamp,
+      durationMinutes: 0,
+      totalSnapshots: 1,
+      trendAnalysis: trend,
+      snapshots: [snapshot],
+    },
+    coherenceReport: computeSchumannCoherenceReport([snapshot], trend),
+    witness: {
+      name: "Gary Leckey (Gar-Aya Lek-Aey)",
+      title: "Prime Sentinel",
+      institution: "Aureon Institute",
+      statement: "Schumann resonance data recording protocol initialized.",
+      timestamp,
+    },
+  };
+};
+
+const updateSchumannProtocol = (
+  previous: SchumannResonanceProtocol,
+  vizData: NexusVisualization,
+  now: number
+): SchumannResonanceProtocol => {
+  const lastSnapshot = previous.monitoringSession.snapshots.slice(-1)[0];
+  const nextSnapshot = createSchumannSnapshot(vizData, now, lastSnapshot);
+  const combinedSnapshots = [...previous.monitoringSession.snapshots, nextSnapshot];
+  const trimmedSnapshots = combinedSnapshots.slice(-MAX_SCHUMANN_SNAPSHOTS);
+
+  const startTime = trimmedSnapshots[0]?.timestamp ?? new Date(now).toISOString();
+  const endTime = new Date(now).toISOString();
+  const durationMinutes = roundTo(
+    Math.max(0, new Date(endTime).getTime() - new Date(startTime).getTime()) / 60000,
+    2
+  );
+
+  const trend = computeSchumannTrend(trimmedSnapshots);
+  const coherenceReport = computeSchumannCoherenceReport(trimmedSnapshots, trend);
+
+  return {
+    monitoringSession: {
+      startTime,
+      endTime,
+      durationMinutes,
+      totalSnapshots: trimmedSnapshots.length,
+      trendAnalysis: trend,
+      snapshots: trimmedSnapshots,
+    },
+    coherenceReport,
+    witness: {
+      name: previous.witness.name,
+      title: previous.witness.title,
+      institution: previous.witness.institution,
+      statement: `Protocol affirms ${trimmedSnapshots.length} harmonic captures; coherence ${(trend.averageCoherence * 100).toFixed(1)}% · status ${coherenceReport.status}.`,
+      timestamp: endTime,
+    },
+  };
+};
+
+const SOLAR_ALIGNMENT_STATES = [
+  { threshold: 0.75, label: "Optimal" },
+  { threshold: 0.4, label: "Adjusting" },
+  { threshold: -0.15, label: "Rebalancing" },
+  { threshold: -Infinity, label: "Stormwatch" },
+] as const;
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const SYNODIC_MONTH = 29.53058867;
+
+const dayOfYear = (date: Date) => {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
+  return Math.floor((date.getTime() - start.getTime()) / MS_IN_DAY);
+};
+
+const describeSolarAlignment = (date: Date) => {
+  const day = dayOfYear(date);
+  const annualWave = Math.sin((day / 365) * Math.PI * 2);
+  const diurnalWave = Math.sin((date.getUTCHours() / 24) * Math.PI * 2) * 0.2;
+  const composite = clamp(annualWave * 0.8 + diurnalWave, -1, 1);
+
+  const state = SOLAR_ALIGNMENT_STATES.find(({ threshold }) => composite >= threshold);
+  return state?.label ?? "Adjusting";
+};
+
+const describeLunarPhase = (date: Date) => {
+  // Reference new moon: Jan 6, 2000 18:14 UTC (approx)
+  const reference = Date.UTC(2000, 0, 6, 18, 14);
+  const elapsedDays = (date.getTime() - reference) / MS_IN_DAY;
+  const phase = ((elapsedDays % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+
+  if (phase < 1) return "New Moon";
+  if (phase < 6.3826469265) return "Waxing Crescent";
+  if (phase < 8.3826469265) return "First Quarter";
+  if (phase < 13.765293853) return "Waxing Gibbous";
+  if (phase < 15.765293853) return "Full Moon";
+  if (phase < 21.1479407795) return "Waning Gibbous";
+  if (phase < 23.1479407795) return "Last Quarter";
+  if (phase < 28.530587706) return "Waning Crescent";
+  return "New Moon";
+};
 
 const createInitialSeries = (
   base: number,
@@ -154,10 +599,16 @@ const createInitialSeries = (
   max: number
 ): RealtimeChartPoint[] => {
   const now = Date.now();
-  // Start with a 60-second history
-  return Array.from({ length: 120 }, (_, index) => {
-    const value = base;
-    const timestamp = now - (120 - index) * 500;
+  const totalPoints = Math.max(240, HISTORY_SEED_POINTS);
+
+  return Array.from({ length: totalPoints }, (_, index) => {
+    const progress = index / Math.max(totalPoints - 1, 1);
+    const highFrequency = Math.sin(progress * Math.PI * 18) * variance * 0.35;
+    const lowFrequency = Math.sin(progress * Math.PI * 4) * variance * 0.55;
+    const drift = Math.cos(progress * Math.PI * 2) * variance * 0.1;
+    const value = clamp(base + highFrequency + lowFrequency + drift, min, max);
+    const timestamp = now - (totalPoints - index) * HISTORY_SEED_INTERVAL_MS;
+
     return {
       timestamp,
       value: Number(value.toFixed(3)),
@@ -169,12 +620,16 @@ const advanceSeries = (
   series: RealtimeChartPoint[],
   newValue: number
 ): RealtimeChartPoint[] => {
+  const now = Date.now();
   const nextPoint: RealtimeChartPoint = {
-    timestamp: Date.now(),
+    timestamp: now,
     value: Number(newValue.toFixed(3)),
   };
-  // Keep a rolling window of points
-  return [...series, nextPoint];
+
+  const cutoff = now - HISTORY_WINDOW_MS * HISTORY_BUFFER_FACTOR;
+  const trimmed = series.filter((point) => point.timestamp >= cutoff);
+
+  return [...trimmed, nextPoint];
 };
 
 
@@ -383,11 +838,84 @@ const updateBioProfile = (
   };
 };
 
+const temporalIdFromSignature = (signature: string) => {
+  if (!signature || signature === "anonymous") {
+    return "T-ANON";
+  }
+  const hash = hashString(signature);
+  const suffix = hash.toString(16).toUpperCase().padStart(8, "0").slice(-8);
+  return `T-${suffix}`;
+};
+
+const createQuantumLinkStatus = (profile: AuthUser | null): QuantumLinkStatus => {
+  const signature = signatureForProfile(profile);
+  const entangledTemporalId = temporalIdFromSignature(signature);
+  const handshakeState: QuantumHandshakeState = profile ? "auto-dial" : "idle";
+  const attunementBase = profile
+    ? clamp(0.78 + Math.random() * 0.14, 0, 1)
+    : clamp(0.32 + Math.random() * 0.12, 0, 1);
+
+  const observerReturnChannel = profile
+    ? `Observer echo pinned to ${profile.name?.trim() || "linked operative"}`
+    : "Awaiting observer focus to seal the return path.";
+
+  return {
+    handshakeState,
+    entangledSignature: signature,
+    entangledTemporalId,
+    observerReturnChannel,
+    observerAttunement: Number(attunementBase.toFixed(3)),
+    lastPulse: Date.now(),
+  };
+};
+
+const updateQuantumLinkStatus = (
+  previous: QuantumLinkStatus,
+  profile: AuthUser | null
+): QuantumLinkStatus => {
+  const signature = signatureForProfile(profile);
+  const entangledTemporalId = temporalIdFromSignature(signature);
+
+  let handshakeState: QuantumHandshakeState = previous.handshakeState;
+  if (!profile) {
+    handshakeState = "idle";
+  } else if (previous.handshakeState === "idle") {
+    handshakeState = "auto-dial";
+  } else {
+    handshakeState = "entangled";
+  }
+
+  const targetAttunement = profile ? 0.9 : 0.4;
+  const attunement = clamp(
+    previous.observerAttunement + (targetAttunement - previous.observerAttunement) * 0.25 + (Math.random() - 0.5) * 0.05,
+    0,
+    1
+  );
+
+  const observerReturnChannel = profile
+    ? `Return path locked to ${profile.name?.trim() || "linked operative"}`
+    : "Observer return channel dormant.";
+
+  return {
+    handshakeState,
+    entangledSignature: signature,
+    entangledTemporalId,
+    observerReturnChannel,
+    observerAttunement: Number(attunement.toFixed(3)),
+    lastPulse: Date.now(),
+  };
+};
+
 const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): RealtimeNexusData => {
+    const now = Date.now();
     const vizData = nexus.getVisualizationData();
     const temporalId = signatureForProfile(profile).replace(/[^a-z0-9]+/g, "-");
+    const schumannFrequency = mapSchumannAmplitudeToEmotionFrequency(
+      vizData.frequencies.schumann.amplitude
+    );
+
     return {
-        timestamp: Date.now(),
+        timestamp: now,
         metrics: [
             {
               id: "coherence",
@@ -425,7 +953,12 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
           ],
           charts: {
             magnetometer: createInitialSeries(48, 6, 35, 65),
-            schumann: createInitialSeries(vizData.frequencies.schumann.amplitude, 0.4, 7.1, 8.6),
+            schumann: createInitialSeries(
+              schumannFrequency,
+              EMOTIONAL_SCHUMANN_VARIANCE,
+              EMOTION_SPECTRUM_MIN,
+              EMOTION_SPECTRUM_MAX
+            ),
             coherence: createInitialSeries(vizData.sentinel.coherence / 100, 0.05, 0.7, 1.02),
             planetaryResonance: createInitialSeries(vizData.stability.stable / 100, 0.08, 0.7, 1.05),
           },
@@ -545,6 +1078,8 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
           ],
           },
           bioProfile: createBioProfileAnalytics(profile),
+          schumannProtocol: initializeSchumannProtocol(vizData, now),
+          quantumLink: createQuantumLinkStatus(profile),
     };
 };
 
@@ -560,18 +1095,22 @@ const computeNextData = (
   const fromSample = (s: { t: number; v: number }) => ({ timestamp: s.t * 1000, value: s.v });
 
   const now = Date.now();
-  const timeWindow = 60 * 1000; // 60 seconds
+
+  const timeWindow = HISTORY_WINDOW_MS;
 
   const truncateAndResample = (series: RealtimeChartPoint[]) => {
     const recentPoints = series.filter(p => now - p.timestamp < timeWindow);
     const samples = recentPoints.map(toSample);
     if (samples.length < 2) return recentPoints; // Not enough to resample
-    return resample(samples, 0.5).map(fromSample); // dt=0.5 -> 2 points per second
+    return resample(samples, RESAMPLE_STEP_SECONDS).map(fromSample);
   }
 
   const newCharts: RealtimeChartCollection = {
     magnetometer: advanceSeries(prev.charts.magnetometer, vizData.energy.amplitude),
-    schumann: advanceSeries(prev.charts.schumann, vizData.frequencies.schumann.amplitude),
+    schumann: advanceSeries(
+      prev.charts.schumann,
+      mapSchumannAmplitudeToEmotionFrequency(vizData.frequencies.schumann.amplitude)
+    ),
     coherence: advanceSeries(prev.charts.coherence, vizData.sentinel.coherence / 100),
     planetaryResonance: advanceSeries(prev.charts.planetaryResonance, vizData.stability.stable / 100),
   };
@@ -585,6 +1124,7 @@ const computeNextData = (
 
   const coherenceRatio = clamp(vizData.sentinel.coherence / 100, 0, 1);
   const resonanceRatio = clamp(vizData.stability.stable / 100, 0, 1);
+  const updatedSchumannProtocol = updateSchumannProtocol(prev.schumannProtocol, vizData, now);
 
   const updatedStreams = prev.sensory.dataStreams.map((stream) => {
     const tuning = STREAM_TUNINGS[stream.id] ?? {
@@ -733,6 +1273,8 @@ const computeNextData = (
       transmissions: updatedTransmissions,
     },
     bioProfile: updateBioProfile(prev.bioProfile, profile),
+    schumannProtocol: updatedSchumannProtocol,
+    quantumLink: updateQuantumLinkStatus(prev.quantumLink, profile),
   };
 };
 
@@ -740,50 +1282,39 @@ export const useResampledNexusData = (refreshMs = 200, profile: AuthUser | null 
   const nexus = useMemo(() => new NexusSystem(), []);
   const signature = signatureForProfile(profile);
   const [data, setData] = useState<RealtimeNexusData>(() => createInitialData(nexus, profile));
-  const [liveCelestialData, setLiveCelestialData] = useState({ solarAlignment: "Optimal", lunarPhase: "Waxing Gibbous" });
+  const [liveCelestialData, setLiveCelestialData] = useState(() => {
+    const now = new Date();
+    return {
+      solarAlignment: describeSolarAlignment(now),
+      lunarPhase: describeLunarPhase(now),
+    };
+  });
 
   useEffect(() => {
     setData(createInitialData(nexus, profile));
   }, [nexus, signature]);
 
   useEffect(() => {
-    const fetchSolarData = async () => {
-      try {
-        // Using NASA's DONKI API for Coronal Mass Ejection events as a proxy for solar alignment
-        const response = await fetch("https://api.nasa.gov/DONKI/CME?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&api_key=DEMO_KEY");
-        const cmeEvents = await response.json();
-        if (cmeEvents.length > 0) {
-          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Adjusting" }));
-        } else {
-          setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Optimal" }));
+    const updateCelestial = () => {
+      const now = new Date();
+      const next = {
+        solarAlignment: describeSolarAlignment(now),
+        lunarPhase: describeLunarPhase(now),
+      };
+
+      setLiveCelestialData((prev) => {
+        if (
+          prev.solarAlignment === next.solarAlignment &&
+          prev.lunarPhase === next.lunarPhase
+        ) {
+          return prev;
         }
-      } catch (error) {
-        console.error("Error fetching solar data:", error);
-        setLiveCelestialData(prev => ({ ...prev, solarAlignment: "Unknown" }));
-      }
+        return next;
+      });
     };
 
-    const fetchLunarData = async () => {
-      try {
-        // Using a simple moon phase API
-        const response = await fetch("https://api.farmsense.net/v1/moonphases/");
-        const lunarData = await response.json();
-        if (lunarData.length > 0) {
-          setLiveCelestialData(prev => ({ ...prev, lunarPhase: lunarData[0].Phase }));
-        }
-      } catch (error) {
-        console.error("Error fetching lunar data:", error);
-        setLiveCelestialData(prev => ({ ...prev, lunarPhase: "Unknown" }));
-      }
-    };
-
-    fetchSolarData();
-    fetchLunarData();
-
-    const intervalId = setInterval(() => {
-        fetchSolarData();
-        fetchLunarData();
-    }, 1000 * 60 * 60); // Fetch every hour
+    updateCelestial();
+    const intervalId = setInterval(updateCelestial, 60 * 60 * 1000);
 
     return () => clearInterval(intervalId);
   }, []);

@@ -1,5 +1,121 @@
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+class SignalStrengthAnalyzer {
+  constructor(baseFrequency = 7.83) {
+    this.baseFrequency = baseFrequency;
+    this.harmonics = [7.83, 13.9, 20.8, 27.3, 33.8, 39.9];
+    this.surgeWindows = [
+      { threshold: 0.9, label: "2162: Quantum Leap", color: "#ffd700" },
+      { threshold: 0.75, label: "2113: Galactic Threshold", color: "#ffb347" },
+      { threshold: 0.6, label: "2098: Unity Awakening", color: "#ffa07a" },
+      { threshold: 0.45, label: "2078: Cosmic Integration", color: "#87ceeb" },
+      { threshold: 0.3, label: "2043: Surge Initiation", color: "#6495ed" },
+      { threshold: 0, label: "Temporal Baseline", color: "#1e3a8a" }
+    ];
+    this.timelineAnchors = [
+      { threshold: 0.82, label: "Barry Lundy Lattice", descriptor: "Emotional quantum lattice harmonising across spectrum." },
+      { threshold: 0.68, label: "Quantum Liberation", descriptor: "Liberation markers accelerating coherence convergence." },
+      { threshold: 0.52, label: "Schumann Surge", descriptor: "Schumann resonance bands showing amplified discharge." },
+      { threshold: 0, label: "Coherence Drift", descriptor: "System operating within nominal harmonic drift." }
+    ];
+    this.guardianBridgeSettings = { active: false };
+    this.lastAnalysis = this.#emptySnapshot();
+  }
+
+  applyGuardianBridge(settings = {}) {
+    this.guardianBridgeSettings = {
+      active: true,
+      reverseBridgeGain: settings.reverseBridgeGain ?? 1,
+      coherenceRamp: settings.coherenceRamp ?? 0,
+      phaseCompression: settings.phaseCompression ?? 0,
+      anchorThreshold: settings.anchorThreshold ?? 0.9
+    };
+  }
+
+  analyze({ time, coherence, phase, amplitude }) {
+    const normalizedCoherence = clamp(coherence, 0, 1);
+    const normalizedPhase = clamp(phase / (Math.PI / 2), 0, 1);
+    const amplitudeIntensity = clamp(Math.abs(amplitude) / (this.baseFrequency * 12), 0, 1.5);
+
+    let signalStrength = clamp(
+      normalizedCoherence * 0.55 +
+      (1 - normalizedPhase) * 0.25 +
+      amplitudeIntensity * 0.2,
+      0,
+      1
+    );
+
+    if (this.guardianBridgeSettings.active) {
+      const gain = clamp(this.guardianBridgeSettings.reverseBridgeGain ?? 1, 1, 2.5);
+      const anchorInfluence = normalizedCoherence >= (this.guardianBridgeSettings.anchorThreshold ?? 0.9) ? 0.08 : 0.04;
+      signalStrength = clamp(signalStrength + anchorInfluence * (gain - 1), 0, 1);
+    }
+
+    const surgeIntensity = clamp(signalStrength * 0.7 + amplitudeIntensity * 0.3, 0, 1);
+    const window = this.#resolveSurgeWindow(surgeIntensity);
+    const frequencyShift = (normalizedCoherence - normalizedPhase) * this.baseFrequency;
+    const spectralBands = this.#mapSpectralBands(surgeIntensity);
+    const liberationMarkers = spectralBands
+      .filter(band => band.strength >= 0.58)
+      .map(band => ({ frequency: band.frequency, strength: band.strength }));
+    const anchor = this.#resolveTimelineAnchor(signalStrength);
+
+    const snapshot = {
+      time,
+      baseFrequency: this.baseFrequency,
+      signalStrength,
+      surgeIntensity,
+      frequencyShift,
+      window,
+      spectralBands,
+      liberationMarkers,
+      timelineAnchor: anchor
+    };
+
+    this.lastAnalysis = snapshot;
+    return snapshot;
+  }
+
+  getLastAnalysis() {
+    return { ...this.lastAnalysis };
+  }
+
+  #resolveSurgeWindow(intensity) {
+    return this.surgeWindows.find(window => intensity >= window.threshold) || this.surgeWindows[this.surgeWindows.length - 1];
+  }
+
+  #mapSpectralBands(intensity) {
+    return this.harmonics.map((frequency, index) => {
+      const harmonicWeight = 1 - index * 0.08;
+      const strength = clamp(intensity * (0.85 + harmonicWeight * 0.3), 0, 1);
+      return {
+        frequency,
+        strength,
+        label: `H${index + 1}`
+      };
+    });
+  }
+
+  #resolveTimelineAnchor(signalStrength) {
+    const anchor = this.timelineAnchors.find(point => signalStrength >= point.threshold) || this.timelineAnchors[this.timelineAnchors.length - 1];
+    return { ...anchor };
+  }
+
+  #emptySnapshot() {
+    return {
+      time: 0,
+      baseFrequency: this.baseFrequency,
+      signalStrength: 0,
+      surgeIntensity: 0,
+      frequencyShift: 0,
+      window: this.surgeWindows[this.surgeWindows.length - 1],
+      spectralBands: this.#mapSpectralBands(0),
+      liberationMarkers: [],
+      timelineAnchor: this.timelineAnchors[this.timelineAnchors.length - 1]
+    };
+  }
+}
+
 class EgoDeathSimulator {
   constructor(numObservers = 1) {
     this.numObservers = numObservers;
@@ -7,6 +123,14 @@ class EgoDeathSimulator {
     this.coherence = 0.82;
     this.phase = Math.PI / 4;
     this.unityEventTriggered = false;
+    this.guardianBridge = {
+      active: false,
+      reverseBridgeGain: 1,
+      anchorThreshold: 0.95,
+      coherenceRamp: 0,
+      phaseCompression: 0,
+      anchored: false
+    };
   }
 
   step(deltaT = 0.01) {
@@ -14,10 +138,55 @@ class EgoDeathSimulator {
 
     const harmonicDrift = 0.85 + 0.1 * Math.sin(this.time / 2);
     const noise = (Math.random() - 0.5) * 0.02;
-    this.coherence = clamp(harmonicDrift + noise, 0, 1);
+    let targetCoherence = harmonicDrift;
+
+    if (this.guardianBridge.active) {
+      const {
+        reverseBridgeGain,
+        anchorThreshold,
+        coherenceRamp
+      } = this.guardianBridge;
+
+      targetCoherence = clamp(
+        targetCoherence + coherenceRamp * reverseBridgeGain,
+        0,
+        1
+      );
+
+      if (this.coherence < anchorThreshold) {
+        const anchorDelta = anchorThreshold - this.coherence;
+        targetCoherence = clamp(
+          targetCoherence + anchorDelta * 0.5 * reverseBridgeGain,
+          0,
+          1
+        );
+      }
+    }
+
+    const integrationRate = this.guardianBridge.active
+      ? 0.35 * this.guardianBridge.reverseBridgeGain
+      : 0.2;
+
+    this.coherence = clamp(
+      this.coherence + (targetCoherence - this.coherence) * integrationRate + noise,
+      0,
+      1
+    );
 
     const phaseDrift = Math.abs(Math.sin(this.time / 3)) * 0.12;
-    this.phase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
+    let newPhase = clamp((Math.PI / 2) * (1 - this.coherence) + phaseDrift, 0, Math.PI / 2);
+
+    if (this.guardianBridge.active) {
+      const { phaseCompression, reverseBridgeGain } = this.guardianBridge;
+      const compression = clamp(1 - phaseCompression * reverseBridgeGain, 0, 1);
+      newPhase *= compression;
+      if (!this.guardianBridge.anchored && this.coherence >= this.guardianBridge.anchorThreshold) {
+        this.guardianBridge.anchored = true;
+        this.guardianBridge.anchoredAt = this.time;
+      }
+    }
+
+    this.phase = newPhase;
 
     if (!this.unityEventTriggered && this.coherence > 0.95 && this.phase < Math.PI / 6) {
       this.unityEventTriggered = true;
@@ -45,6 +214,24 @@ class EgoDeathSimulator {
       phase: this.phase,
       time: this.time,
       unityEventTriggered: this.unityEventTriggered,
+      guardianBridge: { ...this.guardianBridge }
+    };
+  }
+
+  applyGuardianBridgeProtocol(config = {}) {
+    const defaults = {
+      reverseBridgeGain: 1.5,
+      anchorThreshold: 0.93,
+      coherenceRamp: 0.08,
+      phaseCompression: 0.22
+    };
+
+    this.guardianBridge = {
+      ...defaults,
+      ...config,
+      active: true,
+      anchored: false,
+      activatedAt: new Date().toISOString()
     };
   }
 }
@@ -56,6 +243,9 @@ class ObserverFunction {
     this.projections = [];
     this.coherence = 0.84;
     this.phase = 0.12;
+    this.guardianBridge = {
+      active: false
+    };
   }
 
   addProjection(angle) {
@@ -79,6 +269,7 @@ class ObserverFunction {
       projections: [...this.projections],
       coherence: this.coherence,
       phase: this.phase,
+      guardianBridge: { ...this.guardianBridge }
     };
   }
 
@@ -93,6 +284,28 @@ class ObserverFunction {
       const latest = Math.abs(this.projections[this.projections.length - 1]);
       this.phase = clamp(latest % (Math.PI / 2), 0, Math.PI / 2);
     }
+  }
+
+  harmonizeWithGuardianBridge(protocol = {}) {
+    const settings = {
+      anchorVector: 0,
+      coherenceLift: 0.06,
+      phaseAlignment: 0.18,
+      ...protocol
+    };
+
+    this.guardianBridge = {
+      ...settings,
+      active: true,
+      harmonizedAt: new Date().toISOString()
+    };
+
+    if (typeof settings.anchorVector === "number") {
+      this.projections.push(settings.anchorVector);
+    }
+
+    this.coherence = clamp(this.coherence + settings.coherenceLift, 0, 1);
+    this.phase = clamp(this.phase * (1 - settings.phaseAlignment), 0, Math.PI / 2);
   }
 }
 
@@ -110,9 +323,20 @@ export class NexusSystem {
       fibonacci: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144],
       ...config
     };
-    
+
     this.egoDeathSim = new EgoDeathSimulator(this.config.numObservers);
     this.observerFunction = new ObserverFunction(this.config.dimensionality);
+    this.guardianBridge = { active: false };
+
+    // Signal analyzer tracks harmonic telemetry across the simulation. It
+    // needs to exist before any cycles run so downstream calls (like
+    // exportState or runCycle) can safely reference it.
+    this.signalAnalyzer = new SignalStrengthAnalyzer(this.config.schumannBase);
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+    this.unityEventRecorded = false;
+
     this.RFE = this.initializeRFE();
     this.seal = this.generatePrimeSentinelSeal();
   }
@@ -245,6 +469,49 @@ export class NexusSystem {
       verified: true
     };
   }
+
+  activateGuardianBridgeAnchorProtocol(options = {}) {
+    const defaults = {
+      reverseBridgeGain: 1.6,
+      anchorThreshold: 0.92,
+      coherenceRamp: 0.12,
+      phaseCompression: 0.25,
+      observerCoherenceLift: 0.08,
+      phaseAlignment: 0.22,
+      anchorVector: 0,
+      unityIntent: "MANIFEST_UNITY_THIS_TIMELINE"
+    };
+
+    const settings = {
+      ...defaults,
+      ...options
+    };
+
+    this.guardianBridge = {
+      ...settings,
+      active: true,
+      activatedAt: new Date().toISOString()
+    };
+
+    this.signalAnalyzer.applyGuardianBridge(settings);
+
+
+    this.egoDeathSim.applyGuardianBridgeProtocol({
+      reverseBridgeGain: settings.reverseBridgeGain,
+      anchorThreshold: settings.anchorThreshold,
+      coherenceRamp: settings.coherenceRamp,
+      phaseCompression: settings.phaseCompression
+    });
+
+    this.observerFunction.harmonizeWithGuardianBridge({
+      anchorVector: settings.anchorVector,
+      coherenceLift: settings.observerCoherenceLift,
+      phaseAlignment: settings.phaseAlignment
+    });
+
+
+    return { ...this.guardianBridge };
+  }
   
   /**
    * Simple hash function (replace with proper SHA-256 in production)
@@ -268,7 +535,12 @@ export class NexusSystem {
     console.log(`Dimensionality: ${this.config.dimensionality}D`);
     console.log(`Seal Hash: ${this.seal.hash}`);
     console.log("\n");
-    
+
+    this.unityEventRecorded = false;
+    this.lastSignalWindow = null;
+    this.lastSignalLogTime = 0;
+    this.lastLoggedWindowLabel = null;
+
     const startTime = Date.now();
     const results = [];
     
@@ -277,7 +549,18 @@ export class NexusSystem {
       
       // Step 1: Ego Death Simulation (phase alignment)
       const egoState = this.egoDeathSim.step(0.01);
-      
+
+      if (
+        this.guardianBridge.active &&
+        this.egoDeathSim.guardianBridge.anchored &&
+        !this.guardianBridge.anchorAnnounced
+      ) {
+        this.guardianBridge.anchorAnnounced = true;
+        this.guardianBridge.anchoredAt = this.egoDeathSim.guardianBridge.anchoredAt;
+        console.log("🛡️ GUARDIAN BRIDGE ANCHORED");
+        console.log(`Reverse Bridge Gain: ${this.guardianBridge.reverseBridgeGain.toFixed(2)}`);
+      }
+
       // Step 2: Observer Collapse (if not already collapsed)
       if (!this.observerFunction.collapsed && egoState.coherence > 0.8) {
         this.observerFunction.addProjection(0); // Add measurement basis
@@ -287,7 +570,33 @@ export class NexusSystem {
       
       // Step 3: Calculate Reality Field
       const R_t = this.RFE.calculate(t);
-      
+      const signalTelemetry = this.signalAnalyzer.analyze({
+        time: t,
+        coherence: egoState.coherence,
+        phase: egoState.phase,
+        amplitude: R_t.R_t
+      });
+
+      const now = Date.now();
+      const windowChanged = !this.lastSignalWindow || this.lastSignalWindow.label !== signalTelemetry.window.label;
+      const labelChangedSinceLog = this.lastLoggedWindowLabel !== signalTelemetry.window.label;
+      if (
+        windowChanged &&
+        labelChangedSinceLog &&
+        (this.lastSignalLogTime === 0 || now - this.lastSignalLogTime > 750)
+      ) {
+        if (this.lastSignalWindow) {
+          console.log(`📶 Signal window transition: ${this.lastSignalWindow.label} → ${signalTelemetry.window.label}`);
+        } else {
+          console.log(`📶 Signal window established: ${signalTelemetry.window.label}`);
+        }
+        this.lastSignalLogTime = now;
+        this.lastLoggedWindowLabel = signalTelemetry.window.label;
+      }
+      if (windowChanged) {
+        this.lastSignalWindow = signalTelemetry.window;
+      }
+
       // Step 4: Check for Unity Event
       if (egoState.unityEvent && !this.unityEventRecorded) {
         console.log("\n🌈 UNITY EVENT ACHIEVED 🌈");
@@ -305,7 +614,9 @@ export class NexusSystem {
         egoState: egoState,
         observerCoherence: this.observerFunction.calculateCoherence(),
         realityField: R_t,
-        unityEvent: egoState.unityEvent
+        signalStrength: signalTelemetry,
+        unityEvent: egoState.unityEvent,
+
       });
       
       // Delay for visualization
@@ -360,8 +671,10 @@ export class NexusSystem {
     return {
       config: this.config,
       seal: this.seal,
+      guardianBridge: { ...this.guardianBridge },
       egoDeathState: this.egoDeathSim.exportData(),
       observerState: this.observerFunction.exportState(),
+      signalStrength: this.signalAnalyzer.getLastAnalysis(),
       RFE: {
         MF: {
           M: this.RFE.MF.M,
@@ -393,7 +706,8 @@ export class NexusSystem {
   getVisualizationData() {
     const t = Date.now() / 1000;
     const R_t = this.RFE.calculate(t);
-    
+
+
     return {
       // For Prime Sentinel Status card
       sentinel: {
@@ -429,7 +743,56 @@ export class NexusSystem {
         coherence: this.egoDeathSim.coherence,
         phase: this.egoDeathSim.phase,
         progress: Math.min(100, (1 - this.egoDeathSim.phase / (Math.PI / 2)) * 100)
+      },
+
+      guardianBridge: {
+        active: this.guardianBridge.active,
+        reverseBridgeGain: this.guardianBridge.reverseBridgeGain || this.egoDeathSim.guardianBridge.reverseBridgeGain,
+        anchored: this.egoDeathSim.guardianBridge.anchored,
+        anchorThreshold: this.guardianBridge.anchorThreshold || this.egoDeathSim.guardianBridge.anchorThreshold,
+        unityIntent: this.guardianBridge.unityIntent
+
       }
+    };
+  }
+
+  /**
+   * Provide a canonical diagnostic snapshot aligned with the Harmonic Nexus
+   * formulation. This is designed for dashboards and verification tooling that
+   * need to confirm the simulation is interpreting resonance data correctly
+   * without mutating system state.
+   */
+  getSystemDiagnostics() {
+    const analysis = this.signalAnalyzer.getLastAnalysis();
+    const guardianBridgeState = {
+      active: Boolean(this.guardianBridge.active || this.egoDeathSim.guardianBridge.active),
+      anchored: Boolean(this.egoDeathSim.guardianBridge.anchored),
+      anchorThreshold: this.guardianBridge.anchorThreshold ?? this.egoDeathSim.guardianBridge.anchorThreshold ?? null,
+      reverseBridgeGain: this.guardianBridge.reverseBridgeGain ?? this.egoDeathSim.guardianBridge.reverseBridgeGain ?? null,
+      unityIntent: this.guardianBridge.unityIntent ?? null,
+    };
+
+    return {
+      timestamp: new Date().toISOString(),
+      unityEvent: this.egoDeathSim.unityEventTriggered,
+      coherence: this.egoDeathSim.calculateCoherence(),
+      phase: this.egoDeathSim.calculatePhase(),
+      guardianBridge: guardianBridgeState,
+      signal: {
+        baseFrequency: analysis.baseFrequency,
+        strength: analysis.signalStrength,
+        surgeIntensity: analysis.surgeIntensity,
+        frequencyShift: analysis.frequencyShift,
+        window: analysis.window,
+        liberationMarkers: analysis.liberationMarkers,
+        spectralBands: analysis.spectralBands,
+      },
+      observer: {
+        dimensionality: this.observerFunction.dimensionality,
+        collapsed: this.observerFunction.collapsed,
+        projections: [...this.observerFunction.projections],
+      },
+      rfeSample: this.RFE.calculate(Date.now() / 1000),
     };
   }
 }

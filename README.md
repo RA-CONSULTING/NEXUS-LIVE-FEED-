@@ -14,6 +14,14 @@ The system simulates the process of **Ego Death (The Unity Event)** by modeling 
 
 ## Core Concepts
 
+### Nexus Coupling & Balance Protocols
+
+Operational rules for forming couplings, authorizing writes, and managing withdrawal are documented in the [Nexus Coupling and Balance Protocols](docs/nexus_protocols.md). The specification covers the Consent-Before-Coupling (CBC) flow, Balance Guard invariants, revocation rights, the Balance functional, and the minimal REST API surface required for compliant nodes.
+
+### Unified Harmonic Nexus Framework (v6.1)
+
+For the canonical, publication-ready articulation of the lattice's harmonic resonance, memory tensors, and curvature dynamics, see the [Unified Harmonic Nexus Framework](docs/unified_harmonic_nexus_system.md). The v6.1 formulation integrates the loop-state resonance equation, Gary Leckey's formation law, and the Master Nexus curvature coupling into a single cohesive model of the lattice GEM.
+
 ### 1. The Reality Field Equation (RFE)
 
 The simulation is built upon the RFE, which calculates the state of the observable universe as a function of consciousness:
@@ -135,6 +143,37 @@ The core logic is contained within `src/nexus_system_simulator.js`.
 
 3.  **View the Live Dashboard:** The simulation is connected to a React-based front-end. To see the live visualization, run the application.
 
+### Accelerating Unity with the Guardian Bridge Anchor Protocol
+
+To "reverse-bridge" the simulation toward a unity state, call the new `activateGuardianBridgeAnchorProtocol` helper before running a cycle:
+
+```javascript
+const nexus = new NexusSystem();
+nexus.activateGuardianBridgeAnchorProtocol({
+  reverseBridgeGain: 1.8,          // Intensifies the coherence ramp
+  anchorThreshold: 0.94,           // Target coherence for anchoring the bridge
+  coherenceRamp: 0.15,             // Additional lift applied each step
+  phaseCompression: 0.28,          // Compresses phase spread toward zero
+  observerCoherenceLift: 0.1,      // Bonus coherence for the observer lattice
+  unityIntent: "ANCHORING_GUARDIAN_FIELD"
+});
+
+await nexus.runCycle();
+```
+
+When engaged, the guardian bridge data is exposed through `runCycle` results, `exportState()`, and `getVisualizationData()` so the front-end can visualize the anchor/manifestation timeline in real time.
+
+## Source Law of Balance Compliance
+
+Operational deployments must satisfy the Source Law of Balance (SLB) guardrails to remain in stewardship. The new [`slb/compliance.py`](slb/compliance.py) module provides:
+
+- A streaming `BalanceController` that enforces the Lyapunov-style invariants (`B(t) ≤ B_safe` and `⟨B˙⟩ ≤ 0`).
+- Issuance gates such as `should_mint` to ensure WWWW supply expands only when Planet, People, and Progress all improve.
+- Wealth and autonomy checks (`compute_gini`, `check_autonomy_guard`) for governance and QEC flows.
+
+Refer to the [SLB Compliance Guide](docs/slb_compliance.md) for the full guardrails checklist, transparency proofs, and dashboard requirements.
+
+
 ## The Three Paths: Project Vision
 
 This project is the foundation for a three-pronged initiative:
@@ -149,3 +188,32 @@ This project is the foundation for a three-pronged initiative:
 
 **Author:** Gary Leckey, Prime Sentinel  
 **Affiliation:** R&A Consulting and Brokerage Services Ltd, Belfast, Northern Ireland
+
+## Harmonic Nexus Metrics
+
+The script `harmonic_nexus_metrics.py` now couples the Schumann resonance bridge with the aura bio scan feed so the six canonical metrics can be derived directly from live-style samples. Two helper dataclasses, `SchumannWindow` and `AuraBioWindow`, capture the pre-processed windows that the validation bridge would normally stream, and `compute_metrics_from_streams()` condenses them into the familiar Source/Nexus/Unity values. The legacy `compute_metrics()` helper still accepts handcrafted parameters, so existing visualisation notebooks continue to run unchanged.
+
+Run the module to see the fused pipeline render a radar plot:
+
+```bash
+python harmonic_nexus_metrics.py
+```
+
+For bespoke analysis you can assemble the windows manually:
+
+```python
+from harmonic_nexus_metrics import (
+    AuraBioWindow,
+    SchumannWindow,
+    compute_metrics_from_streams,
+)
+
+metrics = compute_metrics_from_streams(
+    [SchumannWindow(7.83, [14.3, 20.8, 27.3, 33.8], 0.9)],
+    [AuraBioWindow(0.48, 0.32, 0.20, 64.0, 6.2, 9.1)],
+)
+```
+
+This returns a dictionary ready for the radar plot or downstream dashboards, mirroring the interpretative overlays shown in the integrated aura visualisation.
+
+## 10-9-1 Tiered Control Demo

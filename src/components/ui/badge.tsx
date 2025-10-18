@@ -9,13 +9,14 @@ interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Badge = ({ className, variant = "default", ...props }: BadgeProps) => {
   const map: Record<Variant, string> = {
-    default: "border border-white/20 bg-gradient-to-r from-sky-500/80 via-blue-500/60 to-fuchsia-500/70 text-white",
-    secondary: "border border-white/15 bg-white/10 text-slate-200",
-    destructive: "border border-rose-400/60 bg-rose-500/25 text-rose-100",
-    outline: "border border-white/25 text-slate-200",
-    success: "border border-emerald-400/60 bg-emerald-500/25 text-emerald-100",
-    warning: "border border-amber-300/60 bg-amber-500/25 text-amber-100",
-    info: "border border-sky-400/60 bg-sky-500/25 text-sky-100",
+    default:
+      "border border-[rgba(102,76,255,0.45)] bg-gradient-to-r from-[#4c7cff]/80 via-[#6f4bff]/75 to-[#f5d26a]/80 text-[#f8fbff]",
+    secondary: "border border-[rgba(82,108,255,0.35)] bg-[rgba(20,32,76,0.6)] text-[#d6e3ff]",
+    destructive: "border border-[rgba(236,72,153,0.45)] bg-[rgba(236,72,153,0.22)] text-[#ffe8f4]",
+    outline: "border border-[rgba(245,210,106,0.45)] text-[#f5d26a]",
+    success: "border border-[rgba(45,212,191,0.45)] bg-[rgba(34,197,247,0.2)] text-[#e9fcff]",
+    warning: "border border-[rgba(245,210,106,0.55)] bg-[rgba(245,210,106,0.24)] text-[#fff8de]",
+    info: "border border-[rgba(96,165,250,0.45)] bg-[rgba(59,130,246,0.22)] text-[#e6f3ff]",
   };
   return (
     <div

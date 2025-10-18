@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import datetime as _dt
 import hashlib
-import importlib
 import json
+import os
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, Iterable, Mapping, Tuple
+from typing import Any, Dict, Iterable, Mapping, Tuple
 
 import numpy as np
 from fastapi import FastAPI, Query
 from pydantic import BaseModel, Field
+
+# WebSocket broadcaster (from auris_ws_patch). Safe fallback if not present.
+try:
+    from auris_ws_patch import emit_event  # async: await emit_event({...})
+except Exception:
+    async def emit_event(_evt: dict):
+        return  # no-op fallback for environments without WS
 
 
 APP_TITLE = "AURIS Unified Interface"
@@ -42,20 +49,6 @@ class BioScanPayload(BaseModel):
 
 
 app = FastAPI(title=APP_TITLE, version=APP_VERSION)
-
-
-_emit_spec = importlib.util.find_spec("auris_ws_patch")
-_emit_callable: Callable[[Dict[str, Any]], Awaitable[None]] | None = None
-if _emit_spec is not None:
-    _ws_module = importlib.import_module("auris_ws_patch")
-    _emit_callable = getattr(_ws_module, "emit_event", None)
-
-
-async def emit_event(_evt: Dict[str, Any]) -> None:
-    """Proxy to the optional WebSocket broadcaster if available."""
-
-    if callable(_emit_callable):
-        await _emit_callable(_evt)  # type: ignore[misc]
 
 
 def _coerce_float(value: Any, default: float | None = None) -> float | None:
@@ -256,10 +249,12 @@ async def ingest_bioscan(
 ) -> Dict[str, Any]:
     data = payload.model_dump()
 
+    # ---- normalize → layers → BCI (your existing logic) ----
     features = normalize_features(data)
     layers, weight_prior = layer_scores(features)
     bci, (ci_lo, ci_hi) = compute_bci(layers, weight_prior)
 
+    # quality flag (unchanged)
     streams = data.get("streams", {})
     status_flag = "OK"
     for stream in streams.values():
@@ -269,10 +264,12 @@ async def ingest_bioscan(
             status_flag = "LOW_QUALITY"
             break
 
-    seals = seal_record(data.get("user", {}), data.get("context", {}), layers, bci, (ci_lo, ci_hi))
-
+    # seals + persistence (unchanged)
     context = data.get("context", {})
+    seals = seal_record(data.get("user", {}), context, layers, bci, (ci_lo, ci_hi))
+    os.makedirs(BIOSCAN_DIR, exist_ok=True)
     session_id = context.get("session_id") or "sess-" + _dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    context = {**context, "session_id": session_id}
     record = {
         "session_id": session_id,
         "mode": mode,
@@ -282,20 +279,20 @@ async def ingest_bioscan(
         "seals": seals,
         "status": status_flag,
         "user": data.get("user"),
-        "context": {**context, "session_id": session_id},
+        "context": context,
     }
-
-    path = BIOSCAN_DIR / f"{session_id}.json"
-    with path.open("w", encoding="utf-8") as handle:
+    record_path = BIOSCAN_DIR / f"{session_id}.json"
+    with record_path.open("w", encoding="utf-8") as handle:
         json.dump(record, handle, indent=2)
 
+    # ---- NEW: broadcast to WebSocket clients (best-effort) ----
     try:
         await emit_event(
             {
                 "type": "bioscan",
                 "session_id": session_id,
                 "mode": mode,
-                "ts": record.get("context", {}).get("timestamp_utc")
+                "ts": context.get("timestamp_utc")
                 or _dt.datetime.utcnow().replace(tzinfo=_dt.timezone.utc).isoformat(),
                 "bci": bci,
                 "crc": layers.get("crc", {}).get("mu"),
@@ -306,6 +303,7 @@ async def ingest_bioscan(
             }
         )
     except Exception:
+        # don't fail the request if WS isn't available
         pass
 
     return record

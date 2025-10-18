@@ -1,12 +1,11 @@
 from fastapi import FastAPI, Query
-from typing import List, Dict, Any
-import os
-import json
+from typing import Dict, Any
+
 import numpy as np
 
 try:
     # Import the running app from v4
-    from auris_unified_interface_v4 import app as unified_app, BIOSCAN_DIR, clip01
+    from auris_unified_interface_v4 import app as unified_app, clip01, load_recent_bioscans
 except Exception as exc:  # pragma: no cover - module import is critical for runtime
     raise SystemExit(
         "This patch expects auris_unified_interface_v4.py to be importable. "
@@ -16,32 +15,10 @@ except Exception as exc:  # pragma: no cover - module import is critical for run
 app: FastAPI = unified_app  # alias for clarity when importing this module
 
 
-def load_recent_bioscans(limit: int = 120) -> List[Dict[str, Any]]:
-    """Return up to ``limit`` most recent bioscan JSON records (newest first)."""
-    os.makedirs(BIOSCAN_DIR, exist_ok=True)
-    files = [
-        f for f in os.listdir(BIOSCAN_DIR)
-        if f.endswith(".json") and os.path.isfile(os.path.join(BIOSCAN_DIR, f))
-    ]
-    files.sort(key=lambda name: os.path.getmtime(os.path.join(BIOSCAN_DIR, name)), reverse=True)
-
-    records: List[Dict[str, Any]] = []
-    for filename in files[:limit]:
-        path = os.path.join(BIOSCAN_DIR, filename)
-        try:
-            with open(path, "r", encoding="utf-8") as handle:
-                records.append(json.load(handle))
-        except Exception:
-            # Ignore bad files but continue pulling what we can
-            continue
-
-    return records
-
-
 @app.get("/bioscan/recent")
 def bioscan_recent(n: int = Query(60, ge=1, le=1000)) -> Dict[str, Any]:
     """Return the most recent bioscan records (newest → oldest)."""
-    return {"results": load_recent_bioscans(n)}
+    return {"results": list(load_recent_bioscans(n))}
 
 
 @app.get("/surge/uvc")

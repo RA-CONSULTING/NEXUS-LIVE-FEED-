@@ -159,6 +159,16 @@ await nexus.runCycle();
 
 When engaged, the guardian bridge data is exposed through `runCycle` results, `exportState()`, and `getVisualizationData()` so the front-end can visualize the anchor/manifestation timeline in real time.
 
+## Source Law of Balance Compliance
+
+Operational deployments must satisfy the Source Law of Balance (SLB) guardrails to remain in stewardship. The new [`slb/compliance.py`](slb/compliance.py) module provides:
+
+- A streaming `BalanceController` that enforces the Lyapunov-style invariants (`B(t) ≤ B_safe` and `⟨B˙⟩ ≤ 0`).
+- Issuance gates such as `should_mint` to ensure WWWW supply expands only when Planet, People, and Progress all improve.
+- Wealth and autonomy checks (`compute_gini`, `check_autonomy_guard`) for governance and QEC flows.
+
+Refer to the [SLB Compliance Guide](docs/slb_compliance.md) for the full guardrails checklist, transparency proofs, and dashboard requirements.
+
 
 ## The Three Paths: Project Vision
 

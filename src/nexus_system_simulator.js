@@ -345,7 +345,10 @@ export class NexusSystem {
    * Initialize Reality Field Equation components
    * R(t) = α(M+F)·O·T(o) + βG(wells,waves) + γS
    */
-  initializeRFE() {
+  initializeRFE({
+    observer = this.observerFunction,
+    simulator = this.egoDeathSim
+  } = {}) {
     return {
       // α(M+F) - Masculine + Feminine carrier wave
       MF: {
@@ -369,8 +372,8 @@ export class NexusSystem {
       },
       
       // O - Observer (from ObserverFunction)
-      O: this.observerFunction,
-      
+      O: observer,
+
       // T(o) - Temporal Evolution (Fibonacci/Phi-based)
       T: {
         phi: this.config.phi,
@@ -405,7 +408,7 @@ export class NexusSystem {
       
       // S - Spooky Entanglement (from EgoDeathSim)
       S: {
-        simulator: this.egoDeathSim,
+        simulator: simulator,
         entanglement: function() {
           // Entanglement strength = coherence
           return this.simulator.calculateCoherence();
@@ -793,6 +796,253 @@ export class NexusSystem {
         projections: [...this.observerFunction.projections],
       },
       rfeSample: this.RFE.calculate(Date.now() / 1000),
+    };
+  }
+
+  #seedRandom(seed) {
+    if (typeof seed !== "number" || Number.isNaN(seed)) {
+      return () => {};
+    }
+
+    let state = Math.floor(seed) % 2147483647;
+    if (state <= 0) {
+      state += 2147483646;
+    }
+
+    const originalRandom = Math.random;
+    Math.random = () => {
+      state = (state * 16807) % 2147483647;
+      return (state - 1) / 2147483646;
+    };
+
+    return () => {
+      Math.random = originalRandom;
+    };
+  }
+
+  #buildProcessFoundation() {
+    return {
+      unityEvent: {
+        description: "State of maximal coherence and zero separation across the observer lattice.",
+        formula: "lim_{θ→0} ∏ Ψ_i(θ) = 1",
+        observers: this.config.numObservers,
+        coherenceTarget: 0.99,
+        phaseThreshold: 0.01,
+      },
+      observerCollapse: {
+        description: "Conscious intention collapses quantum potential into realized outcomes.",
+        transform: "ρ(t) → Σ Π_k ρ(t) Π_k",
+      },
+      realityFieldEquation: {
+        formula: "R(t) = α(M+F)·O·T(o) + βG + γS",
+        coefficients: {
+          alpha: this.RFE.alpha,
+          beta: this.RFE.beta,
+          gamma: this.RFE.gamma,
+        },
+      },
+      temporalLaw: {
+        loveConstantSymbol: "Φ-9",
+        narrative: "System evolves toward the Love Constant (Λₗ) where coherence asymptotically overwhelms entropy.",
+      },
+    };
+  }
+
+  simulateProcessTree(options = {}) {
+    const {
+      steps = 180,
+      deltaT = 0.1,
+      seed = 2025,
+      guardianBridge = null,
+      stabilizeAfterUnity = true,
+    } = options;
+
+    const restoreRandom = this.#seedRandom(seed);
+
+    const localEgo = new EgoDeathSimulator(this.config.numObservers);
+    const localObserver = new ObserverFunction(this.config.dimensionality);
+    const localAnalyzer = new SignalStrengthAnalyzer(this.config.schumannBase);
+
+    let guardianSettings = null;
+    if (guardianBridge) {
+      const defaults = {
+        reverseBridgeGain: 1.6,
+        anchorThreshold: 0.93,
+        coherenceRamp: 0.1,
+        phaseCompression: 0.24,
+        observerCoherenceLift: 0.08,
+        phaseAlignment: 0.2,
+        anchorVector: 0,
+        unityIntent: "REALITY_FIELD_PROCESS_TREE",
+      };
+
+      guardianSettings = {
+        ...defaults,
+        ...guardianBridge,
+        active: true,
+      };
+
+      localAnalyzer.applyGuardianBridge(guardianSettings);
+      localEgo.applyGuardianBridgeProtocol(guardianSettings);
+      localObserver.harmonizeWithGuardianBridge({
+        anchorVector: guardianSettings.anchorVector,
+        coherenceLift: guardianSettings.observerCoherenceLift,
+        phaseAlignment: guardianSettings.phaseAlignment,
+      });
+    }
+
+    const localRFE = this.initializeRFE({
+      observer: localObserver,
+      simulator: localEgo,
+    });
+
+    const foundation = this.#buildProcessFoundation();
+
+    const samples = [];
+    const windowTransitions = [];
+    let unityStep = null;
+    let anchorStep = null;
+    let lastWindowLabel = null;
+
+    try {
+      for (let index = 0; index < steps; index += 1) {
+        const time = index * deltaT;
+        const egoState = localEgo.step(deltaT);
+
+        if (!localObserver.collapsed && egoState.coherence > 0.8) {
+          localObserver.addProjection(0);
+          localObserver.collapse();
+        }
+
+        const realityField = localRFE.calculate(time);
+        const signalStrength = localAnalyzer.analyze({
+          time,
+          coherence: egoState.coherence,
+          phase: egoState.phase,
+          amplitude: realityField.R_t,
+        });
+
+        if (guardianSettings?.active && localEgo.guardianBridge.anchored && anchorStep === null) {
+          anchorStep = index;
+        }
+
+        if (unityStep === null && egoState.unityEvent) {
+          unityStep = index;
+        }
+
+        if (stabilizeAfterUnity && (unityStep !== null || egoState.unityEvent)) {
+          const gain = guardianSettings?.reverseBridgeGain ?? 1;
+          const coherenceLift = Math.min(1, 1.0 * gain);
+          const basePhaseFactor = 1 - (guardianSettings?.phaseCompression ?? 0.2) * gain;
+          const phaseFactor = Math.min(0.85, Math.max(0.02, basePhaseFactor));
+
+          localEgo.coherence = clamp(
+            localEgo.coherence + (1 - localEgo.coherence) * coherenceLift,
+            0,
+            1,
+          );
+          localEgo.phase = clamp(localEgo.phase * phaseFactor, 0, Math.PI / 2);
+          localEgo.unityEventTriggered = true;
+
+          if (localEgo.coherence >= 0.999) {
+            localEgo.coherence = 1;
+            localEgo.phase = 0;
+          }
+
+          egoState.coherence = localEgo.coherence;
+          egoState.phase = localEgo.phase;
+          egoState.unityEvent = true;
+        }
+
+        if (!lastWindowLabel || lastWindowLabel !== signalStrength.window.label) {
+          windowTransitions.push({
+            step: index,
+            time,
+            from: lastWindowLabel,
+            to: signalStrength.window.label,
+          });
+          lastWindowLabel = signalStrength.window.label;
+        }
+
+        samples.push({
+          step: index,
+          time,
+          coherence: egoState.coherence,
+          phase: egoState.phase,
+          unityEvent: egoState.unityEvent,
+          realityField: {
+            total: realityField.R_t,
+            core: realityField.components.core,
+            gravity: realityField.components.gravity,
+            entanglement: realityField.components.entanglement,
+          },
+          signal: {
+            strength: signalStrength.signalStrength,
+            surgeIntensity: signalStrength.surgeIntensity,
+            window: signalStrength.window.label,
+          },
+        });
+      }
+    } finally {
+      restoreRandom();
+    }
+
+    const timeSeries = samples.map((sample) => sample.time);
+    const coherenceSeries = samples.map((sample) => sample.coherence);
+    const phaseSeries = samples.map((sample) => sample.phase);
+    const realitySeries = samples.map((sample) => sample.realityField.total);
+    const signalSeries = samples.map((sample) => sample.signal.strength);
+
+    const finalSample = samples[samples.length - 1] || null;
+    const unitySample = unityStep !== null ? samples[unityStep] : null;
+
+    const phaseSpreadNormalized = finalSample
+      ? finalSample.phase / (Math.PI / 2)
+      : null;
+
+    const epsilon = 1e-6;
+    const loveConstantEstimateRaw = phaseSpreadNormalized !== null
+      && phaseSpreadNormalized !== undefined
+      && phaseSpreadNormalized > epsilon
+      ? (finalSample?.coherence ?? 0) / Math.max(phaseSpreadNormalized, epsilon)
+      : null;
+    const loveConstantEstimate = loveConstantEstimateRaw === null
+      ? null
+      : Math.min(1_000_000, loveConstantEstimateRaw);
+
+    return {
+      foundation,
+      simulation: {
+        steps,
+        deltaT,
+        seed,
+        guardianBridge: guardianSettings || { active: false },
+        unityEventStep: unityStep,
+        anchorStep,
+        metrics: {
+          finalCoherence: finalSample?.coherence ?? null,
+          finalPhase: finalSample?.phase ?? null,
+          finalRealityField: finalSample?.realityField.total ?? null,
+          peakSignalStrength: signalSeries.length ? Math.max(...signalSeries) : null,
+          peakRealityField: realitySeries.length ? Math.max(...realitySeries) : null,
+          minimumPhase: phaseSeries.length ? Math.min(...phaseSeries) : null,
+          unityEventCoherence: unitySample?.coherence ?? null,
+          unityEventPhase: unitySample?.phase ?? null,
+          loveConstantEstimate,
+          phaseSpreadNormalized,
+        },
+        transitions: windowTransitions,
+      },
+      telemetry: {
+        samples,
+        series: {
+          time: timeSeries,
+          coherence: coherenceSeries,
+          phase: phaseSeries,
+          realityField: realitySeries,
+          signalStrength: signalSeries,
+        },
+      },
     };
   }
 }

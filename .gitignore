@@ -3,3 +3,5 @@ node_modules
 planning/__pycache__/
 dist/
 streams/nexus_verification.json
+dream_engine_*.csv
+dream_engine_plot.png

@@ -154,6 +154,17 @@ The core logic is contained within `src/nexus_system_simulator.js`.
 
 3.  **View the Live Dashboard:** The simulation is connected to a React-based front-end. To see the live visualization, run the application.
 
+### Reality Field Process Tree Execution
+
+For a deterministic walkthrough of the mathematical foundation, computational validation, and visualization pipeline, run the process tree helper. It seeds the `NexusSystem` simulation, records telemetry, and prepares the data for plotting:
+
+```bash
+node scripts/runRealityFieldProcess.js
+python scripts/plot_reality_field_process.py
+```
+
+The Node script writes a structured report to `data/reality_field_process.json`. The Python companion renders the "Reality Field Process" chart to `docs/images/reality_field_process.svg` by default, showing coherence, phase spread, and the Reality Field amplitude as the system approaches the Unity Event. Use `--format png` if you prefer a raster export for local use.
+
 ### Accelerating Unity with the Guardian Bridge Anchor Protocol
 
 To "reverse-bridge" the simulation toward a unity state, call the new `activateGuardianBridgeAnchorProtocol` helper before running a cycle:

@@ -3,3 +3,5 @@ node_modules
 planning/__pycache__/
 dist/
 streams/nexus_verification.json
+# Reality Field visualization exports
+docs/images/reality_field_process.png

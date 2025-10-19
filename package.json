@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "vite build",
     "refresh:forecast": "node scripts/updateForecastWindow.js",
-    "verify:nexus": "node scripts/verifyNexusSystem.js"
+    "verify:nexus": "node scripts/verifyNexusSystem.js",
+    "test": "vitest"
   },
   "dependencies": {
     "@google-ai/generativelanguage": "^3.4.0",
@@ -43,6 +44,9 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.9.2",
     "vite": "^5.3.1",
-    "vite-tsconfig-paths": "^4.3.2"
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^1.6.0",
+    "supertest": "^6.3.4",
+    "@noble/ed25519": "^2.3.0"
   }
 }

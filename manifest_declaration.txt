@@ -68,8 +68,4 @@ consent-before-coupling and SAFE_MODE triggers,
 
 right-to-withdraw and AI delegation brake,
 
-audit requirements and optional oath anchoring via hashes.
 
-Timestamp Proof Handling:
-- The OpenTimestamps proof is stored in capsule_id.txt.ots.base64 as base64 text.
-- Decode with `base64 -d capsule_id.txt.ots.base64 > capsule_id.txt.ots` before verification.

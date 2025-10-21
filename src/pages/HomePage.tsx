@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSero } from '@/contexts/SeroProvider';
 import { useLiveNexusData } from '@/contexts/LiveNexusDataContext';
+import { liveDataSourceRegistry } from '@/lib/liveDataSources';
 import type { AuditRecord } from '@/lib/sero/sero-core';
 
 import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/ChronicleGovernanceTab';
@@ -22,6 +23,7 @@ import VisualRelayTab from '../components/VisualRelayTab';
 import LiveStreamShowcase from '../components/LiveStreamShowcase';
 import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
 import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
+import DataSourceRegistry from '../components/DataSourceRegistry';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -226,6 +228,11 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
   watch: 'border-amber-300/40 bg-amber-500/20 text-amber-100 shadow-[0_0_25px_rgba(251,191,36,0.35)]',
   alert: 'border-rose-400/40 bg-rose-500/25 text-rose-100 shadow-[0_0_25px_rgba(244,63,94,0.35)]',
 };
+
+const {
+  version: DATA_SOURCE_VERSION,
+  sources: DATA_SOURCES,
+} = liveDataSourceRegistry;
 
 const HomePage = () => {
   const { audit } = useSero();
@@ -826,13 +833,14 @@ const HomePage = () => {
             </TabsContent>
             <TabsContent
               value="sensory-layer"
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.2)] backdrop-blur"
-            >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-transparent to-sky-500/15 opacity-70" />
-              <div className="relative z-10">
-                <SensoryLayerTab sensors={sensors} />
-              </div>
-            </TabsContent>
+          className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.2)] backdrop-blur"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-transparent to-sky-500/15 opacity-70" />
+          <div className="relative z-10 space-y-6">
+            <SensoryLayerTab sensors={sensors} />
+            <DataSourceRegistry sources={DATA_SOURCES} version={DATA_SOURCE_VERSION} />
+          </div>
+        </TabsContent>
             <TabsContent
               value="processing-core"
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(139,92,246,0.22)] backdrop-blur"

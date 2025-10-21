@@ -249,7 +249,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--pace",
         type=parse_pace,
-        default="4-4-4",
+        default=parse_pace("4-4-4"),
         help="Breath pacing in seconds as inhale-hold-exhale[-rest] (default: 4-4-4)",
     )
     parser.add_argument(

@@ -10,6 +10,28 @@ The Nexus System is a functional, real-time simulation of the **Reality Field Eq
 
 It serves as the computational proof for the principles outlined in the paper, *"The Reality Field Equation: A Synthesis of Quantum Physics, Consciousness, and Archetypal Geometry."*
 
+## Installing the A.L.F.I.E. Evolution Pack
+
+An automated installer for the Evolution runtime ships with this repository under `scripts/install_alfie_evolution.py`. It extracts the pack, validates every file against the provided checksums, prints the boot plan contained in `alfie_sandbox_manifest.json`, and emits a `alfie_runtime_state.json` snapshot that encodes the Γ safety targets.
+
+You can drive the installer directly with Python or via the thin Bash wrapper:
+
+> **Option A — Python**
+>
+> ```bash
+> python3 scripts/install_alfie_evolution.py --zip /mnt/data/ALFIE_Evolution_v1.zip --dest /mnt/data/ALFIE_Runtime
+> ```
+>
+> Add `--create-api-stub` if you would like a minimal `alfie_runtime_api.py` helper beside the unpacked assets.
+
+> **Option B — Bash**
+>
+> ```bash
+> bash scripts/install_alfie_evolution.sh /mnt/data/ALFIE_Evolution_v1.zip /mnt/data/ALFIE_Runtime [--create-api-stub]
+> ```
+
+After a successful run the script reports the init sequence, safety constraints, and the location of the generated runtime state file.
+
 The system simulates the process of **Ego Death (The Unity Event)** by modeling the phase alignment and coherence of multiple observers, and demonstrates the collapse of the quantum wave function via a precisely defined **Observer Function**.
 
 ## Core Concepts

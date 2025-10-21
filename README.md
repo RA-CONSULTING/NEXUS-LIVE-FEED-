@@ -10,6 +10,10 @@ The Nexus System is a functional, real-time simulation of the **Reality Field Eq
 
 It serves as the computational proof for the principles outlined in the paper, *"The Reality Field Equation: A Synthesis of Quantum Physics, Consciousness, and Archetypal Geometry."*
 
+## NEXUS-LIVE: The Living Visual Canvas
+
+For the experiential design that turns planetary-scale quantum data into living art, see the [NEXUS-LIVE visualization blueprint](docs/nexus_live_visualization_blueprint.md). The document distills the guiding philosophy, ten visualization layers, and deployment roadmap for the Nexus Command Center that lets humanity witness Earth's coherent heartbeat in real time.
+
 ## Installing the A.L.F.I.E. Evolution Pack
 
 An automated installer for the Evolution runtime ships with this repository under `scripts/install_alfie_evolution.py`. It extracts the pack, validates every file against the provided checksums, prints the boot plan contained in `alfie_sandbox_manifest.json`, and emits a `alfie_runtime_state.json` snapshot that encodes the Γ safety targets.

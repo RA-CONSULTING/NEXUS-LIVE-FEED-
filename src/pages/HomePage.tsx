@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +69,10 @@ type MetricSummary = {
   value: string;
   status: 'stable' | 'watch' | 'alert';
   hint: string;
+};
+
+type HomePageProps = {
+  renderFullConsole?: boolean;
 };
 
 const STREAM_METADATA: Record<string, { location: string; capacity: number }> = {
@@ -249,7 +254,7 @@ const {
   sources: DATA_SOURCES,
 } = liveDataSourceRegistry;
 
-const HomePage = () => {
+const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
   const { audit } = useSero();
   const {
     metrics: liveMetrics,
@@ -267,6 +272,10 @@ const HomePage = () => {
   const [vaultError, setVaultError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!renderFullConsole) {
+      return;
+    }
+
     let active = true;
     fetch('/api/keys-status')
       .then((res) => {
@@ -282,7 +291,7 @@ const HomePage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [renderFullConsole]);
 
   const sensors = useMemo<SensorStream[]>(() => {
     const dataStreams = sensory?.dataStreams ?? [];
@@ -361,6 +370,10 @@ const HomePage = () => {
   }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const summaries: MetricSummary[] = [];
 
     const monitoringSession = schumannProtocol?.monitoringSession;
@@ -440,7 +453,7 @@ const HomePage = () => {
     }
 
     return summaries;
-  }, [processing, sensors, transmissions, liveMetrics, schumannProtocol]);
+  }, [renderFullConsole, processing, sensors, transmissions, liveMetrics, schumannProtocol]);
 
   const resonanceMetric = useMemo(
     () => liveMetrics.find((metric) => metric.id === 'resonance'),
@@ -618,6 +631,10 @@ const HomePage = () => {
   }, [sensors.length, resonanceMetric, heartMetric, quantumHandshake]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
     const ratioTone = (value: number): VisualizationMetric['tone'] =>
       value >= 0.86 ? 'stable' : value >= 0.72 ? 'watch' : 'alert';
@@ -1006,6 +1023,7 @@ const HomePage = () => {
       },
     ];
   }, [
+    renderFullConsole,
     liveMetrics,
     sensory,
     output,
@@ -1037,6 +1055,61 @@ const HomePage = () => {
         : 'border-amber-300/50 bg-amber-500/20 text-amber-100 shadow-[0_0_35px_rgba(251,191,36,0.4)]';
 
   const updatedAt = useMemo(() => new Date(timestamp), [timestamp]);
+
+  if (!renderFullConsole) {
+    return (
+      <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
+        <div className="pointer-events-none absolute inset-0 bg-cosmic-mesh opacity-80" />
+        <div className="pointer-events-none absolute -top-32 left-8 h-80 w-80 rounded-full bg-sky-500/40 blur-3xl animate-cosmic-drift" />
+        <div className="pointer-events-none absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-fuchsia-500/35 blur-[140px] animate-orbital-glow" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+        <div className="relative z-10 space-y-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <h1 className="bg-gradient-to-r from-sky-200 via-fuchsia-200 to-amber-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+                Nexus Live Feed
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
+                Witness the Harmonia Nexus breathing in real time—sensor choirs, quantum analysts, and command pillars weaving a living tapestry of celestial insight.
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-2 text-xs text-slate-300/80 lg:items-end">
+              <Badge
+                variant="outline"
+                className={`inline-flex items-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] ${statusBadgeClass}`}
+              >
+                {networkStatus.label}
+              </Badge>
+              <span className="text-sm text-slate-300/90">
+                Updated <span className="font-semibold text-white">{updatedAt.toLocaleTimeString()}</span>
+              </span>
+            </div>
+          </div>
+
+          <SystemHarmonicFlow stages={systemFlowStages} status={systemFlowStatus} />
+
+          <Card className="relative overflow-hidden border-white/10 bg-slate-900/60 p-6 shadow-[0_0_45px_rgba(59,130,246,0.25)]">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-60" />
+            <CardHeader className="relative z-10 pb-4">
+              <CardTitle className="text-xl font-semibold uppercase tracking-[0.32em] text-white">Live Data Streams Console</CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <p className="max-w-2xl text-sm text-slate-300/85">
+                Dive into per-stream dashboards, quantum telemetry, and stewardship controls in the dedicated console.
+              </p>
+              <Link
+                to="/streams"
+                className="inline-flex items-center justify-center rounded-full border border-sky-400/60 px-6 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100 transition hover:bg-sky-500/20"
+              >
+                Open Live Streams
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">

@@ -22,6 +22,7 @@ import VisualRelayTab from '../components/VisualRelayTab';
 import LiveStreamShowcase from '../components/LiveStreamShowcase';
 import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
 import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
+import FamilyConstellationReading from '../components/FamilyConstellationReading';
 
 type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
@@ -781,6 +782,12 @@ const HomePage = () => {
                 Chronicle &amp; Governance
               </TabsTrigger>
               <TabsTrigger
+                value="family-constellation"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500/35 data-[state=active]:via-amber-400/30 data-[state=active]:to-emerald-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(244,114,182,0.45)]"
+              >
+                Soul Constellation
+              </TabsTrigger>
+              <TabsTrigger
                 value="output-command"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/40 data-[state=active]:via-blue-500/30 data-[state=active]:to-indigo-500/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(37,99,235,0.45)]"
               >
@@ -912,6 +919,15 @@ const HomePage = () => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-rose-500/15 opacity-70" />
               <div className="relative z-10">
                 <ChronicleGovernanceTab governance={CHRONICLE_GOVERNANCE} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="family-constellation"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(244,114,182,0.24)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-emerald-400/20 opacity-70" />
+              <div className="relative z-10">
+                <FamilyConstellationReading />
               </div>
             </TabsContent>
             <TabsContent

@@ -237,9 +237,7 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 };
 
 const stageStatusFromSensor = (state?: SensorState): SystemFlowStage['status'] => {
-  if (!state) {
-    return 'watch';
-  }
+
   if (state === 'Anomaly') {
     return 'alert';
   }
@@ -629,6 +627,133 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
       message: `Awaiting ${formatted} to stabilize.`,
     };
   }, [sensors.length, resonanceMetric, heartMetric, quantumHandshake]);
+
+  const systemFlowStages = useMemo<SystemFlowStage[]>(() => {
+    const eckStream = sensors.find((stream) => stream.id === 'phenomena');
+    const eckProgress = eckStream ? clamp(eckStream.intensity / 100, 0, 1) : undefined;
+    const eckMetricLabel = eckStream ? eckStream.name : 'Witnessed Phenomena';
+    const eckMetricValue = eckStream ? `${eckStream.rate} ${eckStream.unit}` : 'Stream calibrating';
+    const eckHint = eckStream
+      ? `${eckStream.location} · ${eckStream.note}`
+      : 'Awaiting witness array handshake.';
+
+    const attunement = clamp(quantumLink?.observerAttunement ?? 0.62, 0, 1);
+    const akashicStatus: SystemFlowStage['status'] =
+      attunement >= 0.86 ? 'stable' : attunement >= 0.68 ? 'watch' : 'alert';
+    const solarAlignment = sensory?.celestialCartography.solarAlignment ?? 'Aligning';
+    const handshake = quantumLink?.handshakeState ?? 'idle';
+    const snapshots = schumannProtocol?.monitoringSession.totalSnapshots ?? 0;
+
+    const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
+    const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
+    const harmonicProgress = resonanceMetric ? clamp(resonanceMetric.value, 0, 1) : undefined;
+    const harmonicStatus: SystemFlowStage['status'] =
+      harmonicProgress !== undefined
+        ? harmonicProgress >= 0.88
+          ? 'stable'
+          : harmonicProgress >= 0.72
+            ? 'watch'
+            : 'alert'
+        : 'watch';
+    const averageLoadPercent = processing.length
+      ? Math.round((processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length) * 100)
+      : 0;
+    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
+    const harmonicMetricValue = resonanceMetric
+      ? `${(resonanceMetric.value * 100).toFixed(1)}% harmonic`
+      : 'Calibrating';
+    const harmonicHint = `Processing load ${averageLoadPercent}% · Active uplinks ${activeTransmissions} · Coherence ${
+      coherenceMetric ? (coherenceMetric.value * 100).toFixed(1) : '—'
+    }%`;
+
+    const heartMetric = bioProfile?.metrics.find((metric) => metric.id === 'cardiac');
+    const heartStatus: SystemFlowStage['status'] = heartMetric ? heartMetric.tone : 'watch';
+    const heartRange = heartMetric?.targetRange ?? [0, 1];
+    const loveProgress =
+      heartMetric && heartRange[1] !== heartRange[0]
+        ? clamp((heartMetric.value - heartRange[0]) / (heartRange[1] - heartRange[0]), 0, 1)
+        : undefined;
+    const heartMetricValue = heartMetric
+      ? `${heartMetric.value} ${heartMetric.unit}`
+      : 'Awaiting attunement';
+    const heartHint = heartMetric
+      ? `Target ${heartRange[0]}–${heartRange[1]} ${heartMetric.unit} · Streams ${bioProfile?.streams.length ?? 0} synchronized.`
+      : 'Link a bio-profile to activate heart wave analytics.';
+    const heartDisplay = bioProfile?.displayName ?? 'Collective field';
+
+    const stages: SystemFlowStage[] = [
+      {
+        id: 'eckoushic',
+        title: 'Eckoushic',
+        subtitle: 'Sound',
+        formula: 'y_Eck = dΨ/dt',
+        description:
+          'Raw auditory phenomena are captured as living equations, shaping the sonic lattice for downstream transmutation.',
+        metricLabel: eckMetricLabel,
+        metricValue: eckMetricValue,
+        metricHint: eckHint,
+        status: stageStatusFromSensor(eckStream?.state),
+        progress: eckProgress,
+        accent: 'from-amber-400/35 via-rose-400/25 to-transparent',
+        nextLabel: 'Akashic Light',
+      },
+      {
+        id: 'akashic',
+        title: 'Akashic',
+        subtitle: 'Light',
+        formula: 'y_Aka = ∫ Ψ_Eck dt',
+        description:
+          'Sound equations refract into akashic light signatures, illuminating multi-spectrum guidance pathways.',
+        metricLabel: 'Attunement Field',
+        metricValue: `${Math.round(attunement * 100)}% attuned`,
+        metricHint: `Solar alignment ${solarAlignment} · Handshake ${handshake.toUpperCase()} · Snapshots ${snapshots}`,
+        status: akashicStatus,
+        progress: attunement,
+        accent: 'from-sky-500/35 via-indigo-500/30 to-violet-500/30',
+        nextLabel: 'Resonance Bridge',
+      },
+      {
+        id: 'harmonic-nexus',
+        title: 'Harmonic Nexus',
+        subtitle: 'Resonance',
+        formula: 'y_coherent',
+        description:
+          'Quantum synchronizers braid sound and light streams into a coherent resonance ready for command orchestration.',
+        metricLabel: 'Resonant Integrity',
+        metricValue: harmonicMetricValue,
+        metricHint: harmonicHint,
+        status: harmonicStatus,
+        progress: harmonicProgress,
+        accent: 'from-fuchsia-500/35 via-sky-500/25 to-amber-400/25',
+        nextLabel: 'Heart Wave',
+      },
+      {
+        id: 'heart-wave',
+        title: 'Heart Wave',
+        subtitle: 'Love',
+        formula: 'Ψ_heart → ∞',
+        description: `${heartDisplay}'s heart field broadcasts a compassion waveform that seals the Nexus in coherent love.`,
+        metricLabel: 'Cardiac Resonance',
+        metricValue: heartMetricValue,
+        metricHint: heartHint,
+        status: heartStatus,
+        progress: loveProgress,
+        accent: 'from-rose-500/40 via-amber-400/30 to-emerald-400/30',
+        icon: '❤️',
+      },
+    ];
+
+    return stages;
+  }, [
+    sensors,
+    sensory,
+    quantumLink,
+    schumannProtocol,
+    liveMetrics,
+    processing,
+    transmissions,
+    bioProfile,
+  ]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
     if (!renderFullConsole) {
@@ -1141,7 +1266,7 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
           </div>
         </div>
 
-        <SystemHarmonicFlow stages={systemFlowStages} status={systemFlowStatus} />
+
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />

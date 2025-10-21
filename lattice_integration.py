@@ -7,7 +7,7 @@ import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -74,18 +74,179 @@ class UnityTensorField:
 
     samples: Sequence[Mapping[str, float]]
     default_tsv: float = 0.82
+    version: str = "1.0"
+    schema: Optional[Mapping[str, Any]] = None
+    validation: Optional[Mapping[str, Any]] = None
+    derived_metric_definitions: Optional[Mapping[str, Any]] = None
+
+    _gamma_projection: Optional[float] = field(default=None, init=False, repr=False)
+    _mirror_lock: bool = field(default=False, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.schema, Mapping):
+            self.schema = dict(self.schema)
+        else:
+            self.schema = None
+
+        if isinstance(self.validation, Mapping):
+            self.validation = dict(self.validation)
+        else:
+            self.validation = None
+
+        if isinstance(self.derived_metric_definitions, Mapping):
+            self.derived_metric_definitions = dict(self.derived_metric_definitions)
+        else:
+            self.derived_metric_definitions = None
+
+        normalized_samples: List[Dict[str, float]] = []
+        for row in self.samples:
+            if not isinstance(row, Mapping):
+                continue
+            normalized = self._normalize_sample(row)
+            if normalized is not None:
+                normalized_samples.append(normalized)
+        self.samples = normalized_samples
+
+        self._compute_derived_metrics()
 
     @classmethod
     def from_path(cls, path: Path) -> "UnityTensorField":
         if not path.exists():
             return cls(samples=[], default_tsv=0.82)
+
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            data = []
-        if not isinstance(data, list):
-            data = []
-        return cls(samples=[row for row in data if isinstance(row, MutableMapping)], default_tsv=0.82)
+            data = None
+
+        version = "1.0"
+        schema: Optional[Mapping[str, Any]] = None
+        validation: Optional[Mapping[str, Any]] = None
+        derived_metric_definitions: Optional[Mapping[str, Any]] = None
+
+        raw_samples: Iterable[Any]
+        if isinstance(data, Mapping):
+            version = str(data.get("version", version))
+            schema_candidate = data.get("schema")
+            schema = schema_candidate if isinstance(schema_candidate, Mapping) else None
+            validation_candidate = data.get("validation")
+            validation = validation_candidate if isinstance(validation_candidate, Mapping) else None
+            derived_candidate = data.get("derived_metrics")
+            derived_metric_definitions = (
+                derived_candidate if isinstance(derived_candidate, Mapping) else None
+            )
+            raw_samples = (
+                data.get("samples")
+                or data.get("data")
+                or data.get("rows")
+                or data.get("entries")
+                or []
+            )
+        elif isinstance(data, Sequence):
+            raw_samples = data
+        else:
+            raw_samples = []
+
+        if not isinstance(raw_samples, Sequence):
+            raw_samples = list(raw_samples) if raw_samples is not None else []
+
+        min_rows = 0
+        required_fields = {"phi", "kappa", "psi", "tsv"}
+        if validation:
+            raw_required = validation.get("required_fields")
+            if isinstance(raw_required, Sequence):
+                required_fields = {str(item).lower() for item in raw_required if item}
+            min_rows = int(validation.get("min_rows", 0) or 0)
+
+        normalized_samples: List[Dict[str, float]] = []
+        for row in raw_samples:
+            if not isinstance(row, Mapping):
+                continue
+            keys_lower = {str(key).lower() for key in row.keys()}
+            if required_fields - keys_lower:
+                continue
+            normalized = cls._normalize_sample(row)
+            if normalized is not None:
+                normalized_samples.append(normalized)
+
+        if min_rows and len(normalized_samples) < min_rows:
+            normalized_samples = []
+
+        return cls(
+            samples=normalized_samples,
+            default_tsv=0.82,
+            version=version,
+            schema=schema,
+            validation=validation,
+            derived_metric_definitions=derived_metric_definitions,
+        )
+
+    @staticmethod
+    def _to_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    @classmethod
+    def _normalize_sample(cls, row: Mapping[str, Any]) -> Optional[Dict[str, float]]:
+        phi_value = cls._to_float(row.get("phi"))
+        kappa_value = cls._to_float(row.get("kappa"))
+        psi_value = cls._to_float(row.get("psi"))
+        tsv_source = row.get("tsv")
+        if tsv_source is None:
+            tsv_source = row.get("TSV")
+        tsv_value = cls._to_float(tsv_source)
+
+        if None in (phi_value, kappa_value, psi_value, tsv_value):
+            return None
+
+        return {
+            "phi": float(phi_value),
+            "kappa": float(kappa_value),
+            "psi": float(psi_value),
+            "tsv": float(tsv_value),
+        }
+
+    def _compute_derived_metrics(self) -> None:
+        if not self.samples:
+            self._gamma_projection = None
+            self._mirror_lock = False
+            return
+
+        tsv_values = np.array([row["tsv"] for row in self.samples], dtype=float)
+        mean_value = float(np.mean(tsv_values)) if tsv_values.size else 0.0
+        std_value = float(np.std(tsv_values)) if tsv_values.size else 0.0
+
+        if mean_value != 0.0:
+            self._gamma_projection = 1.0 - std_value / abs(mean_value)
+        else:
+            self._gamma_projection = None
+
+        self._mirror_lock = bool(mean_value < 0.0)
+
+    @property
+    def gamma_projection(self) -> Optional[float]:
+        """Return the Gamma projection metric if it can be determined."""
+
+        return self._gamma_projection
+
+    @property
+    def mirror_lock(self) -> bool:
+        """Whether the mean TSV suggests a mirror-locked phase inversion."""
+
+        return self._mirror_lock
+
+    @property
+    def derived_metrics(self) -> Dict[str, Any]:
+        """Return the computed derived metrics for the field."""
+
+        return {
+            "gamma_projection": self._gamma_projection,
+            "mirror_lock": self._mirror_lock,
+        }
 
     def sample(self, phi: float, kappa: float, psi: float) -> float:
         if not self.samples:

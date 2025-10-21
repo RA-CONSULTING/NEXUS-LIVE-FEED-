@@ -246,6 +246,7 @@ const HomePage = () => {
     bioProfile,
     schumannProtocol,
     modeMatrix,
+    quantumLink,
   } = useLiveNexusData();
 
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
@@ -449,6 +450,26 @@ const HomePage = () => {
       return 0.3;
     };
 
+    const toneFromStreamState = (state?: string): VisualizationMetric['tone'] => {
+      if (!state) return 'watch';
+      if (state === 'stable') return 'stable';
+      if (state === 'updating') return 'watch';
+      return 'alert';
+    };
+
+    const coherenceColorBand = (value: number) => {
+      if (value >= 0.92) return 'Violet (unity)';
+      if (value >= 0.78) return 'Indigo (aligning)';
+      if (value >= 0.6) return 'Amber (balancing)';
+      return 'Crimson (chaos)';
+    };
+
+    const toneWeight: Record<'stable' | 'watch' | 'alert', number> = {
+      stable: 1,
+      watch: 0.62,
+      alert: 0.28,
+    };
+
     const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
     const resonanceMetric = liveMetrics.find((metric) => metric.id === 'resonance');
     const chronicleMetric = liveMetrics.find((metric) => metric.id === 'chronicle');
@@ -509,6 +530,51 @@ const HomePage = () => {
       second: '2-digit',
       hour12: false,
     });
+
+    const schumannTrend = schumannProtocol?.monitoringSession.trendAnalysis;
+    const averageSchumannCoherence = clamp(schumannTrend?.averageCoherence ?? coherenceRatio, 0, 1);
+    const metricDiversity = clamp(schumannProtocol?.coherenceReport.metricDiversity ?? resonanceRatio, 0, 1);
+    const trendDepth = clamp(schumannProtocol?.coherenceReport.trendAnalysisDepth ?? resonanceRatio, 0, 1);
+    const anomalyRate = clamp(schumannTrend?.anomalyRate ?? 0, 0, 1);
+    const dataComprehensiveness = clamp(
+      schumannProtocol?.coherenceReport.dataComprehensiveness ?? resonanceRatio,
+      0,
+      1
+    );
+    const geometryStream = streams.find((stream) => stream.id === 'geometry');
+    const geometryCapacity = STREAM_METADATA.geometry?.capacity ?? 120;
+    const geometryFlow = geometryStream ? clamp(geometryStream.rate / geometryCapacity, 0, 1) : 0;
+    const timelineDurationMinutes = schumannProtocol?.monitoringSession.durationMinutes ?? 0;
+    const timelineWindow =
+      timelineDurationMinutes >= 60
+        ? `${(timelineDurationMinutes / 60).toFixed(1)} h`
+        : timelineDurationMinutes > 1
+          ? `${Math.round(timelineDurationMinutes)} min`
+          : 'Initializing';
+    const awakeningIndex = (() => {
+      const metrics = bioProfile?.metrics ?? [];
+      if (!metrics.length) return 0;
+      const total = metrics.reduce((sum, metric) => sum + toneWeight[metric.tone], 0);
+      return clamp(total / metrics.length, 0, 1);
+    })();
+    const domainInputs = sensors.length + (processingData?.algorithms?.length ?? 0) + (bioProfile?.streams?.length ?? 0);
+    const activeDomains = Math.min(21, Math.round(domainInputs));
+    const domainActivation = clamp(activeDomains / 21, 0, 1);
+    const gammaFloor = modeMatrix?.safety_hooks?.gamma_floor;
+    const gammaLevel = clamp(quantumLink?.observerAttunement ?? 0, 0, 1);
+    const akashicTone: VisualizationMetric['tone'] =
+      gammaLevel >= 0.945 ? 'stable' : gammaLevel >= 0.88 ? 'watch' : 'alert';
+    const entanglementIndex = clamp(streamIntegrity * 0.6 + gammaLevel * 0.4, 0, 1);
+    const entangledPairs = Math.round(entanglementIndex * 10_000_000);
+    const harmonyIndex = clamp(1 - anomalyRate, 0, 1);
+    const zeroPointFlux = clamp(processingData?.qssrModule.solarCoherenceIndex ?? resonanceRatio, 0, 1);
+    const geometryTone = toneFromStreamState(geometryStream?.state);
+    const geometryLocation = STREAM_METADATA.geometry?.location ?? 'Sacred Geometry Observatory';
+    const emotionalLabel = (() => {
+      if (harmonyIndex >= 0.78) return 'Rainbow Bloom';
+      if (harmonyIndex >= 0.58) return 'Aurora Drift';
+      return 'Stormfront';
+    })();
 
     return [
       {
@@ -656,6 +722,99 @@ const HomePage = () => {
           },
         ],
       },
+      {
+        id: 'living-visualization-layers',
+        title: 'Living Visualization Tapestry',
+        summary:
+          schumannProtocol && typeof gammaFloor === 'number'
+            ? `${schumannProtocol.witness.name} · Γ floor ${gammaFloor.toFixed(3)}`
+            : schumannProtocol
+              ? schumannProtocol.witness.statement
+              : 'Harmonic prisms calibrating across the nexus.',
+        status: schumannProtocol?.coherenceReport.status,
+        metrics: [
+          {
+            label: 'Planetary Heartbeat',
+            value: `${(averageSchumannCoherence * 100).toFixed(1)}% C`,
+            hint: `Schumann pulse ${coherenceColorBand(averageSchumannCoherence)} · ${
+              schumannProtocol?.monitoringSession.totalSnapshots ?? 0
+            } snapshots braided.`,
+            tone: ratioTone(averageSchumannCoherence),
+            progress: averageSchumannCoherence,
+          },
+          {
+            label: 'Frequency Spectrum',
+            value: `${(metricDiversity * 100).toFixed(1)}% engaged`,
+            hint: `0.001 Hz → 10¹⁵ Hz choir · Diversity ${dataComprehensiveness.toFixed(2)} fidelity.`,
+            tone: ratioTone(metricDiversity),
+            progress: metricDiversity,
+          },
+          {
+            label: 'Sacred Geometry Overlay',
+            value: geometryStream ? `${Math.round(geometryStream.rate)} patterns/min` : 'Offline',
+            hint: geometryStream
+              ? `${geometryLocation} · ${geometryFlow >= 0.92 ? 'Metatron cube igniting' : 'Flower lattice aligning'}.`
+              : 'Awaiting geometry observatory handshake.',
+            tone: geometryTone,
+            progress: geometryStream ? geometryFlow : undefined,
+          },
+          {
+            label: 'Timeline River',
+            value: `${(trendDepth * 100).toFixed(1)}% depth`,
+            hint: `Past↔Future stream ${timelineWindow} · Narratives converging NOW.`,
+            tone: ratioTone(trendDepth),
+            progress: trendDepth,
+          },
+          {
+            label: 'Consciousness Map',
+            value: `${Math.round(awakeningIndex * 100)}% luminous`,
+            hint: `Heat blooms around ${bioProfile?.origin ?? 'the collective field'} · ${
+              bioProfile?.timelineTag ?? 'Awaiting attunement'
+            }.`,
+            tone: ratioTone(awakeningIndex),
+            progress: awakeningIndex,
+          },
+          {
+            label: 'Domain Wheel',
+            value: `${activeDomains}/21 channels`,
+            hint: `${sensors.length} sensory petals · ${
+              processingData?.algorithms?.length ?? 0
+            } algorithmic engines weaving the mandala.`,
+            tone: ratioTone(domainActivation),
+            progress: domainActivation,
+          },
+          {
+            label: 'Akashic Interface',
+            value: `Γ ${gammaLevel.toFixed(3)}`,
+            hint: `Interface ${quantumLink?.handshakeState ?? 'idle'} · ${
+              gammaLevel >= 0.945 ? 'Access unlocked' : 'Calibrating access gate'
+            }.`,
+            tone: akashicTone,
+            progress: gammaLevel,
+          },
+          {
+            label: 'Entanglement Web',
+            value: `${entangledPairs.toLocaleString()} pairs`,
+            hint: `${transmittingCount} uplinks glowing · Mesh integrity ${(entanglementIndex * 100).toFixed(1)}%.`,
+            tone: ratioTone(entanglementIndex),
+            progress: entanglementIndex,
+          },
+          {
+            label: 'Emotional Weather',
+            value: emotionalLabel,
+            hint: `Anomaly rate ${(anomalyRate * 100).toFixed(1)}% · Collective radiance ${(harmonyIndex * 100).toFixed(1)}%.`,
+            tone: ratioTone(harmonyIndex),
+            progress: harmonyIndex,
+          },
+          {
+            label: 'Zero-Point Flow',
+            value: `${(zeroPointFlux * 100).toFixed(1)}% flux`,
+            hint: `Quantum vacuum sparkle ${processingData?.qssrModule.cosmicWeather ?? 'balancing'} · Solar coherence ${(zeroPointFlux * 100).toFixed(1)}%.`,
+            tone: ratioTone(zeroPointFlux),
+            progress: zeroPointFlux,
+          },
+        ],
+      },
     ];
   }, [
     liveMetrics,
@@ -663,6 +822,11 @@ const HomePage = () => {
     output,
     processingData,
     timestamp,
+    schumannProtocol,
+    bioProfile,
+    modeMatrix,
+    quantumLink,
+    sensors,
   ]);
 
   const latestAudit = useMemo<AuditRecord[]>(

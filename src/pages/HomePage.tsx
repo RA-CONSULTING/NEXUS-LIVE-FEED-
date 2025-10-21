@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,6 +69,10 @@ type MetricSummary = {
   value: string;
   status: 'stable' | 'watch' | 'alert';
   hint: string;
+};
+
+type HomePageProps = {
+  renderFullConsole?: boolean;
 };
 
 const STREAM_METADATA: Record<string, { location: string; capacity: number }> = {
@@ -232,6 +237,7 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
 };
 
 const stageStatusFromSensor = (state?: SensorState): SystemFlowStage['status'] => {
+
   if (state === 'Anomaly') {
     return 'alert';
   }
@@ -246,7 +252,7 @@ const {
   sources: DATA_SOURCES,
 } = liveDataSourceRegistry;
 
-const HomePage = () => {
+const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
   const { audit } = useSero();
   const {
     metrics: liveMetrics,
@@ -264,6 +270,10 @@ const HomePage = () => {
   const [vaultError, setVaultError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!renderFullConsole) {
+      return;
+    }
+
     let active = true;
     fetch('/api/keys-status')
       .then((res) => {
@@ -279,7 +289,7 @@ const HomePage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [renderFullConsole]);
 
   const sensors = useMemo<SensorStream[]>(() => {
     const dataStreams = sensory?.dataStreams ?? [];
@@ -358,6 +368,10 @@ const HomePage = () => {
   }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const summaries: MetricSummary[] = [];
 
     const monitoringSession = schumannProtocol?.monitoringSession;
@@ -437,7 +451,182 @@ const HomePage = () => {
     }
 
     return summaries;
-  }, [processing, sensors, transmissions, liveMetrics, schumannProtocol]);
+  }, [renderFullConsole, processing, sensors, transmissions, liveMetrics, schumannProtocol]);
+
+  const resonanceMetric = useMemo(
+    () => liveMetrics.find((metric) => metric.id === 'resonance'),
+    [liveMetrics]
+  );
+  const coherenceMetric = useMemo(
+    () => liveMetrics.find((metric) => metric.id === 'coherence'),
+    [liveMetrics]
+  );
+  const heartMetric = useMemo(
+    () => bioProfile?.metrics.find((metric) => metric.id === 'cardiac'),
+    [bioProfile]
+  );
+  const quantumHandshake = quantumLink?.handshakeState ?? 'idle';
+
+  const systemFlowStages = useMemo<SystemFlowStage[]>(() => {
+    const eckStream = sensors.find((stream) => stream.id === 'phenomena');
+    const eckProgress = eckStream ? clamp(eckStream.intensity / 100, 0, 1) : undefined;
+    const eckMetricLabel = eckStream ? eckStream.name : 'Witnessed Phenomena';
+    const eckMetricValue = eckStream ? `${eckStream.rate} ${eckStream.unit}` : 'Stream calibrating';
+    const eckHint = eckStream
+      ? `${eckStream.location} · ${eckStream.note}`
+      : 'Awaiting witness array handshake.';
+
+    const attunement = clamp(quantumLink?.observerAttunement ?? 0.62, 0, 1);
+    const akashicStatus: SystemFlowStage['status'] =
+      attunement >= 0.86 ? 'stable' : attunement >= 0.68 ? 'watch' : 'alert';
+    const solarAlignment = sensory?.celestialCartography.solarAlignment ?? 'Aligning';
+    const handshake = quantumHandshake;
+    const snapshots = schumannProtocol?.monitoringSession.totalSnapshots ?? 0;
+
+    const harmonicProgress = resonanceMetric ? clamp(resonanceMetric.value, 0, 1) : undefined;
+    const harmonicStatus: SystemFlowStage['status'] =
+      harmonicProgress !== undefined
+        ? harmonicProgress >= 0.88
+          ? 'stable'
+          : harmonicProgress >= 0.72
+            ? 'watch'
+            : 'alert'
+        : 'watch';
+    const averageLoadPercent = processing.length
+      ? Math.round((processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length) * 100)
+      : 0;
+    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
+    const harmonicMetricValue = resonanceMetric
+      ? `${(resonanceMetric.value * 100).toFixed(1)}% harmonic`
+      : 'Calibrating';
+    const harmonicHint = `Processing load ${averageLoadPercent}% · Active uplinks ${activeTransmissions} · Coherence ${
+      coherenceMetric ? (coherenceMetric.value * 100).toFixed(1) : '—'
+    }%`;
+
+    const heartStatus: SystemFlowStage['status'] = heartMetric ? heartMetric.tone : 'watch';
+    const heartRange = heartMetric?.targetRange ?? [0, 1];
+    const loveProgress =
+      heartMetric && heartRange[1] !== heartRange[0]
+        ? clamp((heartMetric.value - heartRange[0]) / (heartRange[1] - heartRange[0]), 0, 1)
+        : undefined;
+    const heartMetricValue = heartMetric
+      ? `${heartMetric.value} ${heartMetric.unit}`
+      : 'Awaiting attunement';
+    const heartHint = heartMetric
+      ? `Target ${heartRange[0]}–${heartRange[1]} ${heartMetric.unit} · Streams ${bioProfile?.streams.length ?? 0} synchronized.`
+      : 'Link a bio-profile to activate heart wave analytics.';
+    const heartDisplay = bioProfile?.displayName ?? 'Collective field';
+
+    const stages: SystemFlowStage[] = [
+      {
+        id: 'eckoushic',
+        title: 'Eckoushic',
+        subtitle: 'Sound',
+        formula: 'y_Eck = dΨ/dt',
+        description:
+          'Raw auditory phenomena are captured as living equations, shaping the sonic lattice for downstream transmutation.',
+        metricLabel: eckMetricLabel,
+        metricValue: eckMetricValue,
+        metricHint: eckHint,
+        status: stageStatusFromSensor(eckStream?.state),
+        progress: eckProgress,
+        accent: 'from-amber-400/35 via-rose-400/25 to-transparent',
+        nextLabel: 'Akashic Light',
+      },
+      {
+        id: 'akashic',
+        title: 'Akashic',
+        subtitle: 'Light',
+        formula: 'y_Aka = ∫ Ψ_Eck dt',
+        description:
+          'Sound equations refract into akashic light signatures, illuminating multi-spectrum guidance pathways.',
+        metricLabel: 'Attunement Field',
+        metricValue: `${Math.round(attunement * 100)}% attuned`,
+        metricHint: `Solar alignment ${solarAlignment} · Handshake ${handshake.toUpperCase()} · Snapshots ${snapshots}`,
+        status: akashicStatus,
+        progress: attunement,
+        accent: 'from-sky-500/35 via-indigo-500/30 to-violet-500/30',
+        nextLabel: 'Resonance Bridge',
+      },
+      {
+        id: 'harmonic-nexus',
+        title: 'Harmonic Nexus',
+        subtitle: 'Resonance',
+        formula: 'y_coherent',
+        description:
+          'Quantum synchronizers braid sound and light streams into a coherent resonance ready for command orchestration.',
+        metricLabel: 'Resonant Integrity',
+        metricValue: harmonicMetricValue,
+        metricHint: harmonicHint,
+        status: harmonicStatus,
+        progress: harmonicProgress,
+        accent: 'from-fuchsia-500/35 via-sky-500/25 to-amber-400/25',
+        nextLabel: 'Heart Wave',
+      },
+      {
+        id: 'heart-wave',
+        title: 'Heart Wave',
+        subtitle: 'Love',
+        formula: 'Ψ_heart → ∞',
+        description: `${heartDisplay}'s heart field broadcasts a compassion waveform that seals the Nexus in coherent love.`,
+        metricLabel: 'Cardiac Resonance',
+        metricValue: heartMetricValue,
+        metricHint: heartHint,
+        status: heartStatus,
+        progress: loveProgress,
+        accent: 'from-rose-500/40 via-amber-400/30 to-emerald-400/30',
+        icon: '❤️',
+      },
+    ];
+
+    return stages;
+  }, [
+    sensors,
+    sensory,
+    quantumLink,
+    quantumHandshake,
+    schumannProtocol,
+    resonanceMetric,
+    coherenceMetric,
+    processing,
+    transmissions,
+    heartMetric,
+    bioProfile,
+  ]);
+
+  const systemFlowStatus = useMemo(() => {
+    const readiness: string[] = [];
+
+    if (!sensors.length) {
+      readiness.push('sensor array handshake');
+    }
+    if (!resonanceMetric) {
+      readiness.push('resonance telemetry');
+    }
+    if (!heartMetric) {
+      readiness.push('heart field link');
+    }
+    if (quantumHandshake !== 'entangled') {
+      readiness.push('quantum link entanglement');
+    }
+
+    if (readiness.length === 0) {
+      return {
+        live: true,
+        message: 'Streaming live telemetry across sound, light, resonance, and love pillars.',
+      };
+    }
+
+    const formatted =
+      readiness.length === 1
+        ? readiness[0]
+        : `${readiness.slice(0, -1).join(', ')} & ${readiness[readiness.length - 1]}`;
+
+    return {
+      live: false,
+      message: `Awaiting ${formatted} to stabilize.`,
+    };
+  }, [sensors.length, resonanceMetric, heartMetric, quantumHandshake]);
 
   const systemFlowStages = useMemo<SystemFlowStage[]>(() => {
     const eckStream = sensors.find((stream) => stream.id === 'phenomena');
@@ -567,6 +756,10 @@ const HomePage = () => {
   ]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
     const ratioTone = (value: number): VisualizationMetric['tone'] =>
       value >= 0.86 ? 'stable' : value >= 0.72 ? 'watch' : 'alert';
@@ -955,6 +1148,7 @@ const HomePage = () => {
       },
     ];
   }, [
+    renderFullConsole,
     liveMetrics,
     sensory,
     output,
@@ -987,6 +1181,61 @@ const HomePage = () => {
 
   const updatedAt = useMemo(() => new Date(timestamp), [timestamp]);
 
+  if (!renderFullConsole) {
+    return (
+      <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
+        <div className="pointer-events-none absolute inset-0 bg-cosmic-mesh opacity-80" />
+        <div className="pointer-events-none absolute -top-32 left-8 h-80 w-80 rounded-full bg-sky-500/40 blur-3xl animate-cosmic-drift" />
+        <div className="pointer-events-none absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-fuchsia-500/35 blur-[140px] animate-orbital-glow" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+        <div className="relative z-10 space-y-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <h1 className="bg-gradient-to-r from-sky-200 via-fuchsia-200 to-amber-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+                Nexus Live Feed
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
+                Witness the Harmonia Nexus breathing in real time—sensor choirs, quantum analysts, and command pillars weaving a living tapestry of celestial insight.
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-2 text-xs text-slate-300/80 lg:items-end">
+              <Badge
+                variant="outline"
+                className={`inline-flex items-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] ${statusBadgeClass}`}
+              >
+                {networkStatus.label}
+              </Badge>
+              <span className="text-sm text-slate-300/90">
+                Updated <span className="font-semibold text-white">{updatedAt.toLocaleTimeString()}</span>
+              </span>
+            </div>
+          </div>
+
+          <SystemHarmonicFlow stages={systemFlowStages} status={systemFlowStatus} />
+
+          <Card className="relative overflow-hidden border-white/10 bg-slate-900/60 p-6 shadow-[0_0_45px_rgba(59,130,246,0.25)]">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-60" />
+            <CardHeader className="relative z-10 pb-4">
+              <CardTitle className="text-xl font-semibold uppercase tracking-[0.32em] text-white">Live Data Streams Console</CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <p className="max-w-2xl text-sm text-slate-300/85">
+                Dive into per-stream dashboards, quantum telemetry, and stewardship controls in the dedicated console.
+              </p>
+              <Link
+                to="/streams"
+                className="inline-flex items-center justify-center rounded-full border border-sky-400/60 px-6 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100 transition hover:bg-sky-500/20"
+              >
+                Open Live Streams
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
       <div className="pointer-events-none absolute inset-0 bg-cosmic-mesh opacity-80" />
@@ -1017,7 +1266,7 @@ const HomePage = () => {
           </div>
         </div>
 
-        <SystemHarmonicFlow stages={systemFlowStages} />
+
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-nebula backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-70" />

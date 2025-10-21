@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, NavLink, Route, Routes } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
+import LiveStreamsPage from './pages/LiveStreamsPage';
 
 import { SeroProvider } from './contexts/SeroProvider';
 import { LiveNexusDataProvider } from './contexts/LiveNexusDataContext';
@@ -37,13 +38,44 @@ const Layout: React.FC = () => {
           <div className="relative overflow-hidden rounded-3xl border border-[rgba(102,76,255,0.45)] bg-[rgba(14,24,58,0.76)] p-6 text-center shadow-[0_0_45px_rgba(56,189,248,0.28)] backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.4em] text-[#a7b5ff]/85">Live Field Monitoring Priority</p>
             <p className="mt-2 text-sm text-[#c8d4ff]/85">
-              Navigation channels have been suspended to dedicate the interface to live telemetry and analytics oversight.
+              Summary mode keeps telemetry responsive—open the Live Data Streams console for the full, tabbed instrumentation when deeper dives are needed.
             </p>
           </div>
+
+          <nav className="flex flex-wrap items-center justify-center gap-3 text-[11px] uppercase tracking-[0.32em] text-[#c8d4ff]/80 sm:justify-start">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `inline-flex items-center justify-center rounded-full border px-5 py-2 font-semibold transition ${
+                  isActive
+                    ? 'border-sky-400/70 bg-sky-500/20 text-white shadow-[0_0_20px_rgba(56,189,248,0.35)]'
+                    : 'border-white/15 text-[#c8d4ff]/80 hover:border-sky-400/60 hover:text-white'
+                }`
+              }
+              end
+            >
+              Summary View
+            </NavLink>
+            <NavLink
+              to="/streams"
+              className={({ isActive }) =>
+                `inline-flex items-center justify-center rounded-full border px-5 py-2 font-semibold transition ${
+                  isActive
+                    ? 'border-emerald-400/70 bg-emerald-500/20 text-white shadow-[0_0_20px_rgba(16,185,129,0.35)]'
+                    : 'border-white/15 text-[#c8d4ff]/80 hover:border-emerald-400/60 hover:text-white'
+                }`
+              }
+            >
+              Live Data Streams
+            </NavLink>
+          </nav>
         </header>
 
         <main className="mt-10 flex-1 pb-16">
-          <HomePage />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/streams" element={<LiveStreamsPage />} />
+          </Routes>
         </main>
       </div>
     </div>

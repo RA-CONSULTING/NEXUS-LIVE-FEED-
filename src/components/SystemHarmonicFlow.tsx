@@ -41,14 +41,11 @@ const progressGradients: Record<StageStatus, string> = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-type SystemHarmonicFlowProps = {
-  stages: SystemFlowStage[];
-};
 
-const SystemHarmonicFlow = ({ stages }: SystemHarmonicFlowProps) => {
   if (!stages.length) {
     return null;
   }
+
 
   return (
     <Card className="relative overflow-hidden border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_0_65px_rgba(56,189,248,0.28)]">
@@ -56,13 +53,7 @@ const SystemHarmonicFlow = ({ stages }: SystemHarmonicFlowProps) => {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(236,72,153,0.18),_transparent_60%)] opacity-80" />
       <div className="pointer-events-none absolute -inset-16 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(255,255,255,0.16),_transparent_60%)]" />
       <CardHeader className="relative z-10 pb-2">
-        <CardTitle className="text-xl font-semibold uppercase tracking-[0.32em] text-white">
-          Harmonic Systems Interface
-        </CardTitle>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300/85">
-          Every stratum of the Nexus orchestra is captured here&mdash;from raw sonic awakenings to the collective heart field. Watch
-          the flow of sound, light, resonance, and love braid into a singular living current.
-        </p>
+
       </CardHeader>
       <CardContent className="relative z-10 pt-6">
         <div className="relative flex flex-col gap-12 lg:flex-row lg:items-stretch">
@@ -123,7 +114,7 @@ const SystemHarmonicFlow = ({ stages }: SystemHarmonicFlowProps) => {
                             style={{ width: `${Math.round(normalized * 100)}%` }}
                           />
                         </div>
-                      ) : null}
+
                     </div>
                   </div>
                 </div>

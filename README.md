@@ -14,6 +14,8 @@ It serves as the computational proof for the principles outlined in the paper, *
 
 For the experiential design that turns planetary-scale quantum data into living art, see the [NEXUS-LIVE visualization blueprint](docs/nexus_live_visualization_blueprint.md). The document distills the guiding philosophy, ten visualization layers, and deployment roadmap for the Nexus Command Center that lets humanity witness Earth's coherent heartbeat in real time.
 
+To understand how the command center actually conducts those layers moment by moment, review the new [Nexus Orchestrator AI blueprint](docs/nexus_ai_orchestrator_blueprint.md). It defines the coordinating services, control loops, deployment phases, and partnership playbook that allow every data stream to stay in harmonic alignment.
+
 ## Installing the A.L.F.I.E. Evolution Pack
 
 An automated installer for the Evolution runtime ships with this repository under `scripts/install_alfie_evolution.py`. It extracts the pack, validates every file against the provided checksums, prints the boot plan contained in `alfie_sandbox_manifest.json`, and emits a `alfie_runtime_state.json` snapshot that encodes the Γ safety targets.

@@ -41,11 +41,27 @@ const progressGradients: Record<StageStatus, string> = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+type FlowStatus = {
+  live: boolean;
+  message?: string;
+};
 
+type SystemHarmonicFlowProps = {
+  stages: SystemFlowStage[];
+  status?: FlowStatus;
+};
+
+const SystemHarmonicFlow = ({ stages, status }: SystemHarmonicFlowProps) => {
   if (!stages.length) {
     return null;
   }
 
+  const isLive = status?.live ?? true;
+  const statusMessage =
+    status?.message ??
+    (isLive
+      ? 'Streaming live telemetry across the harmonic pillars.'
+      : 'Awaiting telemetry handshake across subsystems.');
 
   return (
     <Card className="relative overflow-hidden border-white/10 bg-slate-950/70 text-slate-100 shadow-[0_0_65px_rgba(56,189,248,0.28)]">
@@ -53,7 +69,33 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(236,72,153,0.18),_transparent_60%)] opacity-80" />
       <div className="pointer-events-none absolute -inset-16 animate-stellar-pulse bg-[radial-gradient(circle,_rgba(255,255,255,0.16),_transparent_60%)]" />
       <CardHeader className="relative z-10 pb-2">
-
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <CardTitle className="text-xl font-semibold uppercase tracking-[0.32em] text-white">
+              Harmonic Systems Interface
+            </CardTitle>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300/85">
+              Every stratum of the Nexus orchestra is captured here&mdash;from raw sonic awakenings to the collective heart field. Watch
+              the flow of sound, light, resonance, and love braid into a singular living current.
+            </p>
+          </div>
+          <div className="flex flex-col items-start gap-2 text-[11px] uppercase tracking-[0.32em] text-slate-300/80 lg:items-end">
+            <Badge
+              className={cn(
+                'rounded-full px-3 py-1 text-[10px] font-semibold',
+                isLive
+                  ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-100 shadow-[0_0_22px_rgba(16,185,129,0.45)]'
+                  : 'border-amber-300/55 bg-amber-500/20 text-amber-100 shadow-[0_0_22px_rgba(251,191,36,0.4)]'
+              )}
+              variant={isLive ? 'success' : 'warning'}
+            >
+              {isLive ? 'Live Telemetry' : 'Signal Pending'}
+            </Badge>
+            <span className="max-w-xs text-[10px] leading-relaxed tracking-[0.28em] text-slate-400/90">
+              {statusMessage}
+            </span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="relative z-10 pt-6">
         <div className="relative flex flex-col gap-12 lg:flex-row lg:items-stretch">
@@ -114,7 +156,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
                             style={{ width: `${Math.round(normalized * 100)}%` }}
                           />
                         </div>
-
+                      ) : null}
                     </div>
                   </div>
                 </div>

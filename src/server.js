@@ -8,6 +8,7 @@ import { sampleMetrics } from './metrics.js';
 import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
 import { generateContent } from './geminiClient.js'; // Import the new Gemini client
 import { loadForecastSummary } from '../core/forecastAnalyzer.js';
+import anchorsDataset from '../data/nexus_anchors.json' assert { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -203,6 +204,135 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(status));
+  } else if (req.method === 'GET' && req.url?.startsWith('/api/anchors')) {
+    try {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const segments = url.pathname.split('/').filter(Boolean);
+
+      const parseMinWeight = () => {
+        const value = url.searchParams.get('minWeight');
+        if (value === null || value === '') {
+          return null;
+        }
+
+        const parsed = Number(value);
+        if (Number.isNaN(parsed) || parsed < 0 || parsed > 1) {
+          throw new Error('Invalid minWeight parameter');
+        }
+
+        return parsed;
+      };
+
+      const parseConsent = () => {
+        const value = url.searchParams.get('consent');
+        if (value === null || value === '') {
+          return null;
+        }
+
+        const normalized = value.toLowerCase();
+        if (['true', '1', 'yes'].includes(normalized)) {
+          return true;
+        }
+        if (['false', '0', 'no'].includes(normalized)) {
+          return false;
+        }
+        if (['all', 'any'].includes(normalized)) {
+          return null;
+        }
+
+        throw new Error('Invalid consent parameter');
+      };
+
+      const minWeight = parseMinWeight();
+      const consentFilter = parseConsent();
+
+      const anchors = Array.isArray(anchorsDataset?.anchors) ? anchorsDataset.anchors : [];
+      const applyFilters = (members = []) => {
+        let filtered = members.filter((member) => typeof member === 'object' && member !== null);
+
+        if (minWeight !== null) {
+          filtered = filtered.filter((member) => Number(member.weight) >= minWeight);
+        }
+
+        if (consentFilter !== null) {
+          filtered = filtered.filter((member) => Boolean(member.consent) === consentFilter);
+        }
+
+        return filtered;
+      };
+
+      const respond = (status, payload) => {
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(payload));
+      };
+
+      if (segments.length === 2) {
+        const summary = anchors.map((anchor) => {
+          const filteredMembers = applyFilters(anchor.members);
+          const consentingMembers = filteredMembers.filter((member) => member.consent).length;
+          const averageWeight = filteredMembers.length
+            ? filteredMembers.reduce((total, member) => total + Number(member.weight || 0), 0) / filteredMembers.length
+            : null;
+
+          return {
+            id: anchor.id || anchor.anchor_id,
+            display_name: anchor.display_name || anchor.name || anchor.anchor_id || 'Unknown Anchor',
+            total_members: Array.isArray(anchor.members) ? anchor.members.length : 0,
+            filtered_members: filteredMembers.length,
+            consenting_members: consentingMembers,
+            average_weight: averageWeight === null ? null : Number(averageWeight.toFixed(3)),
+          };
+        });
+
+        respond(200, {
+          anchors: summary,
+          filters: {
+            minWeight,
+            consent: consentFilter,
+          },
+        });
+        return;
+      }
+
+      if (segments.length === 3) {
+        const anchorId = decodeURIComponent(segments[2]);
+        const anchor = anchors.find((candidate) => (candidate.id || candidate.anchor_id) === anchorId);
+
+        if (!anchor) {
+          respond(404, { error: `Anchor '${anchorId}' not found.` });
+          return;
+        }
+
+        const filteredMembers = applyFilters(anchor.members);
+        const totalMembers = Array.isArray(anchor.members) ? anchor.members.length : 0;
+        const consentingMembers = filteredMembers.filter((member) => member.consent).length;
+        const aggregateWeight = filteredMembers.reduce((total, member) => total + Number(member.weight || 0), 0);
+
+        respond(200, {
+          anchor: {
+            id: anchor.id || anchor.anchor_id,
+            display_name: anchor.display_name || anchor.name || anchor.anchor_id || 'Unknown Anchor',
+            members: filteredMembers,
+          },
+          metrics: {
+            total_members: totalMembers,
+            filtered_members: filteredMembers.length,
+            consenting_members: consentingMembers,
+            average_weight: filteredMembers.length ? Number((aggregateWeight / filteredMembers.length).toFixed(3)) : null,
+          },
+          filters: {
+            minWeight,
+            consent: consentFilter,
+          },
+        });
+        return;
+      }
+
+      respond(404, { error: 'Anchor route not found.' });
+    } catch (error) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
   } else if (req.method === 'GET' && req.url?.startsWith('/api/forecasts')) {
     try {
       const payload = await loadForecastSummary();

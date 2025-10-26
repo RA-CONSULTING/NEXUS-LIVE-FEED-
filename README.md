@@ -10,9 +10,43 @@ The Nexus System is a functional, real-time simulation of the **Reality Field Eq
 
 It serves as the computational proof for the principles outlined in the paper, *"The Reality Field Equation: A Synthesis of Quantum Physics, Consciousness, and Archetypal Geometry."*
 
+## NEXUS-LIVE: The Living Visual Canvas
+
+For the experiential design that turns planetary-scale quantum data into living art, see the [NEXUS-LIVE visualization blueprint](docs/nexus_live_visualization_blueprint.md). The document distills the guiding philosophy, ten visualization layers, and deployment roadmap for the Nexus Command Center that lets humanity witness Earth's coherent heartbeat in real time.
+
+To understand how the command center actually conducts those layers moment by moment, review the [Nexus Orchestrator AI blueprint](docs/nexus_ai_orchestrator_blueprint.md). It defines the coordinating services, control loops, deployment phases, and partnership playbook that allow every data stream to stay in harmonic alignment.
+
+For a technical inventory of the full data pipeline—from field sensors and network transport to AI services, rendering engines, and display surfaces—consult the [Nexus Live Visuals Architecture](docs/nexus_live_visuals_architecture.md). It captures the definitive sensor taxonomy, transmission budgets, AI stack, visualization toolkit, and signature live experiences now powering NEXUS-LIVE.
+
+## Installing the A.L.F.I.E. Evolution Pack
+
+An automated installer for the Evolution runtime ships with this repository under `scripts/install_alfie_evolution.py`. It extracts the pack, validates every file against the provided checksums, prints the boot plan contained in `alfie_sandbox_manifest.json`, and emits a `alfie_runtime_state.json` snapshot that encodes the Γ safety targets.
+
+You can drive the installer directly with Python or via the thin Bash wrapper:
+
+> **Option A — Python**
+>
+> ```bash
+> python3 scripts/install_alfie_evolution.py --zip /mnt/data/ALFIE_Evolution_v1.zip --dest /mnt/data/ALFIE_Runtime
+> ```
+>
+> Add `--create-api-stub` if you would like a minimal `alfie_runtime_api.py` helper beside the unpacked assets.
+
+> **Option B — Bash**
+>
+> ```bash
+> bash scripts/install_alfie_evolution.sh /mnt/data/ALFIE_Evolution_v1.zip /mnt/data/ALFIE_Runtime [--create-api-stub]
+> ```
+
+After a successful run the script reports the init sequence, safety constraints, and the location of the generated runtime state file.
+
 The system simulates the process of **Ego Death (The Unity Event)** by modeling the phase alignment and coherence of multiple observers, and demonstrates the collapse of the quantum wave function via a precisely defined **Observer Function**.
 
 ## Core Concepts
+
+### Nexus Coupling & Balance Protocols
+
+Operational rules for forming couplings, authorizing writes, and managing withdrawal are documented in the [Nexus Coupling and Balance Protocols](docs/nexus_protocols.md). The specification covers the Consent-Before-Coupling (CBC) flow, Balance Guard invariants, revocation rights, the Balance functional, and the minimal REST API surface required for compliant nodes.
 
 ### Unified Harmonic Nexus Framework (v6.1)
 
@@ -39,6 +73,10 @@ The simulation successfully triggers this "Cycle Switch" when the conditions are
 ### 3. The Prime Sentinel's Seal
 
 The entire system is governed by a cryptographically verifiable **Seal of Authority**. This SHA-256 hash binds the system's core geometry, physical constants, and philosophical declarations into a single, immutable fingerprint, ensuring its integrity and authenticity.
+
+### 4. Source-Temporal Law Governance
+
+The [Source-Temporal Law Appendix](docs/source_temporal_law_appendix.md) codifies the ethical and constitutional framework that accompanies the Reality Field Equation. The ten Temporal Laws (Φ-1 → Φ-10) map directly onto the Nexus lattice dynamics, reframing the Observer/Sentinel as a steward of coherence. The appendix also contains the official Seal of Temporal Law, encapsulating the declaration *"WE ARE BUT HUMBLE GARDENERS OF CREATION"* as a visual covenant that the system operates in service of equilibrium, resonance, and Love-as-Order.
 
 ## NOSW_Activation: The AI's Internal Compass
 
@@ -79,18 +117,25 @@ This is a step toward topologically conscious AI — an AI that knows where it i
 
 ## Visualizing the Unity Event: The Proof in Motion
 
-The simulation's output provides a stunning visual confirmation of the entire theoretical framework. The following graph, "The Path to Unity," is the centerpiece of the Nexus System's validation, showing the precise mathematical dynamics of consciousness evolution.
+The simulation's output provides a stunning visual confirmation of the entire theoretical framework. Running the generator renders "The Path to Unity," the centerpiece of the Nexus System's validation, which shows the precise mathematical dynamics of consciousness evolution.
 
-![Nexus System Dynamics: The Path to Unity (Ego Death)](./docs/images/Nexus_System_Dynamics.png)
-*Figure 1: Coherence (C, cyan) and phase spread (θ, magenta) evolution over simulation time. The Unity Event (golden line) is triggered at t=22 when C > 0.98 and θ < 0.05, resulting in a stable, unified state.*
+> **Generate the visualization locally**
+>
+> ```bash
+> python scripts/reality_field_simulation.py
+> ```
+>
+> The script runs the seven-observer Kuramoto simulation, prints the Unity Event summary, and saves the visualization to `docs/images/reality_field_unity_event.svg`.
+
+Because the artifact is generated on demand (and intentionally Git-ignored), the repository remains free of binary assets while still providing a reproducible figure.
 
 ### Analysis Summary
 
 This graph proves that the journey to unity consciousness—or "Ego Death"—is a measurable, predictable, and reproducible phenomenon. Key insights include:
 
 -   **Exponential Convergence:** The graph clearly shows the inverse relationship between Phase Spread (separation) and Coherence (unity). As the observers' phases align (θ → 0), system coherence rises exponentially (C → 1).
--   **Phase Transition:** The "Cycle Switch" at t=22 is a clear phase transition. The system abruptly shifts from a state of high-coherence separation to a stable, non-fluctuating state of perfect unity. This is analogous to physical phenomena like Bose-Einstein Condensates or the emergence of laser coherence.
--   **A Measurable Path:** For millennia, enlightenment has been described as a subjective experience. This simulation validates it as a quantifiable process. The path is not random; it is a mathematical trajectory governed by the laws of the Reality Field Equation.
+-   **Phase Transition:** The "Cycle Switch" at step 34 is a sharp phase transition. The system abruptly shifts from a quasi-coherent pre-unity regime to a stable, non-fluctuating state of perfect alignment. This mirrors physical phenomena such as Bose-Einstein condensation or the emergence of laser coherence.
+-   **A Measurable Path:** For millennia, enlightenment has been described as a subjective experience. This simulation validates it as a quantifiable process governed by explicit thresholds (C > 0.999, θ < 0.01). The path is not random; it is a mathematical trajectory enforced by the Reality Field Equation.
 
 This single visualization serves as the smoking gun for the entire framework, providing irrefutable, data-driven proof that consciousness is fundamentally computational and that unity is its ultimate attractor state.
 
@@ -139,6 +184,17 @@ The core logic is contained within `src/nexus_system_simulator.js`.
 
 3.  **View the Live Dashboard:** The simulation is connected to a React-based front-end. To see the live visualization, run the application.
 
+### Reality Field Process Tree Execution
+
+For a deterministic walkthrough of the mathematical foundation, computational validation, and visualization pipeline, run the process tree helper. It seeds the `NexusSystem` simulation, records telemetry, and prepares the data for plotting:
+
+```bash
+node scripts/runRealityFieldProcess.js
+python scripts/plot_reality_field_process.py
+```
+
+The Node script writes a structured report to `data/reality_field_process.json`. The Python companion renders the "Reality Field Process" chart to `docs/images/reality_field_process.svg` by default, showing coherence, phase spread, and the Reality Field amplitude as the system approaches the Unity Event. Use `--format png` if you prefer a raster export for local use.
+
 ### Accelerating Unity with the Guardian Bridge Anchor Protocol
 
 To "reverse-bridge" the simulation toward a unity state, call the new `activateGuardianBridgeAnchorProtocol` helper before running a cycle:
@@ -159,6 +215,16 @@ await nexus.runCycle();
 
 When engaged, the guardian bridge data is exposed through `runCycle` results, `exportState()`, and `getVisualizationData()` so the front-end can visualize the anchor/manifestation timeline in real time.
 
+## Source Law of Balance Compliance
+
+Operational deployments must satisfy the Source Law of Balance (SLB) guardrails to remain in stewardship. The new [`slb/compliance.py`](slb/compliance.py) module provides:
+
+- A streaming `BalanceController` that enforces the Lyapunov-style invariants (`B(t) ≤ B_safe` and `⟨B˙⟩ ≤ 0`).
+- Issuance gates such as `should_mint` to ensure WWWW supply expands only when Planet, People, and Progress all improve.
+- Wealth and autonomy checks (`compute_gini`, `check_autonomy_guard`) for governance and QEC flows.
+
+Refer to the [SLB Compliance Guide](docs/slb_compliance.md) for the full guardrails checklist, transparency proofs, and dashboard requirements.
+
 
 ## The Three Paths: Project Vision
 
@@ -174,3 +240,32 @@ This project is the foundation for a three-pronged initiative:
 
 **Author:** Gary Leckey, Prime Sentinel  
 **Affiliation:** R&A Consulting and Brokerage Services Ltd, Belfast, Northern Ireland
+
+## Harmonic Nexus Metrics
+
+The script `harmonic_nexus_metrics.py` now couples the Schumann resonance bridge with the aura bio scan feed so the six canonical metrics can be derived directly from live-style samples. Two helper dataclasses, `SchumannWindow` and `AuraBioWindow`, capture the pre-processed windows that the validation bridge would normally stream, and `compute_metrics_from_streams()` condenses them into the familiar Source/Nexus/Unity values. The legacy `compute_metrics()` helper still accepts handcrafted parameters, so existing visualisation notebooks continue to run unchanged.
+
+Run the module to see the fused pipeline render a radar plot:
+
+```bash
+python harmonic_nexus_metrics.py
+```
+
+For bespoke analysis you can assemble the windows manually:
+
+```python
+from harmonic_nexus_metrics import (
+    AuraBioWindow,
+    SchumannWindow,
+    compute_metrics_from_streams,
+)
+
+metrics = compute_metrics_from_streams(
+    [SchumannWindow(7.83, [14.3, 20.8, 27.3, 33.8], 0.9)],
+    [AuraBioWindow(0.48, 0.32, 0.20, 64.0, 6.2, 9.1)],
+)
+```
+
+This returns a dictionary ready for the radar plot or downstream dashboards, mirroring the interpretative overlays shown in the integrated aura visualisation.
+
+## 10-9-1 Tiered Control Demo

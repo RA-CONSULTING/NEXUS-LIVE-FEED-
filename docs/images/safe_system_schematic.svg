@@ -79,7 +79,7 @@
     <text x="210" y="78" class="small" text-anchor="middle">Automated rollback + operator re-test</text>
   </g>
 
-  <!-- Links between Lineage &lt;-&gt; Safety Controller -->
+
   <path class="connector" d="M460,400 L940,370" />
   <path class="connector" d="M460,440 L940,430" />
 

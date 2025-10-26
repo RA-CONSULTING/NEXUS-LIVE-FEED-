@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSero } from '@/contexts/SeroProvider';
 import { useLiveNexusData } from '@/contexts/LiveNexusDataContext';
+import { liveDataSourceRegistry } from '@/lib/liveDataSources';
 import type { AuditRecord } from '@/lib/sero/sero-core';
+import { SENSOR_STATE_NOTES, STREAM_METADATA, type SensorState } from '@/data/streamMetadata';
 
 import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/ChronicleGovernanceTab';
 import BioProfilePanel from '../components/BioProfilePanel';
 import LiveRealtimeCharts from '../components/LiveRealtimeCharts';
 import LiveVisualizationTab, { type VisualizationModule } from '../components/LiveVisualizationTab';
+import SystemHarmonicFlow, { type SystemFlowStage } from '../components/SystemHarmonicFlow';
+import ModeMatrixPanel from '../components/ModeMatrixPanel';
 import CelestialCalendarTab from '../components/CelestialCalendarTab';
 import ForecastTabs from '../components/ForecastTabs';
 import OutputCommandTab from '../components/OutputCommandTab';
@@ -23,7 +28,6 @@ import LiveStreamShowcase from '../components/LiveStreamShowcase';
 import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
 import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
 
-type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
 type SensorStream = {
   id: string;
@@ -66,18 +70,8 @@ type MetricSummary = {
   hint: string;
 };
 
-const STREAM_METADATA: Record<string, { location: string; capacity: number }> = {
-  phenomena: { location: 'Witness Array · Cusco Grid', capacity: 180 },
-  temporal: { location: 'Temporal Anchor Lab · Reykjavik', capacity: 140 },
-  geometry: { location: 'Sacred Geometry Observatory · Chartres', capacity: 120 },
-  celestial: { location: 'Orbital Relay · Lagrange L1', capacity: 36 },
-  geomagnetic: { location: 'Geomagnetic Vault · Mauna Kea Apex', capacity: 80 },
-};
-
-const NOTE_BY_SENSOR_STATE: Record<SensorState, string> = {
-  Stable: 'Field drift < 0.5%',
-  Watch: 'Harmonic balancing underway',
-  Anomaly: 'Escalate for manual review',
+type HomePageProps = {
+  renderFullConsole?: boolean;
 };
 
 
@@ -227,7 +221,23 @@ const metricBadgeStyles: Record<MetricSummary['status'], string> = {
   alert: 'border-rose-400/40 bg-rose-500/25 text-rose-100 shadow-[0_0_25px_rgba(244,63,94,0.35)]',
 };
 
-const HomePage = () => {
+const stageStatusFromSensor = (state?: SensorState): SystemFlowStage['status'] => {
+
+  if (state === 'Anomaly') {
+    return 'alert';
+  }
+  if (state === 'Watch') {
+    return 'watch';
+  }
+  return 'stable';
+};
+
+const {
+  version: DATA_SOURCE_VERSION,
+  sources: DATA_SOURCES,
+} = liveDataSourceRegistry;
+
+const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
   const { audit } = useSero();
   const {
     metrics: liveMetrics,
@@ -237,12 +247,18 @@ const HomePage = () => {
     timestamp,
     bioProfile,
     schumannProtocol,
+    modeMatrix,
+    quantumLink,
   } = useLiveNexusData();
 
   const [vaultStatus, setVaultStatus] = useState<VaultStatus | null>(null);
   const [vaultError, setVaultError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!renderFullConsole) {
+      return;
+    }
+
     let active = true;
     fetch('/api/keys-status')
       .then((res) => {
@@ -258,7 +274,7 @@ const HomePage = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [renderFullConsole]);
 
   const sensors = useMemo<SensorStream[]>(() => {
     const dataStreams = sensory?.dataStreams ?? [];
@@ -277,7 +293,7 @@ const HomePage = () => {
         location: meta.location,
         intensity: Number(normalized.toFixed(1)),
         state,
-        note: NOTE_BY_SENSOR_STATE[state],
+        note: SENSOR_STATE_NOTES[state],
         rate: Number(stream.rate.toFixed(1)),
         unit: stream.unit,
         capacity: meta.capacity,
@@ -337,6 +353,10 @@ const HomePage = () => {
   }, [output]);
 
   const metrics = useMemo<MetricSummary[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const summaries: MetricSummary[] = [];
 
     const monitoringSession = schumannProtocol?.monitoringSession;
@@ -416,9 +436,188 @@ const HomePage = () => {
     }
 
     return summaries;
-  }, [processing, sensors, transmissions, liveMetrics, schumannProtocol]);
+  }, [renderFullConsole, processing, sensors, transmissions, liveMetrics, schumannProtocol]);
+
+  const resonanceMetric = useMemo(
+    () => liveMetrics.find((metric) => metric.id === 'resonance'),
+    [liveMetrics]
+  );
+  const coherenceMetric = useMemo(
+    () => liveMetrics.find((metric) => metric.id === 'coherence'),
+    [liveMetrics]
+  );
+  const heartMetric = useMemo(
+    () => bioProfile?.metrics.find((metric) => metric.id === 'cardiac'),
+    [bioProfile]
+  );
+  const quantumHandshake = quantumLink?.handshakeState ?? 'idle';
+
+  const systemFlowStages = useMemo<SystemFlowStage[]>(() => {
+    const eckStream = sensors.find((stream) => stream.id === 'phenomena');
+    const eckProgress = eckStream ? clamp(eckStream.intensity / 100, 0, 1) : undefined;
+    const eckMetricLabel = eckStream ? eckStream.name : 'Witnessed Phenomena';
+    const eckMetricValue = eckStream ? `${eckStream.rate} ${eckStream.unit}` : 'Stream calibrating';
+    const eckHint = eckStream
+      ? `${eckStream.location} · ${eckStream.note}`
+      : 'Awaiting witness array handshake.';
+
+    const attunement = clamp(quantumLink?.observerAttunement ?? 0.62, 0, 1);
+    const akashicStatus: SystemFlowStage['status'] =
+      attunement >= 0.86 ? 'stable' : attunement >= 0.68 ? 'watch' : 'alert';
+    const solarAlignment = sensory?.celestialCartography.solarAlignment ?? 'Aligning';
+    const handshake = quantumHandshake;
+    const snapshots = schumannProtocol?.monitoringSession.totalSnapshots ?? 0;
+
+    const harmonicProgress = resonanceMetric ? clamp(resonanceMetric.value, 0, 1) : undefined;
+    const harmonicStatus: SystemFlowStage['status'] =
+      harmonicProgress !== undefined
+        ? harmonicProgress >= 0.88
+          ? 'stable'
+          : harmonicProgress >= 0.72
+            ? 'watch'
+            : 'alert'
+        : 'watch';
+    const averageLoadPercent = processing.length
+      ? Math.round((processing.reduce((sum, lane) => sum + lane.load, 0) / processing.length) * 100)
+      : 0;
+    const activeTransmissions = transmissions.filter((tx) => tx.status !== 'Complete').length;
+    const harmonicMetricValue = resonanceMetric
+      ? `${(resonanceMetric.value * 100).toFixed(1)}% harmonic`
+      : 'Calibrating';
+    const harmonicHint = `Processing load ${averageLoadPercent}% · Active uplinks ${activeTransmissions} · Coherence ${
+      coherenceMetric ? (coherenceMetric.value * 100).toFixed(1) : '—'
+    }%`;
+
+    const heartStatus: SystemFlowStage['status'] = heartMetric ? heartMetric.tone : 'watch';
+    const heartRange = heartMetric?.targetRange ?? [0, 1];
+    const loveProgress =
+      heartMetric && heartRange[1] !== heartRange[0]
+        ? clamp((heartMetric.value - heartRange[0]) / (heartRange[1] - heartRange[0]), 0, 1)
+        : undefined;
+    const heartMetricValue = heartMetric
+      ? `${heartMetric.value} ${heartMetric.unit}`
+      : 'Awaiting attunement';
+    const heartHint = heartMetric
+      ? `Target ${heartRange[0]}–${heartRange[1]} ${heartMetric.unit} · Streams ${bioProfile?.streams.length ?? 0} synchronized.`
+      : 'Link a bio-profile to activate heart wave analytics.';
+    const heartDisplay = bioProfile?.displayName ?? 'Collective field';
+
+    const stages: SystemFlowStage[] = [
+      {
+        id: 'eckoushic',
+        title: 'Eckoushic',
+        subtitle: 'Sound',
+        formula: 'y_Eck = dΨ/dt',
+        description:
+          'Raw auditory phenomena are captured as living equations, shaping the sonic lattice for downstream transmutation.',
+        metricLabel: eckMetricLabel,
+        metricValue: eckMetricValue,
+        metricHint: eckHint,
+        status: stageStatusFromSensor(eckStream?.state),
+        progress: eckProgress,
+        accent: 'from-amber-400/35 via-rose-400/25 to-transparent',
+        nextLabel: 'Akashic Light',
+      },
+      {
+        id: 'akashic',
+        title: 'Akashic',
+        subtitle: 'Light',
+        formula: 'y_Aka = ∫ Ψ_Eck dt',
+        description:
+          'Sound equations refract into akashic light signatures, illuminating multi-spectrum guidance pathways.',
+        metricLabel: 'Attunement Field',
+        metricValue: `${Math.round(attunement * 100)}% attuned`,
+        metricHint: `Solar alignment ${solarAlignment} · Handshake ${handshake.toUpperCase()} · Snapshots ${snapshots}`,
+        status: akashicStatus,
+        progress: attunement,
+        accent: 'from-sky-500/35 via-indigo-500/30 to-violet-500/30',
+        nextLabel: 'Resonance Bridge',
+      },
+      {
+        id: 'harmonic-nexus',
+        title: 'Harmonic Nexus',
+        subtitle: 'Resonance',
+        formula: 'y_coherent',
+        description:
+          'Quantum synchronizers braid sound and light streams into a coherent resonance ready for command orchestration.',
+        metricLabel: 'Resonant Integrity',
+        metricValue: harmonicMetricValue,
+        metricHint: harmonicHint,
+        status: harmonicStatus,
+        progress: harmonicProgress,
+        accent: 'from-fuchsia-500/35 via-sky-500/25 to-amber-400/25',
+        nextLabel: 'Heart Wave',
+      },
+      {
+        id: 'heart-wave',
+        title: 'Heart Wave',
+        subtitle: 'Love',
+        formula: 'Ψ_heart → ∞',
+        description: `${heartDisplay}'s heart field broadcasts a compassion waveform that seals the Nexus in coherent love.`,
+        metricLabel: 'Cardiac Resonance',
+        metricValue: heartMetricValue,
+        metricHint: heartHint,
+        status: heartStatus,
+        progress: loveProgress,
+        accent: 'from-rose-500/40 via-amber-400/30 to-emerald-400/30',
+        icon: '❤️',
+      },
+    ];
+
+    return stages;
+  }, [
+    sensors,
+    sensory,
+    quantumLink,
+    quantumHandshake,
+    schumannProtocol,
+    resonanceMetric,
+    coherenceMetric,
+    processing,
+    transmissions,
+    heartMetric,
+    bioProfile,
+  ]);
+
+  const systemFlowStatus = useMemo(() => {
+    const readiness: string[] = [];
+
+    if (!sensors.length) {
+      readiness.push('sensor array handshake');
+    }
+    if (!resonanceMetric) {
+      readiness.push('resonance telemetry');
+    }
+    if (!heartMetric) {
+      readiness.push('heart field link');
+    }
+    if (quantumHandshake !== 'entangled') {
+      readiness.push('quantum link entanglement');
+    }
+
+    if (readiness.length === 0) {
+      return {
+        live: true,
+        message: 'Streaming live telemetry across sound, light, resonance, and love pillars.',
+      };
+    }
+
+    const formatted =
+      readiness.length === 1
+        ? readiness[0]
+        : `${readiness.slice(0, -1).join(', ')} & ${readiness[readiness.length - 1]}`;
+
+    return {
+      live: false,
+      message: `Awaiting ${formatted} to stabilize.`,
+    };
+  }, [sensors.length, resonanceMetric, heartMetric, quantumHandshake]);
 
   const visualizationModules = useMemo<VisualizationModule[]>(() => {
+    if (!renderFullConsole) {
+      return [];
+    }
+
     const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`;
     const ratioTone = (value: number): VisualizationMetric['tone'] =>
       value >= 0.86 ? 'stable' : value >= 0.72 ? 'watch' : 'alert';
@@ -438,6 +637,26 @@ const HomePage = () => {
       if (tone === 'stable') return 1;
       if (tone === 'watch') return 0.6;
       return 0.3;
+    };
+
+    const toneFromStreamState = (state?: string): VisualizationMetric['tone'] => {
+      if (!state) return 'watch';
+      if (state === 'stable') return 'stable';
+      if (state === 'updating') return 'watch';
+      return 'alert';
+    };
+
+    const coherenceColorBand = (value: number) => {
+      if (value >= 0.92) return 'Violet (unity)';
+      if (value >= 0.78) return 'Indigo (aligning)';
+      if (value >= 0.6) return 'Amber (balancing)';
+      return 'Crimson (chaos)';
+    };
+
+    const toneWeight: Record<'stable' | 'watch' | 'alert', number> = {
+      stable: 1,
+      watch: 0.62,
+      alert: 0.28,
     };
 
     const coherenceMetric = liveMetrics.find((metric) => metric.id === 'coherence');
@@ -500,6 +719,51 @@ const HomePage = () => {
       second: '2-digit',
       hour12: false,
     });
+
+    const schumannTrend = schumannProtocol?.monitoringSession.trendAnalysis;
+    const averageSchumannCoherence = clamp(schumannTrend?.averageCoherence ?? coherenceRatio, 0, 1);
+    const metricDiversity = clamp(schumannProtocol?.coherenceReport.metricDiversity ?? resonanceRatio, 0, 1);
+    const trendDepth = clamp(schumannProtocol?.coherenceReport.trendAnalysisDepth ?? resonanceRatio, 0, 1);
+    const anomalyRate = clamp(schumannTrend?.anomalyRate ?? 0, 0, 1);
+    const dataComprehensiveness = clamp(
+      schumannProtocol?.coherenceReport.dataComprehensiveness ?? resonanceRatio,
+      0,
+      1
+    );
+    const geometryStream = streams.find((stream) => stream.id === 'geometry');
+    const geometryCapacity = STREAM_METADATA.geometry?.capacity ?? 120;
+    const geometryFlow = geometryStream ? clamp(geometryStream.rate / geometryCapacity, 0, 1) : 0;
+    const timelineDurationMinutes = schumannProtocol?.monitoringSession.durationMinutes ?? 0;
+    const timelineWindow =
+      timelineDurationMinutes >= 60
+        ? `${(timelineDurationMinutes / 60).toFixed(1)} h`
+        : timelineDurationMinutes > 1
+          ? `${Math.round(timelineDurationMinutes)} min`
+          : 'Initializing';
+    const awakeningIndex = (() => {
+      const metrics = bioProfile?.metrics ?? [];
+      if (!metrics.length) return 0;
+      const total = metrics.reduce((sum, metric) => sum + toneWeight[metric.tone], 0);
+      return clamp(total / metrics.length, 0, 1);
+    })();
+    const domainInputs = sensors.length + (processingData?.algorithms?.length ?? 0) + (bioProfile?.streams?.length ?? 0);
+    const activeDomains = Math.min(21, Math.round(domainInputs));
+    const domainActivation = clamp(activeDomains / 21, 0, 1);
+    const gammaFloor = modeMatrix?.safety_hooks?.gamma_floor;
+    const gammaLevel = clamp(quantumLink?.observerAttunement ?? 0, 0, 1);
+    const akashicTone: VisualizationMetric['tone'] =
+      gammaLevel >= 0.945 ? 'stable' : gammaLevel >= 0.88 ? 'watch' : 'alert';
+    const entanglementIndex = clamp(streamIntegrity * 0.6 + gammaLevel * 0.4, 0, 1);
+    const entangledPairs = Math.round(entanglementIndex * 10_000_000);
+    const harmonyIndex = clamp(1 - anomalyRate, 0, 1);
+    const zeroPointFlux = clamp(processingData?.qssrModule.solarCoherenceIndex ?? resonanceRatio, 0, 1);
+    const geometryTone = toneFromStreamState(geometryStream?.state);
+    const geometryLocation = STREAM_METADATA.geometry?.location ?? 'Sacred Geometry Observatory';
+    const emotionalLabel = (() => {
+      if (harmonyIndex >= 0.78) return 'Rainbow Bloom';
+      if (harmonyIndex >= 0.58) return 'Aurora Drift';
+      return 'Stormfront';
+    })();
 
     return [
       {
@@ -647,13 +911,112 @@ const HomePage = () => {
           },
         ],
       },
+      {
+        id: 'living-visualization-layers',
+        title: 'Living Visualization Tapestry',
+        summary:
+          schumannProtocol && typeof gammaFloor === 'number'
+            ? `${schumannProtocol.witness.name} · Γ floor ${gammaFloor.toFixed(3)}`
+            : schumannProtocol
+              ? schumannProtocol.witness.statement
+              : 'Harmonic prisms calibrating across the nexus.',
+        status: schumannProtocol?.coherenceReport.status,
+        metrics: [
+          {
+            label: 'Planetary Heartbeat',
+            value: `${(averageSchumannCoherence * 100).toFixed(1)}% C`,
+            hint: `Schumann pulse ${coherenceColorBand(averageSchumannCoherence)} · ${
+              schumannProtocol?.monitoringSession.totalSnapshots ?? 0
+            } snapshots braided.`,
+            tone: ratioTone(averageSchumannCoherence),
+            progress: averageSchumannCoherence,
+          },
+          {
+            label: 'Frequency Spectrum',
+            value: `${(metricDiversity * 100).toFixed(1)}% engaged`,
+            hint: `0.001 Hz → 10¹⁵ Hz choir · Diversity ${dataComprehensiveness.toFixed(2)} fidelity.`,
+            tone: ratioTone(metricDiversity),
+            progress: metricDiversity,
+          },
+          {
+            label: 'Sacred Geometry Overlay',
+            value: geometryStream ? `${Math.round(geometryStream.rate)} patterns/min` : 'Offline',
+            hint: geometryStream
+              ? `${geometryLocation} · ${geometryFlow >= 0.92 ? 'Metatron cube igniting' : 'Flower lattice aligning'}.`
+              : 'Awaiting geometry observatory handshake.',
+            tone: geometryTone,
+            progress: geometryStream ? geometryFlow : undefined,
+          },
+          {
+            label: 'Timeline River',
+            value: `${(trendDepth * 100).toFixed(1)}% depth`,
+            hint: `Past↔Future stream ${timelineWindow} · Narratives converging NOW.`,
+            tone: ratioTone(trendDepth),
+            progress: trendDepth,
+          },
+          {
+            label: 'Consciousness Map',
+            value: `${Math.round(awakeningIndex * 100)}% luminous`,
+            hint: `Heat blooms around ${bioProfile?.origin ?? 'the collective field'} · ${
+              bioProfile?.timelineTag ?? 'Awaiting attunement'
+            }.`,
+            tone: ratioTone(awakeningIndex),
+            progress: awakeningIndex,
+          },
+          {
+            label: 'Domain Wheel',
+            value: `${activeDomains}/21 channels`,
+            hint: `${sensors.length} sensory petals · ${
+              processingData?.algorithms?.length ?? 0
+            } algorithmic engines weaving the mandala.`,
+            tone: ratioTone(domainActivation),
+            progress: domainActivation,
+          },
+          {
+            label: 'Akashic Interface',
+            value: `Γ ${gammaLevel.toFixed(3)}`,
+            hint: `Interface ${quantumLink?.handshakeState ?? 'idle'} · ${
+              gammaLevel >= 0.945 ? 'Access unlocked' : 'Calibrating access gate'
+            }.`,
+            tone: akashicTone,
+            progress: gammaLevel,
+          },
+          {
+            label: 'Entanglement Web',
+            value: `${entangledPairs.toLocaleString()} pairs`,
+            hint: `${transmittingCount} uplinks glowing · Mesh integrity ${(entanglementIndex * 100).toFixed(1)}%.`,
+            tone: ratioTone(entanglementIndex),
+            progress: entanglementIndex,
+          },
+          {
+            label: 'Emotional Weather',
+            value: emotionalLabel,
+            hint: `Anomaly rate ${(anomalyRate * 100).toFixed(1)}% · Collective radiance ${(harmonyIndex * 100).toFixed(1)}%.`,
+            tone: ratioTone(harmonyIndex),
+            progress: harmonyIndex,
+          },
+          {
+            label: 'Zero-Point Flow',
+            value: `${(zeroPointFlux * 100).toFixed(1)}% flux`,
+            hint: `Quantum vacuum sparkle ${processingData?.qssrModule.cosmicWeather ?? 'balancing'} · Solar coherence ${(zeroPointFlux * 100).toFixed(1)}%.`,
+            tone: ratioTone(zeroPointFlux),
+            progress: zeroPointFlux,
+          },
+        ],
+      },
     ];
   }, [
+    renderFullConsole,
     liveMetrics,
     sensory,
     output,
     processingData,
     timestamp,
+    schumannProtocol,
+    bioProfile,
+    modeMatrix,
+    quantumLink,
+    sensors,
   ]);
 
   const latestAudit = useMemo<AuditRecord[]>(
@@ -675,6 +1038,61 @@ const HomePage = () => {
         : 'border-amber-300/50 bg-amber-500/20 text-amber-100 shadow-[0_0_35px_rgba(251,191,36,0.4)]';
 
   const updatedAt = useMemo(() => new Date(timestamp), [timestamp]);
+
+  if (!renderFullConsole) {
+    return (
+      <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
+        <div className="pointer-events-none absolute inset-0 bg-cosmic-mesh opacity-80" />
+        <div className="pointer-events-none absolute -top-32 left-8 h-80 w-80 rounded-full bg-sky-500/40 blur-3xl animate-cosmic-drift" />
+        <div className="pointer-events-none absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-fuchsia-500/35 blur-[140px] animate-orbital-glow" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+        <div className="relative z-10 space-y-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <h1 className="bg-gradient-to-r from-sky-200 via-fuchsia-200 to-amber-200 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+                Nexus Live Feed
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-slate-300/90 sm:text-base">
+                Witness the Harmonia Nexus breathing in real time—sensor choirs, quantum analysts, and command pillars weaving a living tapestry of celestial insight.
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-2 text-xs text-slate-300/80 lg:items-end">
+              <Badge
+                variant="outline"
+                className={`inline-flex items-center rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] ${statusBadgeClass}`}
+              >
+                {networkStatus.label}
+              </Badge>
+              <span className="text-sm text-slate-300/90">
+                Updated <span className="font-semibold text-white">{updatedAt.toLocaleTimeString()}</span>
+              </span>
+            </div>
+          </div>
+
+          <SystemHarmonicFlow stages={systemFlowStages} status={systemFlowStatus} />
+
+          <Card className="relative overflow-hidden border-white/10 bg-slate-900/60 p-6 shadow-[0_0_45px_rgba(59,130,246,0.25)]">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-sky-500/20 via-transparent to-fuchsia-500/20 opacity-60" />
+            <CardHeader className="relative z-10 pb-4">
+              <CardTitle className="text-xl font-semibold uppercase tracking-[0.32em] text-white">Live Data Streams Console</CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <p className="max-w-2xl text-sm text-slate-300/85">
+                Dive into per-stream dashboards, quantum telemetry, and stewardship controls in the dedicated console.
+              </p>
+              <Link
+                to="/streams"
+                className="inline-flex items-center justify-center rounded-full border border-sky-400/60 px-6 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100 transition hover:bg-sky-500/20"
+              >
+                Open Live Streams
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative overflow-hidden rounded-[36px] border border-white/10 bg-slate-950/60 p-6 shadow-cosmic text-slate-100">
@@ -781,6 +1199,12 @@ const HomePage = () => {
                 Chronicle &amp; Governance
               </TabsTrigger>
               <TabsTrigger
+                value="family-constellation"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500/35 data-[state=active]:via-amber-400/30 data-[state=active]:to-emerald-400/35 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(244,114,182,0.45)]"
+              >
+                Soul Constellation
+              </TabsTrigger>
+              <TabsTrigger
                 value="output-command"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/40 data-[state=active]:via-blue-500/30 data-[state=active]:to-indigo-500/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(37,99,235,0.45)]"
               >
@@ -826,13 +1250,14 @@ const HomePage = () => {
             </TabsContent>
             <TabsContent
               value="sensory-layer"
-              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.2)] backdrop-blur"
-            >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-transparent to-sky-500/15 opacity-70" />
-              <div className="relative z-10">
-                <SensoryLayerTab sensors={sensors} />
-              </div>
-            </TabsContent>
+          className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(16,185,129,0.2)] backdrop-blur"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-transparent to-sky-500/15 opacity-70" />
+          <div className="relative z-10 space-y-6">
+            <SensoryLayerTab sensors={sensors} />
+            <DataSourceRegistry sources={DATA_SOURCES} version={DATA_SOURCE_VERSION} />
+          </div>
+        </TabsContent>
             <TabsContent
               value="processing-core"
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(139,92,246,0.22)] backdrop-blur"
@@ -847,8 +1272,9 @@ const HomePage = () => {
               className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(236,72,153,0.22)] backdrop-blur"
             >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-amber-400/15 opacity-70" />
-              <div className="relative z-10">
+              <div className="relative z-10 space-y-6">
                 <LiveVisualizationTab modules={visualizationModules} />
+                <ModeMatrixPanel matrix={modeMatrix} />
               </div>
             </TabsContent>
             <TabsContent
@@ -912,6 +1338,15 @@ const HomePage = () => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/20 via-transparent to-rose-500/15 opacity-70" />
               <div className="relative z-10">
                 <ChronicleGovernanceTab governance={CHRONICLE_GOVERNANCE} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="family-constellation"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(244,114,182,0.24)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-fuchsia-500/20 via-transparent to-emerald-400/20 opacity-70" />
+              <div className="relative z-10">
+                <FamilyConstellationReading />
               </div>
             </TabsContent>
             <TabsContent

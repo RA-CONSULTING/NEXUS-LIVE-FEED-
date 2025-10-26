@@ -9,9 +9,12 @@ const CONTROL_CARD =
   'relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 p-4 shadow-[0_0_30px_rgba(59,130,246,0.12)]';
 
 const SeroComplianceConsole: React.FC = () => {
-  const { config, updateConfig, audit } = useSero();
+  const { config, updateConfig, audit, directives } = useSero();
 
   const formatScore = (score: number) => `${Math.round(score * 100)}%`;
+
+  const directiveFlag = (flag: boolean, on = 'REQUIRED', off = 'ADVISORY') =>
+    flag ? on : off;
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 text-slate-100 shadow-[0_0_45px_rgba(37,99,235,0.25)]">
@@ -35,6 +38,32 @@ const SeroComplianceConsole: React.FC = () => {
             </Badge>
           </div>
         </header>
+
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/85">
+              Prime Guardian Directives
+            </span>
+            <Badge className="px-3 py-1 text-[10px]" variant="outline">
+              Γ ≥ {directives.minGamma.toFixed(2)}
+            </Badge>
+            <Badge className="px-3 py-1 text-[10px]" variant="outline">
+              Log ≥ {directives.minLogRateHz} Hz
+            </Badge>
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-300/80">
+            {directives.primeDirective || 'Prime directive not declared.'}
+          </p>
+          <div className="mt-3 grid gap-2 text-[10px] uppercase tracking-[0.28em] text-slate-300/70 sm:grid-cols-2 xl:grid-cols-3">
+            <span>Energy Budget · {directiveFlag(directives.respectEnergyBudget)}</span>
+            <span>Transparency · {directiveFlag(directives.requireTransparency)}</span>
+            <span>Graceful Failure · {directiveFlag(directives.requireGracefulFailure)}</span>
+            <span>No Weaponization · {directiveFlag(directives.enforceNoWeaponization, 'ENFORCED', 'ADVISORY')}</span>
+            <span>Auto-Retune · {directiveFlag(directives.requireAutoRetune)}</span>
+            <span>Safe-Idle · {directiveFlag(directives.requireSafeIdle)}</span>
+            <span>Explainability · {directiveFlag(directives.explainabilityRequired)}</span>
+          </div>
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className={`${CONTROL_CARD} bg-gradient-to-br from-sky-500/15 via-transparent to-transparent`}>

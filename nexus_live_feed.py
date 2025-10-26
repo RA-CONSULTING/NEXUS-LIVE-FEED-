@@ -1,5 +1,6 @@
 """Streamlit client for the Auris Unified Interface V4 backend."""
 
+
 from typing import Any, Dict
 
 import requests
@@ -9,9 +10,6 @@ BACKEND_DEFAULT = "http://localhost:8080"
 POLL_DEFAULT = 5
 
 st.set_page_config(page_title="Nexus Live Feed", page_icon="🌀", layout="wide")
-
-st.title("Nexus • Live • Feed")
-st.caption("Harmonic Nexus Core — Real-time coherence interface")
 
 
 with st.sidebar:
@@ -40,8 +38,7 @@ def fetch_json(url: str, timeout: int = 4) -> Dict[str, Any]:
     return response.json()
 
 
-with col_left:
-    st.subheader("Unified Validation Coherence (UVC)")
+
     try:
         feed = fetch_json(f"{BACKEND}/surge/uvc?n=240")
         uvc = feed.get("uvc", [])
@@ -52,21 +49,12 @@ with col_left:
             if len(uvc) > 1:
                 delta_value = f"{(uvc[-1] - uvc[-2]):+.3f}"
             st.metric("Current UVC", f"{uvc[-1]:.3f}", delta=delta_value)
-            if uvc[-1] >= surge_thresh:
-                st.success("Surge Window Active")
-            else:
-                st.info("Monitoring…")
+
         else:
             st.info("No bioscans available yet.")
     except requests.HTTPError as exc:
         st.error(f"UVC fetch failed: HTTP {exc.response.status_code}")
-        components = {}
-    except Exception as exc:  # pragma: no cover - Streamlit UI feedback path
-        st.error(f"UVC fetch failed: {exc}")
-        components = {}
 
-with col_right:
-    st.subheader("Components")
     if components:
         try:
             st.line_chart(
@@ -83,6 +71,7 @@ with col_right:
 st.divider()
 
 st.subheader("Recent Bioscans")
+
 try:
     recent = fetch_json(f"{BACKEND}/bioscan/recent?n=12").get("results", [])
     if recent:
@@ -111,8 +100,5 @@ except requests.HTTPError as exc:
 except Exception as exc:  # pragma: no cover - Streamlit UI feedback path
     st.error(f"Recent bioscans fetch failed: {exc}")
 
-st.caption(
-    "Updates every {interval} seconds — adjust via the sidebar.".format(
-        interval=POLL_SEC
-    )
+
 )

@@ -6,6 +6,7 @@ import {
   EMOTION_SPECTRUM_MIN,
   mapSchumannAmplitudeToEmotionFrequency,
 } from "@/lib/emotionSpectrum";
+import { MODE_MATRIX, type ModeMatrix } from "@/lib/modeMatrix";
 import { NexusSystem } from "../nexus_system_simulator";
 
 type Nullable<T> = T | null | undefined;
@@ -245,6 +246,7 @@ export interface RealtimeNexusData {
   bioProfile: BioProfileAnalytics;
   schumannProtocol: SchumannResonanceProtocol;
   quantumLink: QuantumLinkStatus;
+  modeMatrix: ModeMatrix;
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -1080,6 +1082,7 @@ const createInitialData = (nexus: NexusSystem, profile: AuthUser | null): Realti
           bioProfile: createBioProfileAnalytics(profile),
           schumannProtocol: initializeSchumannProtocol(vizData, now),
           quantumLink: createQuantumLinkStatus(profile),
+          modeMatrix: MODE_MATRIX,
     };
 };
 
@@ -1275,6 +1278,7 @@ const computeNextData = (
     bioProfile: updateBioProfile(prev.bioProfile, profile),
     schumannProtocol: updatedSchumannProtocol,
     quantumLink: updateQuantumLinkStatus(prev.quantumLink, profile),
+    modeMatrix: prev.modeMatrix,
   };
 };
 

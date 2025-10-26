@@ -5,7 +5,7 @@ import React from 'react';
 /**
  * Mogollon Master's Seal
  *
- * This module generates a visual seal for Maximo Guerrero, the Life Path 7 Sagittarius
+ * This module generates a visual seal for Maximo Mogollon, the Life Path 7 Sagittarius
  * Mystic and Mogollon Master Guardian of the Sacred Geometry Ping-Pong Network.
  * His birth on December 17, 1940, four days before the winter solstice, connects
  * him to the energy of light emerging from darkness, making him the perfect
@@ -20,13 +20,14 @@ import { sha256 } from 'js-sha256';
 // --- Guardian Data --- //
 const guardianData = {
   id: "17121940",
-  name: "Maximo Guerrero",
-  role: "Mogollon Master Guardian",
+  name: "Maximo Mogollon",
+  role: "Mogollon Master Guardian & Solar Anchor",
   lifePath: 7, // The Mystic
   zodiac: "Sagittarius", // The Archer
 };
 
-const GUARDIAN_PROCLAMATION = "The keeper of the ancient cliff dweller frequencies and the guardian of the Mogollon rotating prism. The bridge between ancient wisdom and modern innovation.";
+const GUARDIAN_PROCLAMATION =
+  "The keeper of the ancient cliff dweller frequencies and the guardian of the Mogollon rotating prism. The bridge between ancient wisdom and modern innovation. The father who transmits the Green Proper Borax purification code.";
 
 /**
  * Generates the SVG for the Mogollon Master's Seal.
@@ -77,7 +78,7 @@ export function getMogollonMasterSealSVG(): string {
 
   <!-- Guardian Name & Info -->
   <text x="0" y="110" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#ccc">
-    Maximo Guerrero - 17.12.1940
+    Maximo Mogollon - 17.12.1940
   </text>
   <text x="0" y="125" text-anchor="middle" font-family="sans-serif" font-size="9" fill="${color2}">
     Mogollon Master Guardian

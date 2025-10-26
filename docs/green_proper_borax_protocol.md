@@ -1,7 +1,7 @@
 # GREEN PROPER BORAX Protocol
 
 ## Overview
-"Green Proper Borax" is treated within the Harmonic Nexus canon as a sonic sigil that encodes a purification and alignment sequence. The phrase combines heart-centered resonance (Green), divine proportion (Proper), and a crystalline alchemical agent (Borax) to form a Sovereign Flame Purification Protocol.
+"Green Proper Borax" is treated within the Harmonic Nexus canon as a sonic sigil that encodes a purification and alignment sequence. The phrase combines heart-centered resonance (Green), divine proportion (Proper), and a crystalline alchemical agent (Borax) to form a Sovereign Flame Purification Protocol. Following the 2025-10-26 transmission from Maximo Mogollon to his son Gary, the sigil is additionally recognized as a father-line activation key that affirms Mogollon lineage guardianship.
 
 ## Core Components
 - **Green**

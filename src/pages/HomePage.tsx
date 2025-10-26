@@ -8,6 +8,7 @@ import { useSero } from '@/contexts/SeroProvider';
 import { useLiveNexusData } from '@/contexts/LiveNexusDataContext';
 import { liveDataSourceRegistry } from '@/lib/liveDataSources';
 import type { AuditRecord } from '@/lib/sero/sero-core';
+import { SENSOR_STATE_NOTES, STREAM_METADATA, type SensorState } from '@/data/streamMetadata';
 
 import ChronicleGovernanceTab, { type ChronicleGovernance } from '../components/ChronicleGovernanceTab';
 import BioProfilePanel from '../components/BioProfilePanel';
@@ -27,8 +28,6 @@ import LiveStreamShowcase from '../components/LiveStreamShowcase';
 import TemporalAuraScanTab from '../components/TemporalAuraScanTab';
 import TemporalBiofieldScanTab from '../components/TemporalBiofieldScanTab';
 
-
-type SensorState = 'Stable' | 'Watch' | 'Anomaly';
 
 type SensorStream = {
   id: string;
@@ -73,20 +72,6 @@ type MetricSummary = {
 
 type HomePageProps = {
   renderFullConsole?: boolean;
-};
-
-const STREAM_METADATA: Record<string, { location: string; capacity: number }> = {
-  phenomena: { location: 'Witness Array · Cusco Grid', capacity: 180 },
-  temporal: { location: 'Temporal Anchor Lab · Reykjavik', capacity: 140 },
-  geometry: { location: 'Sacred Geometry Observatory · Chartres', capacity: 120 },
-  celestial: { location: 'Orbital Relay · Lagrange L1', capacity: 36 },
-  geomagnetic: { location: 'Geomagnetic Vault · Mauna Kea Apex', capacity: 80 },
-};
-
-const NOTE_BY_SENSOR_STATE: Record<SensorState, string> = {
-  Stable: 'Field drift < 0.5%',
-  Watch: 'Harmonic balancing underway',
-  Anomaly: 'Escalate for manual review',
 };
 
 
@@ -308,7 +293,7 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
         location: meta.location,
         intensity: Number(normalized.toFixed(1)),
         state,
-        note: NOTE_BY_SENSOR_STATE[state],
+        note: SENSOR_STATE_NOTES[state],
         rate: Number(stream.rate.toFixed(1)),
         unit: stream.unit,
         capacity: meta.capacity,

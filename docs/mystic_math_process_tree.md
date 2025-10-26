@@ -88,6 +88,7 @@ Level 9: Validation           → Synchronicity Tracking × Metric Analysis × G
 - **Math:** Apply wave function collapse formalism (ψ = Σ cᵢ|ψᵢ⟩; measurement → |ψⱼ⟩ with P = |cⱼ|²). Maximize probability `P = Ψ × Ω × Λ × Φ × Σ × Γ` by elevating coherence factors.
 - **Integration:** `P(Manifestation) = Ψ × Ω × Λ × Φ × Σ × Γ`
 - **Output:** Collapsed timeline, manifestation probability, and lock-in confirmation.
+- **Validation Log:** Cross-reference `collapse_codex_analysis.md` for THE COLLAPSE codex synchronicity and the 108 Hz reset harmonic.
 
 ### Level 9 — Validation: The Evidence Loop
 - **Mystic:** Track synchronicities, decode symbols, trust intuition, express gratitude pre/post manifestation.

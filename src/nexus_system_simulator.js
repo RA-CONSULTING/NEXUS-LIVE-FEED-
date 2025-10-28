@@ -515,7 +515,93 @@ export class NexusSystem {
 
     return { ...this.guardianBridge };
   }
-  
+
+  /**
+   * Advance the Nexus system by a single integration step while
+   * incorporating optional external coherence (C_t) and stress inputs.
+   *
+   * @param {number | null} C_t - Observed coherence value to blend in.
+   * @param {number | null} stress_t - Normalized stress reading applied as
+   *   a penalty to coherence and a boost to phase spread.
+   * @param {object} [options]
+   * @param {number} [options.deltaT=0.01] - Time increment supplied to the
+   *   internal EgoDeath simulator.
+   * @param {number} [options.coherenceBlend=0.35] - Weight applied when
+   *   blending the simulated coherence with the observed C_t input.
+   * @param {number} [options.stressCoherencePenalty=0.2] - Portion of
+   *   coherence reduced when stress_t is present.
+   * @param {number} [options.stressPhaseGain=0.35] - Gain applied when
+   *   converting stress into additional phase spread.
+   * @returns {object} Snapshot of the updated system state.
+   */
+  step(C_t = null, stress_t = null, options = {}) {
+    const {
+      deltaT = 0.01,
+      coherenceBlend = 0.35,
+      stressCoherencePenalty = 0.2,
+      stressPhaseGain = 0.35
+    } = options;
+
+    const dt = Math.max(0, Number.isFinite(deltaT) ? deltaT : 0.01);
+    const blend = clamp(Number.isFinite(coherenceBlend) ? coherenceBlend : 0.35, 0, 1);
+    const stressPenalty = Math.max(0, Number.isFinite(stressCoherencePenalty) ? stressCoherencePenalty : 0.2);
+    const stressGain = Math.max(0, Number.isFinite(stressPhaseGain) ? stressPhaseGain : 0.35);
+
+    const egoState = this.egoDeathSim.step(dt);
+
+    let coherence = egoState.coherence;
+    let phase = egoState.phase;
+
+    if (Number.isFinite(C_t)) {
+      const observed = clamp(C_t, 0, 1);
+      coherence = clamp(coherence * (1 - blend) + observed * blend, 0, 1);
+    }
+
+    let normalizedStress = null;
+    if (Number.isFinite(stress_t)) {
+      normalizedStress = clamp(stress_t, 0, 1);
+      const coherenceDrop = normalizedStress * stressPenalty;
+      coherence = clamp(coherence * (1 - coherenceDrop), 0, 1);
+      const phaseShift = normalizedStress * stressGain * (Math.PI / 6);
+      phase = clamp(phase + phaseShift, 0, Math.PI / 2);
+    }
+
+    this.egoDeathSim.coherence = coherence;
+    this.egoDeathSim.phase = phase;
+    if (!this.egoDeathSim.unityEventTriggered && coherence > 0.95 && phase < Math.PI / 6) {
+      this.egoDeathSim.unityEventTriggered = true;
+    }
+
+    const t = this.egoDeathSim.time;
+    const R_t = this.RFE.calculate(t);
+    const signalTelemetry = this.signalAnalyzer.analyze({
+      time: t,
+      coherence,
+      phase,
+      amplitude: R_t.R_t
+    });
+
+    const windowChanged = !this.lastSignalWindow || this.lastSignalWindow.label !== signalTelemetry.window.label;
+    if (windowChanged) {
+      this.lastSignalWindow = signalTelemetry.window;
+      this.lastLoggedWindowLabel = signalTelemetry.window.label;
+      this.lastSignalLogTime = Date.now();
+    }
+
+    return {
+      time: t,
+      deltaT: dt,
+      coherence,
+      phase,
+      unityEvent: this.egoDeathSim.unityEventTriggered,
+      stress: normalizedStress,
+      realityField: R_t,
+      signalStrength: signalTelemetry,
+      observerCoherence: this.observerFunction.calculateCoherence(),
+      guardianBridge: { ...this.guardianBridge }
+    };
+  }
+
   /**
    * Simple hash function (replace with proper SHA-256 in production)
    */

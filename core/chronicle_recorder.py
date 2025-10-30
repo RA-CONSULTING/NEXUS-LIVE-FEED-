@@ -76,6 +76,9 @@ class ChronicleRecorder:
 
     async def shutdown(self) -> None:
         """Gracefully shuts down the recorder and its worker tasks."""
+        # Allow any pending events to be processed before stopping the workers.
+        await self._queue.join()
+
         tasks = [
             self._worker_task,
             self._synthesis_task,
@@ -86,11 +89,9 @@ class ChronicleRecorder:
         for task in tasks:
             if task:
                 task.cancel()
-        
+
         await asyncio.gather(*[t for t in tasks if t], return_exceptions=True)
 
-        # Ensure the queue is fully processed before exiting
-        await self._queue.join()
         logging.info("Chronicle Recorder shutdown complete.")
 
         self._worker_task = None

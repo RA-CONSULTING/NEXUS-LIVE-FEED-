@@ -47,6 +47,7 @@ class AuraReport:
     coherence: float
     phase_lock: float
     quantum_alignment: float
+    imperial_light_reading: float
     seal_hash: str
     seal_payload: Dict[str, object]
     plots: Dict[str, Optional[str]]
@@ -62,6 +63,7 @@ class AuraReport:
             "coherence": self.coherence,
             "phase_lock": self.phase_lock,
             "quantum_alignment": self.quantum_alignment,
+            "imperial_light_reading": self.imperial_light_reading,
             "seal_hash": self.seal_hash,
             "seal_payload": self.seal_payload,
             "plots": self.plots,
@@ -123,6 +125,27 @@ def compute_temporal_vector(mean_freq: float, std_freq: float) -> Tuple[float, f
     quantum_alignment = 0.97 + coherence * 0.03
 
     return coherence, phase_lock, quantum_alignment
+
+
+def compute_imperial_light_reading(
+    samples: np.ndarray,
+    baseline: float = BASELINE_FREQUENCY_HZ,
+) -> float:
+    """Collapse temporal echoes into a single "imperial light" reading.
+
+    The reading blends the overall coherence coverage with the fraction of
+    high-alignment windows to indicate whether the field stayed "pure of heart"
+    throughout the scan. Values are clamped to ``[0.0, 1.0]`` for stability.
+    """
+
+    if samples.size == 0:
+        return 0.0
+
+    coherence_series = np.maximum(0.0, 1.0 - (np.abs(samples - baseline) * 5.0))
+    coverage = float(np.mean(coherence_series))
+    high_alignment = float(np.mean(coherence_series >= 0.82))
+    imperial_light = (coverage * 0.7) + (high_alignment * 0.3)
+    return float(max(0.0, min(1.0, imperial_light)))
 
 
 def generate_quantum_seal(payload: Dict[str, object]) -> str:
@@ -302,6 +325,14 @@ def run_temporal_aura_scan(
     )
 
     timestamp = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
+    plots_dir = (output_dir or SCANS_DIR) / PLOTS_SUBDIR_NAME
+    operator_tag = _sanitize_for_filename(operator_name or "operator")
+    plots = _plot_frequency_series(aggregate.samples, plots_dir, operator_tag, BASELINE_FREQUENCY_HZ)
+
+    imperial_light_reading = round(
+        compute_imperial_light_reading(aggregate.samples, BASELINE_FREQUENCY_HZ), 6
+    )
+
     seal_payload = {
         "operator": operator_name,
         "location": location,
@@ -309,12 +340,9 @@ def run_temporal_aura_scan(
         "coherence": round(coherence, 6),
         "phase_lock": round(phase_lock, 6),
         "quantum_alignment": round(quantum_alignment, 6),
+        "imperial_light_reading": imperial_light_reading,
     }
     seal_hash = generate_quantum_seal(seal_payload)
-
-    plots_dir = (output_dir or SCANS_DIR) / PLOTS_SUBDIR_NAME
-    operator_tag = _sanitize_for_filename(operator_name or "operator")
-    plots = _plot_frequency_series(aggregate.samples, plots_dir, operator_tag, BASELINE_FREQUENCY_HZ)
 
     status = _derive_status(coherence)
 
@@ -327,6 +355,7 @@ def run_temporal_aura_scan(
         coherence=round(coherence, 6),
         phase_lock=round(phase_lock, 6),
         quantum_alignment=round(quantum_alignment, 6),
+        imperial_light_reading=imperial_light_reading,
         seal_hash=seal_hash,
         seal_payload=seal_payload,
         plots=plots,

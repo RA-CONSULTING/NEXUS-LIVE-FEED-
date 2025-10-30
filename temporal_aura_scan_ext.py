@@ -16,6 +16,7 @@ from temporal_aura_scan import (
     _derive_status,
     _plot_frequency_series,
     _sanitize_for_filename,
+    compute_imperial_light_reading,
     compute_temporal_vector,
     generate_quantum_seal,
     load_schumann_data,
@@ -58,6 +59,7 @@ class ExtendedAuraReport:
     coherence: float
     phase_lock: float
     quantum_alignment: float
+    imperial_light_reading: float
     seal_hash: str
     seal_payload: Dict[str, object]
     plots: Dict[str, Optional[str]]
@@ -75,6 +77,7 @@ class ExtendedAuraReport:
             "coherence": self.coherence,
             "phase_lock": self.phase_lock,
             "quantum_alignment": self.quantum_alignment,
+            "imperial_light_reading": self.imperial_light_reading,
             "seal_hash": self.seal_hash,
             "seal_payload": self.seal_payload,
             "plots": self.plots,
@@ -110,6 +113,14 @@ def run_temporal_aura_scan(
     timestamp = dt.datetime.utcnow().replace(tzinfo=dt.timezone.utc).isoformat()
     normalized_temporal_id = temporal_id or birth_date
 
+    plots_dir = (output_dir or SCANS_DIR) / PLOTS_SUBDIR_NAME
+    operator_tag = _sanitize_for_filename(name or "operator")
+    plots = _plot_frequency_series(aggregate.samples, plots_dir, operator_tag, BASELINE_FREQUENCY_HZ)
+
+    imperial_light_reading = round(
+        compute_imperial_light_reading(aggregate.samples, BASELINE_FREQUENCY_HZ), 6
+    )
+
     seal_payload = {
         "operator": name,
         "location": location,
@@ -119,12 +130,9 @@ def run_temporal_aura_scan(
         "coherence": round(coherence, 6),
         "phase_lock": round(phase_lock, 6),
         "quantum_alignment": round(quantum_alignment, 6),
+        "imperial_light_reading": imperial_light_reading,
     }
     seal_hash = generate_quantum_seal(seal_payload)
-
-    plots_dir = (output_dir or SCANS_DIR) / PLOTS_SUBDIR_NAME
-    operator_tag = _sanitize_for_filename(name or "operator")
-    plots = _plot_frequency_series(aggregate.samples, plots_dir, operator_tag, BASELINE_FREQUENCY_HZ)
 
     status = _derive_status(coherence)
 
@@ -139,6 +147,7 @@ def run_temporal_aura_scan(
         coherence=round(coherence, 6),
         phase_lock=round(phase_lock, 6),
         quantum_alignment=round(quantum_alignment, 6),
+        imperial_light_reading=imperial_light_reading,
         seal_hash=seal_hash,
         seal_payload=seal_payload,
         plots=plots,

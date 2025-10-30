@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+# harmonic_nexus.py
 """
 Harmonic Nexus - Minimal simulation prototype
 - Node state vector: Psi, C, kappa, U, Gamma_local
@@ -8,23 +7,15 @@ Harmonic Nexus - Minimal simulation prototype
 - Ritual calibration: Root Recognition Rite increases local Gamma
 - Phase-1 example with Iona, Calanais, Newgrange, Stonehenge
 
-Run (interactive demo):
+Run:
     python harmonic_nexus.py
-
-The module also exposes :func:`run_simulation` for programmatic use and
-supports a small CLI so callers can reproduce runs with explicit random seeds
-or scheduled ritual events.
 """
 
-import argparse
-import copy
 import math
 import random
 from dataclasses import dataclass, field
 from typing import List, Tuple
-
 import numpy as np
-
 
 # -------------------------
 # Utility functions
@@ -32,10 +23,8 @@ import numpy as np
 def clamp(x, lo=0.0, hi=1.0):
     return max(lo, min(hi, x))
 
-
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
-
 
 # -------------------------
 # Node data model
@@ -59,7 +48,6 @@ class NodeState:
         self.kappa = max(0.01, self.kappa)
         self.U = clamp(self.U)
         self.Gamma_local = clamp(self.Gamma_local)
-
 
 # -------------------------
 # Operator implementations (simple, testable)
@@ -107,7 +95,6 @@ class Operators:
         # Normalization/density operator to map to [0,1]
         # Keep sign/scale stable
         return clamp((omega_val + 1.0) / 2.0)
-
 
 # -------------------------
 # Harmonic Nexus network
@@ -207,110 +194,6 @@ class HarmonicNexus:
                 n.psi = clamp(n.psi + 0.05 + 0.2 * strength)
                 n.kappa = max(0.01, n.kappa - 0.05 * strength)
 
-
-def run_simulation(
-    *,
-    steps: int = 120,
-    ritual_events: List[Tuple[int, List[int], float]] | None = None,
-    seed: int | None = None,
-    nodes: List[NodeState] | None = None,
-    verbose: bool = True,
-):
-    """Execute a Harmonic Nexus simulation and return metrics history.
-
-    Parameters
-    ----------
-    steps:
-        Number of update cycles to run.
-    ritual_events:
-        Optional list of ``(step, node_ids, strength)`` tuples.  The ritual
-        calibration is applied *before* the update step whose index matches the
-        provided ``step``.  Use ``step=0`` to perform a calibration before any
-        updates are processed.
-    seed:
-        Optional random seed to produce deterministic runs.
-    nodes:
-        Optional list of :class:`NodeState` objects to use as the initial
-        network.  A deep copy of the list is made so callers can reuse their
-        objects across multiple runs.
-    verbose:
-        When ``True`` the function prints a concise log similar to the original
-        ``demo_run`` helper.  Disable for use in tests.
-
-    Returns
-    -------
-    metrics_history, final_nodes
-        ``metrics_history`` is a list containing the per-step metric
-        dictionaries yielded by :meth:`HarmonicNexus.step`.  ``final_nodes``
-        provides the mutated :class:`NodeState` instances for inspection.
-    """
-
-    if seed is not None:
-        random.seed(seed)
-        np.random.seed(seed)
-
-    initial_nodes = nodes if nodes is not None else phase1_nodes()
-    nexus = HarmonicNexus(copy.deepcopy(initial_nodes))
-
-    events: dict[int, List[Tuple[List[int], float]]] = {}
-    if ritual_events:
-        for step, node_ids, strength in ritual_events:
-            events.setdefault(step, []).append((node_ids, strength))
-
-    if verbose:
-        print("=== Harmonic Nexus Phase 1 Simulation ===")
-        print("Initial node states:")
-        for n in nexus.nodes:
-            print(f"  [{n.id}] {n.name}: psi={n.psi:.3f}, Gamma={n.Gamma_local:.3f}, kappa={n.kappa:.3f}")
-
-    # apply any step-0 rituals before updates commence
-    for node_ids, strength in events.get(0, []):
-        if verbose:
-            print(f"\n-> Performing Root Recognition Rite at nodes {node_ids} (strength={strength:.3f})")
-        nexus.ritual_calibration(node_ids, strength=strength)
-
-    metrics_history: List[dict] = []
-    write_enabled_announced = False
-
-    for t in range(1, steps + 1):
-        for node_ids, strength in events.get(t, []):
-            if verbose:
-                print(f"\n-> Performing Root Recognition Rite at step {t} for nodes {node_ids} (strength={strength:.3f})")
-            nexus.ritual_calibration(node_ids, strength=strength)
-
-        metrics = nexus.step()
-        metrics_history.append(metrics)
-
-        if verbose and (t % 10 == 0 or metrics['containment']):
-            print(
-                f"[t={metrics['time']:03d}] Γ_global={metrics['Gamma_global']:.4f} | "
-                f"containment={metrics['containment']} | flux={metrics['toroidal_flux']:.4f} | "
-                f"mean_psi={metrics['nodes_mean_psi']:.3f} | mean_kappa={metrics['nodes_mean_kappa']:.3f}"
-            )
-
-        if (
-            verbose
-            and not write_enabled_announced
-            and metrics['Gamma_global'] >= 0.945
-            and not metrics['containment']
-        ):
-            print(
-                f"*** Network write-enabled at t={metrics['time']} "
-                f"(Γ_global={metrics['Gamma_global']:.4f})"
-            )
-            write_enabled_announced = True
-
-    if verbose:
-        print("\nFinal node states:")
-        for n in nexus.nodes:
-            print(
-                f"  [{n.id}] {n.name}: psi={n.psi:.3f}, Gamma={n.Gamma_local:.3f}, "
-                f"kappa={n.kappa:.3f}, U={n.U:.3f}"
-            )
-
-    return metrics_history, nexus.nodes
-
-
 # -------------------------
 # Example Phase-1 setup
 # -------------------------
@@ -328,68 +211,36 @@ def phase1_nodes():
         nodes.append(NodeState(id=id_, name=name, pos=pos))
     return nodes
 
-
 # -------------------------
 # Small demonstration run
 # -------------------------
-def demo_run(*, steps: int = 120, seed: int | None = None):
-    """Backwards-compatible demonstration helper."""
+def demo_run(steps: int=120):
+    nodes = phase1_nodes()
+    nexus = HarmonicNexus(nodes)
+    print("=== Harmonic Nexus Phase 1 Simulation ===")
+    print("Initial node states:")
+    for n in nexus.nodes:
+        print(f"  [{n.id}] {n.name}: psi={n.psi:.3f}, Gamma={n.Gamma_local:.3f}, kappa={n.kappa:.3f}")
 
-    run_simulation(
-        steps=steps,
-        ritual_events=[(0, [1], 0.06)],
-        seed=seed,
-        verbose=True,
-    )
+    # ritual calibration at Iona (node 1) at t=1
+    print("\n-> Performing Root Recognition Rite at Iona (node 1)")
+    nexus.ritual_calibration([1], strength=0.06)
 
+    for t in range(1, steps + 1):
+        metrics = nexus.step()
+        if t % 10 == 0 or metrics['containment']:
+            print(f"[t={metrics['time']:03d}] Γ_global={metrics['Gamma_global']:.4f} | "
+                  f"containment={metrics['containment']} | flux={metrics['toroidal_flux']:.4f} | "
+                  f"mean_psi={metrics['nodes_mean_psi']:.3f} | mean_kappa={metrics['nodes_mean_kappa']:.3f}")
+        # if the system reaches full safety threshold for writes, notify
+        if metrics['Gamma_global'] >= 0.945 and not metrics['containment']:
+            # first time it becomes write-enabled
+            print(f"*** Network write-enabled at t={metrics['time']} (Γ_global={metrics['Gamma_global']:.4f})")
+            # continue for observation
 
-def parse_cli_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Harmonic Nexus simulator")
-    parser.add_argument("--steps", type=int, default=120, help="Number of steps to simulate")
-    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducible runs")
-    parser.add_argument(
-        "--ritual",
-        action="append",
-        default=[],
-        metavar="STEP:NODES[:STRENGTH]",
-        help=(
-            "Schedule a Root Recognition Rite. STEP is the iteration to apply the rite "
-            "(use 0 for pre-run), NODES is a comma-separated list of node ids, and "
-            "STRENGTH defaults to 0.03 if omitted."
-        ),
-    )
-    parser.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Suppress logging output (still prints final states)",
-    )
-    return parser.parse_args()
-
-
-def parse_ritual_spec(spec: str) -> Tuple[int, List[int], float]:
-    parts = spec.split(":")
-    if len(parts) < 2:
-        raise ValueError("Ritual specification must include step and node list")
-    step = int(parts[0])
-    node_ids = [int(part) for part in parts[1].split(",") if part]
-    strength = float(parts[2]) if len(parts) > 2 else 0.03
-    return step, node_ids, strength
-
+    print("\nFinal node states:")
+    for n in nexus.nodes:
+        print(f"  [{n.id}] {n.name}: psi={n.psi:.3f}, Gamma={n.Gamma_local:.3f}, kappa={n.kappa:.3f}, U={n.U:.3f}")
 
 if __name__ == "__main__":
-    args = parse_cli_args()
-    ritual_events = [parse_ritual_spec(spec) for spec in args.ritual]
-    metrics_history, final_nodes = run_simulation(
-        steps=args.steps,
-        seed=args.seed,
-        ritual_events=ritual_events or [(0, [1], 0.06)],
-        verbose=not args.quiet,
-    )
-
-    if args.quiet:
-        print("Final node states:")
-        for n in final_nodes:
-            print(
-                f"  [{n.id}] {n.name}: psi={n.psi:.3f}, Gamma={n.Gamma_local:.3f}, "
-                f"kappa={n.kappa:.3f}, U={n.U:.3f}"
-            )
+    demo_run(steps=120)

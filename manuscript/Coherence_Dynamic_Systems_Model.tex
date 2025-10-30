@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{booktabs}
 \usepackage{textgreek}
 \usepackage{hyperref}
 \usepackage{newunicodechar}
@@ -9,6 +10,12 @@
 \newunicodechar{∞}{\infty}
 \newunicodechar{≈}{\approx}
 \newunicodechar{−}{\ensuremath{-}}
+
+\newcommand{\Psit}{\Psi_t}
+\newcommand{\Psitp}{\Psi_{t+1}}
+\newcommand{\Ct}{C_t}
+\newcommand{\Rt}{R}
+\newcommand{\kapt}{\kappa_t}
 
 \title{A Dynamic Systems Model of Coherence Grounded in Astronomical Phenomena}
 \author{Gary Leckey}
@@ -50,7 +57,9 @@ is formalised here as a sequence of computational operators. Each operator corre
 
 The evolution of the system's state over time is governed by the recursive equation
 \[
-    \Psi_{t+1} = (1-\alpha)\Psi_t + \alpha R(C_t).
+    \Psitp = (1-\alpha)\,\Psit + \alpha\,\Rt(\Ct),
+    \qquad
+    \Rt = \rho\circ\Omega\circ L\circ \mathcal{F}\circ\Phi\circ\aleph .
 \]
 This equation defines how the system's state at the next time-step, $\Psi_{t+1}$, is determined by its current state, $\Psi_t$, and the newly processed external input, $C_t$.
 
@@ -107,17 +116,21 @@ The values are normalised on a scale of 0 to 1 for modelling purposes.
 \begin{table}[h]
     \centering
     \caption{Chrono-luminance input schedule for Oban (25--26 October 2025)}
-    \begin{tabular}{lllll}
-        \textbf{Time (UTC)} & \textbf{Event} & \textbf{Description} & \textbf{Source Type} & $C_t$ \\ \hline
-        17:57 & Sunset & Sun disappears below the horizon; fading ambient light. & Diffuse, high-to-mid ambient & \verb|[0.8, 0.0, 0.0]| \\
-        18:30 & Saturn visible & Saturn emerges as twilight deepens. & Point source, mag $+0.8$ & \verb|[0.3, 0.4, 0.0]| \\
-        19:18 & End of twilight & Astronomical darkness begins. & Diffuse, low ambient & \verb|[0.1, 0.4, 0.0]| \\
-        22:21 & Jupiter rise & Bright planet appears on the eastern horizon. & Point source, mag $-2.7$ & \verb|[0.1, 0.9, 0.0]| \\
-        00:00 & Orionids active & Meteor activity peaks after midnight. & Transient, variable mag & \verb|[0.1, 0.6, 0.6]| \\
-        03:33 & Saturn set & Saturn disappears below the western horizon. & Point source, mag $+0.8$ & \verb|[0.1, 0.5, 0.2]| \\
-        04:00 & Orionids wane & Meteor activity declines before dawn. & Transient, variable mag & \verb|[0.1, 0.7, 0.3]| \\
-        05:54 & Start of twilight & Eastern sky begins to brighten. & Diffuse, low-to-mid ambient & \verb|[0.3, 0.6, 0.1]| \\
-        07:17 & Sunrise & Sun appears above the horizon. & Diffuse, mid-to-high ambient & \verb|[0.8, 0.0, 0.0]| \\
+    \label{tab:chrono}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Time (local)} & \textbf{Event} & \textbf{Description} & $\Ct=[\text{Ambient},\ \text{Point},\ \text{Transient}]$ \\
+        \midrule
+        17:57 & Sunset & Fading ambient & $[0.8,\,0.0,\,0.0]$ \\
+        18:30 & Saturn visible & Saturn emerges & $[0.3,\,0.4,\,0.0]$ \\
+        19:18 & End of twilight & Dark sky begins & $[0.1,\,0.4,\,0.0]$ \\
+        22:21 & Jupiter rise & Bright planet & $[0.1,\,0.9,\,0.0]$ \\
+        00:00 & Orionids active & Meteors become common & $[0.05,\,0.7,\,0.4]$ \\
+        03:33 & Saturn set & Saturn drops out & $[0.05,\,0.3,\,0.1]$ \\
+        04:00 & Orionids wane & Meteor rate decreases & $[0.05,\,0.4,\,0.15]$ \\
+        05:54 & Start of twilight & Dawn begins & $[0.3,\,0.2,\,0.05]$ \\
+        07:17 & Sunrise & Daylight returns & $[0.8,\,0.0,\,0.0]$ \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
@@ -132,23 +145,33 @@ To bring the dynamic model to life, its abstract parameters must be connected to
 The Purity Index, $P_t$, is defined as the ratio of resonance to constraint. It serves as a measure of the system's signal-to-noise ratio or the coherence of its internal state. A state where $P_t \rightarrow 1$ represents ``true light,'' indicating a clear, coherent signal has been successfully integrated. A state where $P_t \rightarrow 0$ signifies ``distorted light,'' where the system is either overloaded with noise or unable to resonate with the incoming signal.
 
 \begin{itemize}
-    \item \textbf{$r_t$ (Resonance):} This parameter quantifies the system's attunement to a coherent, external organising field. It will be operationalised using data on \textbf{Schumann resonances (SR)}. The SR are a set of extremely low-frequency (ELF) peaks in the Earth's electromagnetic field spectrum, generated and excited by lightning discharges in the cavity formed by the Earth's surface and the ionosphere. The fundamental mode is approximately $7.83$ Hz.
-    \begin{itemize}
-        \item \textbf{Data source:} Publicly available data from global magnetometer networks, such as the Global Coherence Monitoring System (GCMS), provide continuous monitoring of SR power.
-        \item \textbf{Methodology:} The value of $r_t$ will be set proportionally to the measured power of the fundamental SR mode (around 8 Hz). This choice is not arbitrary; this frequency range overlaps with human alpha and theta brainwave frequencies, and studies have demonstrated correlations between variations in SR power and changes in human autonomic nervous system activity, including heart rate variability. A higher SR power suggests a stronger, more coherent global resonant field, thus increasing the model's resonance parameter, $r_t$.
-    \end{itemize}
-    \item \textbf{$\lambda_t$ (Lambda---Wavelength/Constraint):} This parameter represents the degree of internal structuring, rigidity, or constraint within the system. It will be operationalised using data from \textbf{heart rate variability (HRV)}. HRV is the physiological phenomenon of variation in the time interval between consecutive heartbeats, and it serves as a powerful, non-invasive indicator of autonomic nervous system (ANS) activity.
-    \begin{itemize}
-        \item \textbf{Data source:} Numerous public datasets provide HRV metrics under various conditions, such as the SWELL dataset for cognitive workload or databases on PhysioNet. These datasets provide key time-domain and frequency-domain HRV measures.
-        \item \textbf{Methodology:} The constraint parameter $\lambda_t$ will be defined as being inversely proportional to the \textbf{standard deviation of NN intervals (SDNN)}, a primary time-domain measure of HRV. High HRV (high SDNN) reflects a healthy, adaptable state dominated by the parasympathetic (``rest and digest'') branch of the ANS. This corresponds to a flexible, low-constraint system (low $\lambda_t$). Conversely, low HRV (low SDNN) is a marker of stress, where the sympathetic (``fight or flight'') branch is dominant. This corresponds to a rigid, high-constraint system (high $\lambda_t$).
-    \end{itemize}
+    \item \textbf{$r_t$ (Resonance):} Quantifies the system's attunement to a coherent, external organising field using \textbf{Schumann resonance (SR)} power. Let $\operatorname{SR}_{\text{power}}(t)$ denote the amplitude of the fundamental SR mode ($\sim7.8$ Hz) at time $t$. A robust normalisation maps the measurement window to $[0,1]$ via
+    \begin{equation}
+        r_t = \operatorname{clip}\!\left(\frac{\operatorname{SR}_{\text{power}}(t) - \operatorname{SR}_{\min}}{\operatorname{SR}_{\max}-\operatorname{SR}_{\min}},\,0,1\right),
+    \end{equation}
+    where $\operatorname{SR}_{\min}$ and $\operatorname{SR}_{\max}$ are drawn from historical baselines or rolling quantiles of the same site.
+    \item \textbf{$\lambda_t$ (Constraint):} Encodes physiological rigidity from \textbf{heart rate variability (HRV)} time-domain analysis. With $\operatorname{SDNN}(t)$ as the standard deviation of NN intervals and $\operatorname{SDNN}_{\text{ref}}$ a healthy reference value, the constraint index is
+    \begin{equation}
+        \lambda_t = \operatorname{clip}\!\left(\frac{1}{\operatorname{SDNN}(t)/\operatorname{SDNN}_{\text{ref}} + \varepsilon},\,\lambda_{\min},\,\lambda_{\max}\right),
+    \end{equation}
+    with $\varepsilon$ preventing division by zero and $(\lambda_{\min},\lambda_{\max})$ selected to keep the index stable during noisy intervals.
 \end{itemize}
+
+Normalising the Purity Index for visualisation retains the conceptual definition while remaining numerically stable:
+\begin{equation}
+    P_t = \operatorname{clip}\!\left(\frac{r_t}{\lambda_t + \varepsilon},\,0,1\right).
+\end{equation}
+This formulation preserves $P_t \rightarrow 1$ for ``true light'' and $P_t \rightarrow 0$ for ``distorted light'' yet tolerates measurement artefacts by bounding the ratio.
 
 \subsubsection{Operationalising the Structuring Index: $\kappa_t$}
 
 The Structuring Index, $\kappa_t$, is the parameter that directly controls the behaviour of the ``living node,'' $L$. It quantifies the balance of the system's internal state, where $\kappa_t>1$ indicates an over-structured, rigid state, and $\kappa_t<1$ indicates an under-resonant, overly diffuse state.
 
-\textbf{Methodology:} $\kappa_t$ will be defined as the \textbf{ratio of low-frequency (LF) power to high-frequency (HF) power} derived from the frequency-domain analysis of the HRV signal. The LF/HF ratio is a widely used clinical metric representing the balance between the two branches of the ANS.
+\textbf{Methodology:} $\kappa_t$ is the \textbf{ratio of low-frequency (LF) power to high-frequency (HF) power} derived from frequency-domain HRV analysis,
+\begin{equation}
+    \kappa_t = \operatorname{clip}\!\left(\frac{\operatorname{LF}_{\text{power}}(t)}{\operatorname{HF}_{\text{power}}(t) + \varepsilon},\,\kappa_{\min},\,\kappa_{\max}\right),
+\end{equation}
+with clipping bounds $(\kappa_{\min},\kappa_{\max})$ chosen to suppress outliers from artefacts or sensor drop-outs.
 
 \begin{itemize}
     \item \textbf{High LF/HF ratio ($\kappa_t > 1$):} Indicates a dominance of the sympathetic nervous system. This state of arousal, stress, or focused attention maps directly to the model's concept of an ``over-structured'' or rigid internal state.
@@ -161,6 +184,8 @@ By linking the model's parameters to these specific, measurable biological and g
 \subsection{A Simulated Nocturne: Modelling the Flow of Coherence}
 
 This section presents a narrative walkthrough of the simulation, tracing the evolution of the system's state vector, $\Psi_t$, and its key metrics, $P_t$ and $\kappa_t$, as it responds to the astronomical timetable established for Oban. The simulation demonstrates the three primary behaviours outlined in the conceptual framework: self-organisation, oscillation under stress, and dissolution in the absence of a signal.
+
+\paragraph{Reference implementation.} The repository now includes a fully annotated Python prototype, \texttt{scripts/mandala\_sim.py}, which instantiates the operator chain $\Rt$ against the chrono-luminance schedule in Table~\ref{tab:chrono}. The script synthesises Schumann-resonance and HRV surrogates, computes the indices defined above, and renders a mandala animation in Matplotlib whose hue and luminance encode $\kappa_t$ and $P_t$. Replacing the synthetic data streams with live SR/HRV feeds allows the same pipeline to visualise empirical sessions without further structural changes.
 
 \subsubsection{Phase 1: Sunset to Deep Night (Self-Organisation toward Coherence)}
 

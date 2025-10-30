@@ -152,13 +152,19 @@
         // --- PILLARS & FAMILY ---
         const pillarsGroup = new THREE.Group();
         scene.add(pillarsGroup);
+        const pillarIdentifiers = ['philipPillar', 'susanPillar', 'samuelPillar', 'garryPillar'];
+        const pillarRegistry = {};
         pillarPositions.forEach((pos, i) => {
             const pillarGeo = new THREE.CylinderGeometry(0.5, 0.5, pillarHeight, 32, 1, true);
             const pillarMat = new THREE.MeshBasicMaterial({ color: pillarColors[i], transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
             const pillar = new THREE.Mesh(pillarGeo, pillarMat);
             pillar.position.copy(pos);
             pillarsGroup.add(pillar);
+            const registryKey = pillarIdentifiers[i] || `pillar-${i}`;
+            pillarRegistry[registryKey] = pillar;
         });
+
+        window.pillarRegistry = Object.freeze({ ...pillarRegistry });
         
         const coreGeo = new THREE.SphereGeometry(1, 32, 32);
         const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending });

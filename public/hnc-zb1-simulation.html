@@ -98,6 +98,8 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
+        const textureLoader = new THREE.TextureLoader();
+
         // --- LIGHTING ---
         const ambientLight = new THREE.AmbientLight(0x404040, 2); // soft white light
         scene.add(ambientLight);
@@ -165,12 +167,13 @@
         const posArray = new Float32Array(particleCount * 3);
         const traceLayerTop = traceLayerMesh.position.y + traceLayerThickness / 2;
         
-        for (let i = 0; i < particleCount * 3; i++) {
+        for (let i = 0; i < particleCount; i++) {
             const radius = Math.random() * (chipWidth / 2.1);
             const angle = Math.random() * Math.PI * 2;
-            posArray[i*3] = radius * Math.cos(angle);
-            posArray[i*3+1] = traceLayerTop + 0.01;
-            posArray[i*3+2] = radius * Math.sin(angle) * (chipLength/chipWidth);
+            const baseIndex = i * 3;
+            posArray[baseIndex] = radius * Math.cos(angle);
+            posArray[baseIndex + 1] = traceLayerTop + 0.01;
+            posArray[baseIndex + 2] = radius * Math.sin(angle) * (chipLength / chipWidth);
         }
         particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
         const particleMat = new THREE.PointsMaterial({
@@ -421,7 +424,7 @@
         const unityHeight = beamHeight;
         const unityRadius = chipWidth * 0.7;
         const unityGeo = new THREE.CylinderGeometry(unityRadius, unityRadius, unityHeight, 64, 1, true);
-        const unityTexture = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABYSURBVFhH7c5BDQAwEASh+je9v+EECkCj1k2A2f93k4A/WgEEYAABGMAAAjCAAAxgAAEYwPwFjL8QIOwzCCAAARjAAAIMwAACIACBfQMEtAB9tazpZgAAAABJRU5ErkJggg==');
+        const unityTexture = textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABYSURBVFhH7c5BDQAwEASh+je9v+EECkCj1k2A2f93k4A/WgEEYAABGMAAAjCAAAxgAAEYwPwFjL8QIOwzCCAAARjAAAIMwAACIACBfQMEtAB9tazpZgAAAABJRU5ErkJggg==');
         unityTexture.wrapS = THREE.RepeatWrapping;
         unityTexture.wrapT = THREE.RepeatWrapping;
         unityTexture.repeat.set(2, 8);
@@ -471,7 +474,7 @@
         const conductorCurve = new THREE.CatmullRomCurve3(conductorPoints);
         const conductorGeo = new THREE.TubeGeometry(conductorCurve, 100, 0.1, 8, false);
         
-        const conductorTexture = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII='); 
+        const conductorTexture = textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII=');
         conductorTexture.wrapT = THREE.RepeatWrapping;
 
         const conductorMat = new THREE.MeshBasicMaterial({
@@ -567,7 +570,7 @@
         stabilizingBeamPoints.push(endPoint);
         
         const stabilizingBeamGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(stabilizingBeamPoints), 2, 0.2, 8, false);
-        const beamTexture = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII=');
+        const beamTexture = textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII=');
         beamTexture.wrapT = THREE.RepeatWrapping;
         const stabilizingBeamMat = new THREE.Mesh(stabilizingBeamGeo, new THREE.MeshBasicMaterial({
             map: beamTexture,
@@ -634,7 +637,7 @@
         
         const bridgeHeight = understandingRadius * 2.2;
         const bridgeGeo = new THREE.CylinderGeometry(0.2, 0.2, bridgeHeight, 32, 1, true);
-        const bridgeTexture = new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAACACAYAAABgYXB3AAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABoSURBVBhXY/j////79++/v3//An////f79y8DIyOj79+/Q4A5gAAD/v//8/v376CgoOD79++gUCj4/f0bA4MB4/fv30FycjIYYgAEEAAmYPh9+vQJ//79A83NzZgYAP369QsCgwIIGANk/gBo4Q93/4k07wAAAABJRU5ErkJggg==');
+        const bridgeTexture = textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAACACAYAAABgYXB3AAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABoSURBVBhXY/j////79++/v3//An////f79y8DIyOj79+/Q4A5gAAD/v//8/v376CgoOD79++gUCj4/f0bA4MB4/fv30FycjIYYgAEEAAmYPh9+vQJ//79A83NzZgYAP369QsCgwIIGANk/gBo4Q93/4k07wAAAABJRU5ErkJggg==');
         bridgeTexture.wrapS = THREE.RepeatWrapping;
         bridgeTexture.wrapT = THREE.RepeatWrapping;
         bridgeTexture.repeat.set(1, 4);
@@ -653,8 +656,8 @@
         const legacyGroup = new THREE.Group();
         scene.add(legacyGroup);
         const legacyTextures = {
-            ancestral: new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII='),
-            future: new THREE.TextureLoader().load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII=')
+            ancestral: textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII='),
+            future: textureLoader.load('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAoCAYAAAAIAM2XAAAAAXNSRIArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAUSURBVBhXY/j//z8DIyMjAwkAAbQBF4J+2U0AAAAASUVORK5CYII=')
         };
         legacyTextures.ancestral.wrapT = THREE.RepeatWrapping;
         legacyTextures.future.wrapT = THREE.RepeatWrapping;
@@ -757,9 +760,9 @@
             }
 
             // --- TESLA ARC TRIGGER & ANIMATION ---
-             if (elapsedTime - lastTeslaTime > 2.5) { 
-                while(teslaGroup.children.length > 0){ 
-                    const oldArc = teslaGroup.children[0];
+            if (elapsedTime - lastTeslaTime > 2.5) {
+                for (let i = teslaGroup.children.length - 1; i >= 0; i--) {
+                    const oldArc = teslaGroup.children[i];
                     teslaGroup.remove(oldArc);
                     oldArc.geometry.dispose();
                     oldArc.material.dispose();
@@ -797,14 +800,15 @@
                 }
                 lastTeslaTime = elapsedTime;
             }
-            teslaGroup.children.forEach(arc => {
+            for (let i = teslaGroup.children.length - 1; i >= 0; i--) {
+                const arc = teslaGroup.children[i];
                 arc.material.opacity *= 0.85;
-                 if(arc.material.opacity < 0.01) {
+                if (arc.material.opacity < 0.01) {
+                    teslaGroup.remove(arc);
                     arc.material.dispose();
                     arc.geometry.dispose();
-                 }
-            });
-            teslaGroup.children = teslaGroup.children.filter(arc => arc.material.opacity >= 0.01);
+                }
+            }
 
 
             // Animate particles

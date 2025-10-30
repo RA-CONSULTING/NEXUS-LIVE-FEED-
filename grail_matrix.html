@@ -130,6 +130,8 @@
             "Harmonization": "In the web of connection, all notes become one,<br>The song of creation, its new cycle begun."
         };
 
+        const phaseNames = Object.keys(harmonicMantras);
+
         // --- UI Elements ---
         const geminiButton = document.getElementById('gemini-button');
         const mantraTextElement = document.getElementById('mantra-text');
@@ -137,7 +139,7 @@
         const ttsAudio = document.getElementById('tts-audio');
 
         let isGenerating = false;
-        let currentPhaseName = '';
+        let currentPhaseName = phaseNames[0] || '';
         let generatedMantra = '';
 
         // --- Oracle Functions ---
@@ -161,10 +163,73 @@
             geminiButton.disabled = false;
         }
         
+        function normaliseMantra(mantra) {
+            return mantra.replace(/<br\s*\/?>(\s*)/gi, ' ').trim();
+        }
+
+        function convertPCMToWav(pcmBuffer, options = {}) {
+            const {
+                sampleRate = 24000,
+                numChannels = 1,
+                bytesPerSample = 2,
+            } = options;
+
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const pcmLength = pcmBuffer.byteLength;
+            const wavBuffer = new ArrayBuffer(44 + pcmLength);
+            const view = new DataView(wavBuffer);
+            let offset = 0;
+
+            const writeString = (str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset++, str.charCodeAt(i));
+                }
+            };
+
+            const writeUint32 = (value) => {
+                view.setUint32(offset, value, true);
+                offset += 4;
+            };
+
+            const writeUint16 = (value) => {
+                view.setUint16(offset, value, true);
+                offset += 2;
+            };
+
+            writeString('RIFF');
+            writeUint32(36 + pcmLength);
+            writeString('WAVE');
+            writeString('fmt ');
+            writeUint32(16);
+            writeUint16(1);
+            writeUint16(numChannels);
+            writeUint32(sampleRate);
+            writeUint32(byteRate);
+            writeUint16(blockAlign);
+            writeUint16(bytesPerSample * 8);
+            writeString('data');
+            writeUint32(pcmLength);
+
+            const pcmData = new Uint8Array(pcmBuffer);
+            const wavData = new Uint8Array(wavBuffer, 44);
+            wavData.set(pcmData);
+
+            return wavBuffer;
+        }
+
         async function playMantra() {
             if (isGenerating || !generatedMantra) return;
 
+            const resetPlaybackState = () => {
+                isGenerating = false;
+                playButton.disabled = false;
+                playButton.textContent = "▶";
+                ttsAudio.onended = null;
+            };
+
             isGenerating = true;
+            playButton.disabled = true;
             playButton.textContent = "🔊";
 
             try {
@@ -173,26 +238,60 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ mantra: generatedMantra.replace('<br>', ' ') }),
+                    body: JSON.stringify({ mantra: normaliseMantra(generatedMantra) }),
                 });
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const audioBlob = await response.blob();
+                const contentType = response.headers.get('Content-Type') || '';
+                let audioBlob;
+
+                if (/audio\/(wav|wave|x-wav|mpeg|mp3)/i.test(contentType)) {
+                    audioBlob = await response.blob();
+                } else if (/pcm|octet-stream/i.test(contentType)) {
+                    const pcmBuffer = await response.arrayBuffer();
+                    const sampleRateHeader = Number(response.headers.get('x-audio-sample-rate'));
+                    const channelHeader = Number(response.headers.get('x-audio-channels'));
+                    const wavBuffer = convertPCMToWav(pcmBuffer, {
+                        sampleRate: Number.isFinite(sampleRateHeader) ? sampleRateHeader : undefined,
+                        numChannels: Number.isFinite(channelHeader) ? channelHeader : undefined,
+                    });
+                    audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+                } else {
+                    audioBlob = await response.blob();
+                }
+
+                if (ttsAudio.src) {
+                    URL.revokeObjectURL(ttsAudio.src);
+                }
+
                 const audioUrl = URL.createObjectURL(audioBlob);
                 ttsAudio.src = audioUrl;
-                ttsAudio.play();
+
+                ttsAudio.onended = () => {
+                    if (ttsAudio.src) {
+                        URL.revokeObjectURL(ttsAudio.src);
+                        ttsAudio.removeAttribute('src');
+                    }
+                    resetPlaybackState();
+                };
+
+                await ttsAudio.play();
 
             } catch (error) {
                 console.error("Error playing mantra:", error);
                 mantraTextElement.textContent = "The mantra fades into silence.";
+                if (ttsAudio.src) {
+                    URL.revokeObjectURL(ttsAudio.src);
+                    ttsAudio.removeAttribute('src');
+                }
+                resetPlaybackState();
             } finally {
-                ttsAudio.onended = () => {
-                    isGenerating = false;
-                    playButton.textContent = "▶";
-                };
+                if (ttsAudio.paused || !ttsAudio.src) {
+                    resetPlaybackState();
+                }
             }
         }
         
@@ -308,7 +407,6 @@
 
         // --- TIMELINE / CYCLE MANAGEMENT ---
         const cycleDuration = 12; // seconds
-        const phaseNames = ["Ignition", "Stabilization", "Amplification", "Harmonization"];
         const phaseUI = [
             document.getElementById('phase1'),
             document.getElementById('phase2'),

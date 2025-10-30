@@ -1,0 +1,234 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{textgreek}
+\usepackage{hyperref}
+\usepackage{newunicodechar}
+
+\newunicodechar{∞}{\infty}
+\newunicodechar{≈}{\approx}
+\newunicodechar{−}{\ensuremath{-}}
+
+\title{A Dynamic Systems Model of Coherence Grounded in Astronomical Phenomena}
+\author{Gary Leckey}
+\date{October 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\section{A Dynamic Systems Model of Coherence Grounded in Astronomical Phenomena}
+
+\subsection{System Architecture: From Symbolic Cycle to Computational Network}
+
+The conceptual framework provided---a symbolic process tree with a mathematical skeleton---serves as the foundation for a dynamic system model. This model is designed to simulate the flow and transformation of information, termed ``light,'' through a learning, adaptive network. This section translates the symbolic cycle and its governing equation into a formal computational architecture, defining the system's state, its operators, and the mechanics of its evolution over time.
+
+\subsubsection{Defining the State Vector and Operators}
+
+The state of the system at any discrete time-step $t$ is encapsulated by a state vector, $\Psi_t$. This vector represents the integrated, processed information held within the system, analogous to a cognitive or perceptual state. The symbolic cycle
+\[
+\Psi_\infty \rightarrow \aleph \rightarrow \Phi \rightarrow F \rightarrow L \rightarrow \Omega \rightarrow \rho \rightarrow C \rightarrow \Psi'_\infty
+\]
+is formalised here as a sequence of computational operators. Each operator corresponds to a distinct stage in a perceptual--cognitive process, transforming the input signal on its path to becoming an ``experienced pattern.''
+
+\begin{itemize}
+    \item \textbf{$\Psi_\infty$ (Source):} Represents the initial potential or ``true light'' from which a signal originates. In the model, this is the external reality that generates the input signal.
+    \item \textbf{$C$ (Channel---Input):} The entry point for the external signal vector, $C_t$, at time $t$. This vector quantifies the properties of the incoming ``light.''
+    \item \textbf{$\aleph$ (Aleph---Sieve):} A saliency operator. Mathematically, this can be modelled as a filtering matrix that attenuates or amplifies specific components of the input vector $C_t$. It selects features deemed relevant, effectively acting as a pre-attentive filter.
+    \item \textbf{$\Phi$ (Phi---Pattern Recognition):} A structural analysis operator. This stage identifies patterns, correlations, and structures within the filtered signal. It could be implemented as a convolution with a set of pattern-matching kernels or a transformation (for example a Fourier transform) to move from a time-domain signal to a frequency-domain representation.
+    \item \textbf{$F$ (Framing/Memory):} An integration operator. This function contextualises the newly identified pattern by combining it with the system's previous state, $\Psi_t$. It provides temporal context and memory, ensuring that the interpretation of new data is influenced by past experience.
+    \item \textbf{$L$ (Living Node---The Stag):} A critical, non-linear modulation operator. This node represents the internal state of the observer, which actively shapes the information flow. Its behaviour is governed by the structuring parameter $\kappa_t$, which quantifies the system's internal balance or rigidity. When $\kappa_t>1$, the operator imposes a rigid structure; when $\kappa_t<1$, it is more receptive and less constrained.
+    \item \textbf{$\Omega$ (Omega---Synthesis):} A convergence operator. This function synthesises the modulated, contextualised pattern into a single, coherent gestalt or ``experienced pattern.'' It resolves conflicts and integrates disparate informational elements into a unified whole.
+    \item \textbf{$\rho$ (Rho---Reflection):} A feedback preparation operator. This final stage formats the synthesised output, preparing it to become the memory trace for the next cycle. It ensures the output is in a compatible format to be integrated as the next state vector, $\Psi_{t+1}$.
+    \item \textbf{$\Psi'_\infty$ (Output/Experience):} The final state vector produced by the cycle, representing the conscious ``experienced pattern'' that is then fed back into the system's memory.
+\end{itemize}
+
+\subsubsection{Deconstructing the Governing Equation}
+
+The evolution of the system's state over time is governed by the recursive equation
+\[
+    \Psi_{t+1} = (1-\alpha)\Psi_t + \alpha R(C_t).
+\]
+This equation defines how the system's state at the next time-step, $\Psi_{t+1}$, is determined by its current state, $\Psi_t$, and the newly processed external input, $C_t$.
+
+\begin{itemize}
+    \item \textbf{$\Psi_t$:} The state vector from the previous time-step. This term represents the system's memory, inertia, or existing internal model of the world.
+    \item \textbf{$(1-\alpha)$:} The memory retention factor. This scalar determines how much of the previous state is carried over to the next. A value close to one implies strong memory and stability, while a value close to zero implies rapid forgetting.
+    \item \textbf{$\alpha$:} The learning rate or attentional gain, where $0 \leq \alpha \leq 1$. This parameter controls the influence of new information. A high $\alpha$ makes the system highly responsive and plastic, rapidly updating its state based on new inputs. A low $\alpha$ makes the system more conservative, giving more weight to its established internal state.
+    \item \textbf{$C_t$:} The external input vector at time $t$. This is the raw data from the environment---in this case, a quantified representation of the light from the night sky over Oban.
+    \item \textbf{$R$:} The composite transformation operator. This function represents the entire processing cycle applied to the input, such that $R = \rho \circ \Omega \circ L \circ F \circ \Phi \circ \aleph$. The operator $R$ processes the raw input $C_t$ not in isolation, but in the context of the system's current state, as the $F$ (Framing) and $L$ (Living Node) operators are state-dependent.
+\end{itemize}
+
+The mathematical structure of this equation is a form of an exponential moving average, a fundamental tool in signal processing and time-series analysis used to create a smoothed, updated representation of a changing variable. Here, however, it is applied not to a simple data point but to a complex state vector, and the new information is not raw data but a deeply processed and transformed signal, $R(C_t)$. This elevates the model from a simple filter to a system that actively learns and maintains an adaptive internal model of its external environment. The feedback mechanism is not merely additive; it is integrative and transformative. The system does not just see the light; it learns the light, and its interpretation of the present moment is intrinsically shaped by its memory of all past moments. The ``stag,'' the living node $L$, introduces a crucial non-linearity, where the observer's own internal state---its balance, stress, or receptivity---dynamically alters the rules by which it processes reality. This transforms the model into a rudimentary but formal representation of a conscious, learning observer.
+
+\subsection{The Chronology of Light: An Astronomical Timetable for Oban, 25 October 2025}
+
+To ground the dynamic model in verifiable phenomena, a precise timeline of astronomical events for Oban, Scotland, on the night of 25 October 2025 is required. This timeline provides the discrete time-steps and the corresponding input vectors, $C_t$, that will drive the simulation.
+
+\subsubsection{The Setting: Oban's Sky, 25 October 2025}
+
+\begin{itemize}
+    \item \textbf{Location:} Oban, Scotland (An t-\`{O}ban), a coastal town in Argyll and Bute. While subject to local weather and light pollution, its proximity to the Isle of Coll, a designated Dark Sky Community, suggests the region offers excellent potential for stargazing under clear conditions.
+    \item \textbf{Date:} Saturday, 25 October 2025.
+    \item \textbf{Lunar Conditions:} The night is exceptionally favourable for observation. The Moon is a waxing crescent with only $11\%$ to $15\%$ illumination. This minimal moonlight ensures a dark sky background, a critical factor for observing faint deep-sky objects and, most importantly, the transient streaks of the Orionid meteor shower. The period of darkness, free from significant moonlight, extends from approximately 18:23 to 05:59.
+\end{itemize}
+
+\subsubsection{The Sequence of Phenomena}
+
+The simulation's narrative follows the natural progression of the night, from the fading light of dusk to the first light of dawn. Each event provides a distinct input signal to the model.
+
+\begin{itemize}
+    \item \textbf{Sunset and Twilight:} Sunset in Oban occurs at approximately 17:57 local time. This initiates a period of twilight, a gradual transition to darkness. Nautical twilight, a phase where the horizon is still visible but most stars have appeared, ends at 19:18. The onset of full astronomical darkness marks the point where the ambient, diffuse light from the sun is effectively zero, allowing the faintest celestial signals to be detected.
+    \item \textbf{Planet Visibility:} The planets provide stable, point-source signals of varying intensity throughout the night.
+    \begin{itemize}
+        \item \textbf{Mercury and Mars:} These planets are technically present in the sky but set at 18:13 and 18:27, respectively, very shortly after the sun. Their proximity to the sun renders them extremely difficult, if not impossible, to observe. Their effective non-visibility serves as a null input for these specific point sources.
+        \item \textbf{Saturn:} The ringed planet is an early evening target. It rises before sunset at 17:13 and is well-positioned for observation as darkness falls. It crosses the meridian (its highest point in the sky) at 22:53, providing a consistent, coherent point of light for the first half of the night before setting at 03:33.
+        \item \textbf{Jupiter:} As the brightest planetary object of the night, Jupiter's appearance is a major event. It rises later in the evening at 22:21 and dominates the sky until sunrise. Its ``perfect visibility'' and high magnitude make it the primary coherent signal for the latter half of the night.
+        \item \textbf{Uranus and Neptune:} These distant ice giants are also present. Uranus rises at 18:39 and Neptune at 17:10. However, their faintness requires binoculars or a telescope for observation, meaning they contribute a very low-amplitude signal to the naked-eye observer.
+    \end{itemize}
+    \item \textbf{The Orionid Meteor Shower:} This is the most dynamic and unpredictable element of the night. The shower, created by debris from Halley's Comet, is active from early October to early November. Although its peak occurs a few days earlier (around 21--22 October), it remains active on the night of the 25th, producing an expected rate of around 15--20 meteors per hour under ideal conditions. These meteors are characterised as being very fast (travelling at 41 miles per second) and often leaving persistent, glowing trains. They represent transient, high-energy, and stochastic inputs to the system.
+\end{itemize}
+
+\subsubsection{Key Table: Chrono-Luminance Input Schedule}
+
+To formalise these events for the simulation, the input ``light'' is quantified into a three-dimensional vector, $C_t = [C^{\text{ambient}}_t, C^{\text{point}}_t, C^{\text{transient}}_t]$.
+
+\begin{itemize}
+    \item \textbf{Ambient:} Represents diffuse, background light (for example twilight, airglow).
+    \item \textbf{Point:} Represents stable, coherent sources (for example planets, bright stars).
+    \item \textbf{Transient:} Represents sporadic, high-energy bursts (for example meteors).
+\end{itemize}
+
+The values are normalised on a scale of 0 to 1 for modelling purposes.
+
+\begin{table}[h]
+    \centering
+    \caption{Chrono-luminance input schedule for Oban (25--26 October 2025)}
+    \begin{tabular}{lllll}
+        \textbf{Time (UTC)} & \textbf{Event} & \textbf{Description} & \textbf{Source Type} & $C_t$ \\ \hline
+        17:57 & Sunset & Sun disappears below the horizon; fading ambient light. & Diffuse, high-to-mid ambient & \verb|[0.8, 0.0, 0.0]| \\
+        18:30 & Saturn visible & Saturn emerges as twilight deepens. & Point source, mag $+0.8$ & \verb|[0.3, 0.4, 0.0]| \\
+        19:18 & End of twilight & Astronomical darkness begins. & Diffuse, low ambient & \verb|[0.1, 0.4, 0.0]| \\
+        22:21 & Jupiter rise & Bright planet appears on the eastern horizon. & Point source, mag $-2.7$ & \verb|[0.1, 0.9, 0.0]| \\
+        00:00 & Orionids active & Meteor activity peaks after midnight. & Transient, variable mag & \verb|[0.1, 0.6, 0.6]| \\
+        03:33 & Saturn set & Saturn disappears below the western horizon. & Point source, mag $+0.8$ & \verb|[0.1, 0.5, 0.2]| \\
+        04:00 & Orionids wane & Meteor activity declines before dawn. & Transient, variable mag & \verb|[0.1, 0.7, 0.3]| \\
+        05:54 & Start of twilight & Eastern sky begins to brighten. & Diffuse, low-to-mid ambient & \verb|[0.3, 0.6, 0.1]| \\
+        07:17 & Sunrise & Sun appears above the horizon. & Diffuse, mid-to-high ambient & \verb|[0.8, 0.0, 0.0]| \\
+    \end{tabular}
+\end{table}
+
+This schedule provides the empirical backbone of the simulation. It translates the continuous, poetic unfolding of a night sky into a discrete, quantifiable series of stimuli. This process of discretisation and quantification allows the symbolic model to become a testable, data-driven system, directly fulfilling the core requirement to remain grounded in verifiable reality.
+
+\subsection{Parameterisation and Data Integration: Quantifying the Model's Environment}
+
+To bring the dynamic model to life, its abstract parameters must be connected to measurable, real-world data streams. This section details the operationalisation of the system's key metrics---the Purity Index ($P_t$) and the Structuring Index ($\kappa_t$)---by integrating data from geophysics and human physiology. This step transforms the model from a generic simulation into a specific representation of a human biological observer coupled with its planetary electromagnetic environment.
+
+\subsubsection{Operationalising the Purity Index: $P_t = r_t / \lambda_t$}
+
+The Purity Index, $P_t$, is defined as the ratio of resonance to constraint. It serves as a measure of the system's signal-to-noise ratio or the coherence of its internal state. A state where $P_t \rightarrow 1$ represents ``true light,'' indicating a clear, coherent signal has been successfully integrated. A state where $P_t \rightarrow 0$ signifies ``distorted light,'' where the system is either overloaded with noise or unable to resonate with the incoming signal.
+
+\begin{itemize}
+    \item \textbf{$r_t$ (Resonance):} This parameter quantifies the system's attunement to a coherent, external organising field. It will be operationalised using data on \textbf{Schumann resonances (SR)}. The SR are a set of extremely low-frequency (ELF) peaks in the Earth's electromagnetic field spectrum, generated and excited by lightning discharges in the cavity formed by the Earth's surface and the ionosphere. The fundamental mode is approximately $7.83$ Hz.
+    \begin{itemize}
+        \item \textbf{Data source:} Publicly available data from global magnetometer networks, such as the Global Coherence Monitoring System (GCMS), provide continuous monitoring of SR power.
+        \item \textbf{Methodology:} The value of $r_t$ will be set proportionally to the measured power of the fundamental SR mode (around 8 Hz). This choice is not arbitrary; this frequency range overlaps with human alpha and theta brainwave frequencies, and studies have demonstrated correlations between variations in SR power and changes in human autonomic nervous system activity, including heart rate variability. A higher SR power suggests a stronger, more coherent global resonant field, thus increasing the model's resonance parameter, $r_t$.
+    \end{itemize}
+    \item \textbf{$\lambda_t$ (Lambda---Wavelength/Constraint):} This parameter represents the degree of internal structuring, rigidity, or constraint within the system. It will be operationalised using data from \textbf{heart rate variability (HRV)}. HRV is the physiological phenomenon of variation in the time interval between consecutive heartbeats, and it serves as a powerful, non-invasive indicator of autonomic nervous system (ANS) activity.
+    \begin{itemize}
+        \item \textbf{Data source:} Numerous public datasets provide HRV metrics under various conditions, such as the SWELL dataset for cognitive workload or databases on PhysioNet. These datasets provide key time-domain and frequency-domain HRV measures.
+        \item \textbf{Methodology:} The constraint parameter $\lambda_t$ will be defined as being inversely proportional to the \textbf{standard deviation of NN intervals (SDNN)}, a primary time-domain measure of HRV. High HRV (high SDNN) reflects a healthy, adaptable state dominated by the parasympathetic (``rest and digest'') branch of the ANS. This corresponds to a flexible, low-constraint system (low $\lambda_t$). Conversely, low HRV (low SDNN) is a marker of stress, where the sympathetic (``fight or flight'') branch is dominant. This corresponds to a rigid, high-constraint system (high $\lambda_t$).
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Operationalising the Structuring Index: $\kappa_t$}
+
+The Structuring Index, $\kappa_t$, is the parameter that directly controls the behaviour of the ``living node,'' $L$. It quantifies the balance of the system's internal state, where $\kappa_t>1$ indicates an over-structured, rigid state, and $\kappa_t<1$ indicates an under-resonant, overly diffuse state.
+
+\textbf{Methodology:} $\kappa_t$ will be defined as the \textbf{ratio of low-frequency (LF) power to high-frequency (HF) power} derived from the frequency-domain analysis of the HRV signal. The LF/HF ratio is a widely used clinical metric representing the balance between the two branches of the ANS.
+
+\begin{itemize}
+    \item \textbf{High LF/HF ratio ($\kappa_t > 1$):} Indicates a dominance of the sympathetic nervous system. This state of arousal, stress, or focused attention maps directly to the model's concept of an ``over-structured'' or rigid internal state.
+    \item \textbf{Low LF/HF ratio ($\kappa_t < 1$):} Indicates a dominance of the parasympathetic nervous system. This state of calm, relaxation, or recovery maps to an ``under-resonant'' or highly receptive internal state.
+    \item \textbf{Balanced ratio ($\kappa_t \approx 1$):} Represents a state of sympathovagal balance, or ``coherence,'' which is considered optimal for physiological function.
+\end{itemize}
+
+By linking the model's parameters to these specific, measurable biological and geophysical variables, the system is transformed. It is no longer an abstract model of an observer but a concrete, testable model of a human physiological system dynamically coupled to the Earth's electromagnetic environment. The model now embodies a complete, verifiable feedback loop: global geomagnetic activity (affecting SR) can influence the observer's physiological state (HRV), which in turn dictates how the observer's cognitive-perceptual apparatus (the operator sequence $R$) processes incoming sensory data from the cosmos. The symbolic ``stag'' is given a clear biological identity: the autonomic nervous system, whose ``balance'' is a measurable quantity, the LF/HF ratio, that governs the system's ability to achieve and maintain coherence.
+
+\subsection{A Simulated Nocturne: Modelling the Flow of Coherence}
+
+This section presents a narrative walkthrough of the simulation, tracing the evolution of the system's state vector, $\Psi_t$, and its key metrics, $P_t$ and $\kappa_t$, as it responds to the astronomical timetable established for Oban. The simulation demonstrates the three primary behaviours outlined in the conceptual framework: self-organisation, oscillation under stress, and dissolution in the absence of a signal.
+
+\subsubsection{Phase 1: Sunset to Deep Night (Self-Organisation toward Coherence)}
+
+\begin{itemize}
+    \item \textbf{Input:} The simulation commences at sunset (17:57 UTC). The initial input vector, $C_t$, is characterised by a high but rapidly decaying ambient component and zero point or transient signals. As the simulation progresses through civil and nautical twilight, the ambient value in $C_t$ diminishes exponentially. At 18:30, the first stable point source, Saturn, emerges, providing a small but coherent signal. By the end of twilight (19:18), the ambient light is minimal, and the sky is dominated by the stable light of stars and Saturn.
+    \item \textbf{System response:} In the initial moments of twilight, the signal is diffuse and lacks clear structure. The system's Purity Index, $P_t$, is low, reflecting a noisy, incoherent state. The visual representation would be a dim, greyish light pulsing through the cycle. However, as the sky darkens and the coherent signal from Saturn strengthens, the system begins to ``lock on.'' The pattern recognition operator ($\Phi$) identifies the stable point source, and the synthesis operator ($\Omega$) integrates it into a coherent state. Assuming the observer is in a calm, receptive state (modelled with a baseline $\kappa_t \approx 1$, indicating parasympathetic balance), the learning rate $\alpha$ allows the system to update its state vector $\Psi_t$ smoothly. Consequently, $P_t$ steadily climbs towards one. This phase demonstrates the system's fundamental capacity for self-organisation. When presented with a stable, low-complexity signal, it naturally converges towards a state of high coherence or ``true light.''
+\end{itemize}
+
+\subsubsection{Phase 2: Mid-Night (Perturbation and Oscillation)}
+
+\begin{itemize}
+    \item \textbf{Input:} This phase begins with the rise of Jupiter at 22:21, which introduces a much stronger coherent signal, reinforcing the system's stability. The critical challenge arrives after midnight, during the active period of the Orionid meteor shower. The input vector $C_t$ is now characterised by a strong, stable point component (Jupiter) and a stochastic, high-energy transient component (the meteors). Each meteor is a sudden, unpredictable impulse of light.
+    \item \textbf{System response:} The system's reaction to the meteors is critically dependent on the state of the ``living node,'' $L$, governed by $\kappa_t$.
+    \begin{itemize}
+        \item \textbf{Scenario A: Balanced observer ($\kappa_t \approx 1$).} If the observer remains in a state of calm alertness (a balanced LF/HF ratio), the system can integrate the transient meteor flashes without losing overall coherence. Each meteor causes a brief dip in $P_t$ as the system momentarily works to process the unexpected signal, but it quickly returns to a high-coherence state centred on Jupiter. The visual mandala would show brilliant green light with brief, bright white flashes that are quickly absorbed.
+        \item \textbf{Scenario B: Over-structured observer ($\kappa_t > 1$).} Let us model a ``startle'' response to a particularly bright meteor. This physiological reaction would be reflected in the HRV data as a sudden drop in variability and a spike in the LF/HF ratio, causing $\kappa_t$ to rise significantly above one. This shift makes the $L$ operator rigid and less adaptive. The system now overreacts to the transient signals. Instead of smoothly integrating the meteor flash, its state vector $\Psi_t$ is knocked far from its stable point. The feedback loop then causes it to overshoot in its correction, leading to oscillations around the coherent state. The Purity Index $P_t$ would fluctuate wildly, and the visual mandala would pulse erratically, its colour shifting from green to agitated reds and yellows. This phase directly simulates the hypothesis that the system ``oscillates when over-structured,'' demonstrating that coherence is not just a property of the signal but of the observer's internal state.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Phase 3: System Dissolution (A Hypothetical Test)}
+
+\begin{itemize}
+    \item \textbf{Input:} To test the third proposed behaviour, a hypothetical scenario is introduced around 03:00. We simulate the arrival of thick cloud cover, a common occurrence in western Scotland. This event effectively reduces all components of the input vector $C_t$ to near zero. The point sources (Jupiter, stars) and any potential transient signals are completely obscured, leaving only a minimal, diffuse ambient signal from residual light pollution, if any.
+    \item \textbf{System response:} With the external input $C_t \approx 0$, the second term in the governing equation, $\alpha R(C_t)$, vanishes. The equation simplifies to $\Psi_{t+1} \approx (1-\alpha)\Psi_t$. The system is now decoupled from its environment. It is running purely on memory. The state vector $\Psi_t$ no longer updates with new information but simply decays exponentially at a rate determined by $\alpha$. There is no external signal to resonate with, so the resonance parameter $r_t$ plummets. Consequently, the Purity Index $P_t$ falls towards zero. The system's internal model of the sky dissolves into a featureless, incoherent state. The visual mandala would fade to a uniform, dim grey. This successfully demonstrates the ``dissolves when under-resonant'' condition, highlighting the system's dependence on a continuous flow of structured information from its environment to maintain coherence.
+\end{itemize}
+
+\subsection{Visualisation and Interpretation: The Mandala of Night}
+
+The quantitative results of the simulation find their most intuitive expression in a dynamic visualisation that connects the mathematical outputs back to the project's conceptual and philosophical origins. This final section describes this visual model and interprets the simulation's behaviour in the context of the guiding philosophical statements.
+
+\subsubsection{The Visual Model: A Dynamic Mandala}
+
+The proposed visualisation is a circular diagram, or mandala, which serves as a real-time dashboard for the system's state.
+
+\begin{itemize}
+    \item \textbf{Structure:} The circle is divided into segments, each corresponding to one of the primary operators in the processing cycle: $\aleph \rightarrow \Phi \rightarrow F \rightarrow L \rightarrow \Omega \rightarrow \rho$. At each time-step of the simulation, a pulse of ``light'' animates through these segments, representing the flow and transformation of the input signal.
+    \item \textbf{Brightness $= |P_t|$:} The intensity or brightness of the light pulse is directly proportional to the absolute value of the Purity Index, $P_t$.
+    \begin{itemize}
+        \item When $P_t \approx 1$, the system is in a coherent, high-fidelity state. The light is brilliant, clear, and sharp.
+        \item When $P_t \approx 0$, the system is in a distorted, noisy, or dissolved state. The light is dim, murky, and grey.
+    \end{itemize}
+    \item \textbf{Hue $= f(\kappa_t)$:} The colour of the light is a function of the Structuring Index, $\kappa_t$, providing an immediate visual cue to the observer's internal state.
+    \begin{itemize}
+        \item \textbf{$\kappa_t \approx 1$ (Balance):} The light is a stable, neutral colour, such as emerald green, representing homeostatic balance.
+        \item \textbf{$\kappa_t > 1$ (Over-structured):} The hue shifts towards the ``hot'' end of the spectrum---yellow, orange, and finally red---indicating a state of sympathetic arousal, stress, and rigidity.
+        \item \textbf{$\kappa_t < 1$ (Under-resonant):} The hue shifts towards the ``cool'' end of the spectrum---cyan, blue, and violet---indicating a state of parasympathetic dominance, deep relaxation, or high receptivity.
+    \end{itemize}
+    \item \textbf{Equilibrium and ``Cycle-Closure'':} The state of perfect equilibrium, the ``locked-in myth,'' is visualised as the moment the system achieves a stable, high-purity state. In the mandala, this would appear as a brilliant, emerald green pulse cycling smoothly, with the hues of all segments unified and the brightness maximal and unwavering. This represents the complete and harmonious integration of the external world and the internal state.
+\end{itemize}
+
+\subsubsection{Philosophical Interpretation}
+
+The simulation and its visualisation provide a concrete, dynamic embodiment of the project's guiding philosophical principles.
+
+\begin{itemize}
+    \item \textbf{``The tree of light keeps learning itself.''} This is demonstrated by the recursive nature of the governing equation, $\Psi_{t+1} = f(\Psi_t, C_t)$. The system's state (``the tree'') is a function of its own prior state and new information (``the light''). The simulation of the night in Oban shows this process in action: the system's internal model, $\Psi_t$, is continuously refined with each new astronomical event, from the subtle appearance of Saturn to the brilliant arrival of Jupiter. It is a system that learns from experience, with its present perception built upon the integrated memory of its past.
+    \item \textbf{``Every observation refines the source.''} This speaks to the profound implication of the feedback loop. The ``source'' is not a fixed, objective external reality but the system's internal model of that reality. The output of one cycle, the experience of observing the early evening sky, becomes the context, $\Psi_t$, for the next cycle. Therefore, the observation of Saturn fundamentally alters the way the system processes the subsequent appearance of Jupiter. The act of observing changes the observer, which in turn changes all future observations. The source is not static but is co-created and refined through the iterative process of perception.
+    \item \textbf{``The stag---the living node---holds the balance.''} This is the most critical conclusion of the integrated model. The stag, operationalised as the observer's autonomic nervous system via HRV and the $\kappa_t$ parameter, is revealed as the central regulator of coherence. The simulation of the Orionid meteor shower makes this explicit. It is the physiological state of the observer---the balance held by the stag---that determines whether an unpredictable event (a meteor) is integrated gracefully or throws the entire system into chaotic oscillation. The stag's ability to maintain a balanced state ($\kappa_t \approx 1$) is the key to resilience, allowing the system to process both predictable, coherent signals (planets) and unpredictable, transient signals (meteors) into a unified, meaningful experience. The balance is not in the sky; it is within the observer. The model thus posits that the capacity to perceive a coherent cosmos is ultimately contingent upon the physiological coherence of the perceiver.
+\end{itemize}
+
+\paragraph{Selected resources}
+\begin{itemize}
+    \item \href{https://www.visitscotland.com/info/events/coll-the-cosmos-25th-p3435721}{VisitScotland: Coll \\& The Cosmos---25 October 2025}
+    \item \href{https://gostargazing.co.uk/events/coll-and-the-cosmos-october-2025/}{Go Stargazing: Coll and the Cosmos---October 2025}
+    \item \href{https://www.rmg.co.uk/stories/space-astronomy/orionid-meteor-shower-2025-when-where-see-it-uk}{Royal Museums Greenwich: Orionid meteor shower 2025}
+    \item \href{https://www.timeanddate.com/astronomy/night/uk/oban}{Time and Date: Night sky in Oban}
+    \item \href{https://www.heartmath.org/gci/gcms/live-data/gcms-magnetometer/}{HeartMath Institute: GCMS Magnetometer}
+    \item \href{https://physionet.org/about/database/}{PhysioNet databases}
+\end{itemize}
+
+\end{document}

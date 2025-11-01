@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Chronicles from './components/Chronicles';
 import NexusIntelligence from './components/NexusIntelligence';
 import Actuation from './components/Actuation';
+import CollaborativeDashboardBuilder from './components/CollaborativeDashboardBuilder';
 import { SeroProvider } from './contexts/SeroProvider';
 
 const App: React.FC = () => {
@@ -26,11 +27,15 @@ const App: React.FC = () => {
           <button className={tabStyle('actuation')} onClick={() => setActiveTab('actuation')}>
             Actuation (Act)
           </button>
+          <button className={tabStyle('builder')} onClick={() => setActiveTab('builder')}>
+            Dashboard Builder
+          </button>
         </nav>
         <div className="mt-8">
           {activeTab === 'chronicles' && <Chronicles />}
           {activeTab === 'intelligence' && <NexusIntelligence />}
           {activeTab === 'actuation' && <Actuation />}
+          {activeTab === 'builder' && <CollaborativeDashboardBuilder />}
         </div>
       </div>
     </SeroProvider>

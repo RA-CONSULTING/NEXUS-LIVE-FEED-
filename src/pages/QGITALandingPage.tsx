@@ -131,6 +131,34 @@ const journeySteps = [
   },
 ];
 
+const relentlessPrinciples = [
+  {
+    symbol: 'Ψ₀',
+    label: 'Consciousness',
+    description: 'Hold the unwavering vision so every decision maps back to the mission.',
+  },
+  {
+    symbol: 'Ω',
+    label: 'Resonance',
+    description: 'Show up daily with actions that tune the system to the desired frequency.',
+  },
+  {
+    symbol: 'Λ',
+    label: 'Coherence',
+    description: 'Align talent, tools, and timelines so momentum compounds instead of scattering.',
+  },
+  {
+    symbol: 'Φ',
+    label: 'Golden Ratio',
+    description: 'Trust natural timing—surges arrive when preparation meets pivotal openings.',
+  },
+  {
+    symbol: 'Σ',
+    label: 'Synergy',
+    description: 'Layer small wins relentlessly; the lattice strengthens with every refusal to quit.',
+  },
+];
+
 const pricingTiers = [
   {
     title: 'Initiate',
@@ -356,6 +384,51 @@ const QGITALandingPage = () => {
                       <span className="text-sm tracking-[0.2em] text-amber-100">{item.value}</span>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section
+            id="relentless-execution"
+            className="grid gap-6 rounded-[32px] border border-amber-200/30 bg-amber-200/5 p-10 text-white lg:grid-cols-[1.1fr,0.9fr]"
+          >
+            <div className="space-y-6">
+              <Badge className="rounded-full border border-amber-200/40 bg-amber-200/10 px-4 py-1 text-[11px] uppercase tracking-[0.36em] text-amber-100/90">
+                Relentless Execution Mantra
+              </Badge>
+              <h3 className="text-3xl font-semibold tracking-[0.22em]">ΔM = Ψ₀ × Ω × Λ × Φ × Σ</h3>
+              <p className="max-w-xl text-base text-amber-50/80">
+                Momentum shifts in your favor when vision, action, and coherence refuse to fracture. This operational mantra
+                keeps teams focused on the compounding effect of staying on mission—no matter the turbulence.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {relentlessPrinciples.slice(0, 3).map((principle) => (
+                  <div key={principle.symbol} className="rounded-2xl border border-amber-200/30 bg-[#110f07]/40 p-4">
+                    <div className="text-sm uppercase tracking-[0.32em] text-amber-100/90">{principle.symbol}</div>
+                    <div className="mt-2 text-lg font-semibold tracking-[0.18em] text-amber-100">{principle.label}</div>
+                    <p className="mt-3 text-sm text-amber-50/70">{principle.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Card className="border border-amber-200/30 bg-[#0b153a]/80 text-white">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-sm uppercase tracking-[0.3em] text-amber-100/80">
+                  Commitment Telemetry
+                  <CheckCircle2 className="h-5 w-5" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5 text-sm text-amber-50/80">
+                {relentlessPrinciples.slice(3).map((principle) => (
+                  <div key={principle.symbol} className="rounded-2xl border border-amber-200/20 bg-[#141326]/80 p-4">
+                    <div className="text-xs uppercase tracking-[0.34em] text-amber-100/70">{principle.symbol}</div>
+                    <div className="mt-1 text-base font-semibold tracking-[0.2em] text-amber-100">{principle.label}</div>
+                    <p className="mt-3 text-xs leading-relaxed text-amber-50/70">{principle.description}</p>
+                  </div>
+                ))}
+                <div className="rounded-2xl border border-emerald-200/30 bg-emerald-200/10 p-4 text-xs uppercase tracking-[0.3em] text-emerald-100/90">
+                  Keep executing. The lattice resolves in your favor.
                 </div>
               </CardContent>
             </Card>

@@ -1,44 +1,39 @@
-import React, { useState } from 'react';
-import Chronicles from './components/Chronicles';
-import NexusIntelligence from './components/NexusIntelligence';
-import Actuation from './components/Actuation';
-import CollaborativeDashboardBuilder from './components/CollaborativeDashboardBuilder';
+
+
 import { SeroProvider } from './contexts/SeroProvider';
+import { LiveNexusDataProvider } from './contexts/LiveNexusDataContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('intelligence');
+const NAV_ITEMS = [
+  { path: '/live', label: 'Live', emoji: '📡', description: 'Real-time planetary data feed' },
+  { path: '/map', label: 'Map', emoji: '🌍', description: 'Global sensor network & ley lines' },
+  { path: '/me', label: 'Me', emoji: '💚', description: 'Personal resonance profile' },
+  { path: '/insights', label: 'Insights', emoji: '⚛️', description: 'AI analysis & patterns' },
+  { path: '/more', label: 'More', emoji: '☰', description: 'Settings & advanced tools' },
+] as const;
 
-  const tabStyle = (tabName: string) =>
-    `py-2 px-4 font-medium text-sm whitespace-nowrap border-b-2 ` +
-    (activeTab === tabName
-      ? 'border-amber-500 text-amber-600'
-      : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300');
+const Layout: React.FC = () => {
+  const { user } = useAuth();
+  const location = useLocation();
 
   return (
-    <SeroProvider>
-      <div className="p-6 bg-stone-50 min-h-screen">
-        <nav className="flex -mb-px space-x-6 border-b border-stone-200">
-          <button className={tabStyle('chronicles')} onClick={() => setActiveTab('chronicles')}>
-            Chronicles (Sense)
-          </button>
-          <button className={tabStyle('intelligence')} onClick={() => setActiveTab('intelligence')}>
-            Nexus Intelligence (Understand)
-          </button>
-          <button className={tabStyle('actuation')} onClick={() => setActiveTab('actuation')}>
-            Actuation (Act)
-          </button>
-          <button className={tabStyle('builder')} onClick={() => setActiveTab('builder')}>
-            Dashboard Builder
-          </button>
-        </nav>
-        <div className="mt-8">
-          {activeTab === 'chronicles' && <Chronicles />}
-          {activeTab === 'intelligence' && <NexusIntelligence />}
-          {activeTab === 'actuation' && <Actuation />}
-          {activeTab === 'builder' && <CollaborativeDashboardBuilder />}
-        </div>
+
       </div>
-    </SeroProvider>
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <SeroProvider>
+        <LiveNexusDataProvider>
+          <Router>
+            <Layout />
+          </Router>
+        </LiveNexusDataProvider>
+      </SeroProvider>
+    </AuthProvider>
   );
 };
 

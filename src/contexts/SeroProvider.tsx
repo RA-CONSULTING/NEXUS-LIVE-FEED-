@@ -1,9 +1,11 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
-import sero, { ActuationRequest, AuditRecord, SeroConfig } from "../lib/sero/sero-core";
+import sero, { ActuationRequest, AuditRecord, SeroConfig, SeroDirectives, DirectivePacket } from "../lib/sero/sero-core";
 
 type Ctx = {
   config: typeof SeroConfig;
+  directives: typeof SeroDirectives;
   updateConfig: (c: Partial<typeof SeroConfig>) => void;
+  updateDirectives: (packet: DirectivePacket) => void;
   actuate: (req: ActuationRequest) => AuditRecord;
   audit: AuditRecord[];
 };
@@ -16,8 +18,10 @@ export const SeroProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
   const api: Ctx = useMemo(() => ({
     config: sero.SeroConfig,
+    directives: sero.SeroDirectives,
     updateConfig: (c: Partial<typeof SeroConfig>) => { Object.assign(sero.SeroConfig, c); refresh(); },
-    actuate: (req: ActuationRequest) => { 
+    updateDirectives: (packet: DirectivePacket) => { sero.applyDirectivePacket(packet); refresh(); },
+    actuate: (req: ActuationRequest) => {
       const rec = sero.actuate(req);
       refresh(); // to update audit log
       return rec;

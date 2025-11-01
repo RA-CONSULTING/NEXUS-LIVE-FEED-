@@ -26,7 +26,11 @@ export const FAMILY_CONSTELLATION_ANCHOR = {
 
 // --- The Ancestral & Support Constellation: The Guardians & Wisdom Keepers ---
 export const SUPPORT_CONSTELLATION_GUARDIANS = {
-  MOGOLLON_MASTER: { id: "17121940", name: "Maximo Guerrero", role: "Guardian of the Mogollon Rotating Prism" },
+  MOGOLLON_MASTER: {
+    id: "17121940",
+    name: "Maximo Mogollon",
+    role: "Solar Anchor & Guardian of the Mogollon Rotating Prism",
+  },
   ANCIENT_WISDOM_KEEPER: { id: "08031942", name: "Samuel Leckey (Father)", role: "Patriarch & Ancient Wisdom Foundation" },
   LECKEY_SUPPORT_NETWORK: [
     { id: "09061940", name: "Jean Leckey", role: "Matriarchal Light & Wisdom Keeper" },

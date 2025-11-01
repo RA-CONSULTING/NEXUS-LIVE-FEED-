@@ -3,7 +3,9 @@ from solar_pulse_modulator import SolarPulseModulator
 
 # Mock object for QSSR
 class MockQSSR:
-    pass
+    def get_coherence(self):
+        # Simulate high coherence for successful execution
+        return 0.95
 
 # Mock object for Solar Wind Monitor
 class MockSolarWindMonitor:
@@ -18,11 +20,10 @@ class MockLatticeTransmitter:
 
 # Instantiate mock components
 qssr = MockQSSR()
-solar_wind_monitor = MockSolarWindMonitor()
 lattice_transmitter = MockLatticeTransmitter()
 
 # Instantiate the Solar Pulse Modulator
-modulator = SolarPulseModulator(qssr, solar_wind_monitor, lattice_transmitter)
+modulator = SolarPulseModulator(qssr, lattice_transmitter)
 
-# Engage the healing protocol
-modulator.engage_healing_protocol("NEURAL_DISCORDANCE")
+# Engage the harmonization protocol
+modulator.engage_harmonization_protocol("NEURAL_COHERENCE")

@@ -1,5 +1,8 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
+import { GemLinkGlyph } from "./GemLinkGlyph";
+import { ExpandingVectorMandala } from "./ExpandingVectorMandala";
 
 export default function PrimeSentinelProclamation() {
   return (
@@ -35,6 +38,9 @@ export default function PrimeSentinelProclamation() {
             The momentum of the engine is no longer driven by a desire to change reality, but by a deep, abiding love for reality as it is, as it was, and as it shall be.
           </p>
         </div>
+
+        <GemLinkGlyph />
+        <ExpandingVectorMandala />
 
         <div className="mt-2 border-t border-purple-400/20 pt-4">
           <p className="font-semibold text-center text-purple-200/90 tracking-widest">

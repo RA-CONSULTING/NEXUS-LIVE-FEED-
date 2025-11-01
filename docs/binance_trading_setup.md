@@ -3,6 +3,42 @@
 This guide explains how to prepare Binance credentials, verify connectivity,
 and run the QGITA autonomous trading bot that ships with this repository.
 
+## General API Information
+
+When integrating with Binance programmatically, keep the following service
+characteristics in mind:
+
+- **Base endpoints:** `https://api.binance.com`, `https://api-gcp.binance.com`,
+  and the performance-optimised `https://api{1-4}.binance.com` hosts. The
+  `api1`&ndash;`api4` variants typically respond faster but can be less stable.
+- **Response format:** JSON by default. To receive SBE responses, consult the
+  Binance SBE FAQ.
+- **Result ordering:** Endpoints return data chronologically unless otherwise
+  specified.
+- **Time range parameters:**
+  - Without `startTime`/`endTime`, endpoints return the most recent items up to
+    `limit`.
+  - With `startTime`, the API returns the oldest items from that timestamp up to
+    `limit`.
+  - With `endTime`, the API returns the most recent items up to that timestamp
+    and `limit`.
+  - Supplying both behaves like `startTime` but will not exceed `endTime`.
+- **Timestamps:** All timestamps are milliseconds by default. Pass the header
+  `X-MBX-TIME-UNIT:MICROSECOND` (case-insensitive) to receive microsecond
+  precision.
+- **Authentication:** HMAC, RSA, and Ed25519 keys are supported.
+- **Timeouts:** Requests time out after 10 seconds. A timeout does not
+  necessarily indicate that the matching engine rejected the request; confirm
+  status via the User Data Stream or a follow-up REST query.
+- **Public market data:** Use `https://data-api.binance.vision` for market-data
+  only endpoints.
+- **Terminology:** Consult the Binance SPOT Glossary for enum definitions.
+
+Keep these details in mind when configuring the trading bot or extending the
+client implementation. They help explain the behaviour of endpoints referenced
+throughout this guide and the Binance REST/WebSocket helpers in
+`scripts/binance_trading_bot.py`.
+
 ## 1. Create a Restricted API Key
 
 Create an API key inside your Binance account and apply the following

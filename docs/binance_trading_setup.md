@@ -180,13 +180,3 @@ The implementation enforces several safeguards:
 These values should be tuned for your account size and risk tolerance before
 live deployment.
 
-## 6. Track Binance API Changelog Updates
-
-On 2025-10-28 Binance introduced an optional `symbolStatus` filter across depth
-and ticker endpoints for both REST and WebSocket APIs. The trading bot now
-exposes the `QGITA_SYMBOL_STATUS` environment variable so you can opt into the
-stricter behaviour without editing code. By default the bot passes
-`symbolStatus=TRADING` when fetching prices, which causes Binance to return
-error `-1220` if the symbol leaves the trading phase. Clear the variable (set
-it to an empty string) if you need to query symbols in maintenance phases while
-testing.

@@ -122,7 +122,15 @@ Use `--account-info` to print the account balances and confirm trading access:
 python scripts/binance_trading_bot.py --live --account-info
 ```
 
-## 5. Risk Controls
+## 5. Understand Exchange Filters
+
+Binance enforces price, quantity, notional, and order-count filters across
+symbols, the entire exchange, and specific assets. Consult the
+[Binance Exchange Filters Reference](./binance_exchange_filters.md) for a
+complete breakdown before promoting QGITA to production so every submission
+conforms to those limits on the first attempt.
+
+## 6. Risk Controls
 
 The implementation enforces several safeguards:
 

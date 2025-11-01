@@ -239,6 +239,104 @@ The Aureon Quantum Trading System (AQTS) combines quantum geometry insight with 
 | 60–79%     | 2    | Half position size |
 | <60%       | 3    | No trade |
 
+## API ENUM Definitions
+
+The AQTS execution layer harmonises with Binance-style REST and WebSocket interfaces. The following enumerations keep the
+frontend, orchestration services, and documentation aligned on the canonical values expected by those APIs.
+
+### Symbol Status (`status`)
+
+| Value | Meaning |
+|-------|---------|
+| `TRADING` | Instrument is actively tradable. |
+| `END_OF_DAY` | Venue has halted matching for the day while allowing order management. |
+| `HALT` | Trading halted; orders cannot be matched. |
+| `BREAK` | Temporary session break (e.g. auction, circuit breaker). |
+
+### Account & Symbol Permissions (`permissions`)
+
+`SPOT`, `MARGIN`, `LEVERAGED`, followed by trade-group identifiers `TRD_GRP_002` … `TRD_GRP_025` denote the allowed venues or
+internal routing cohorts for a credential or instrument.
+
+### Order Status (`status`)
+
+| Value | Description |
+|-------|-------------|
+| `NEW` | Order accepted by the matching engine. |
+| `PENDING_NEW` | Awaiting activation while a related list order completes. |
+| `PARTIALLY_FILLED` | Order filled in part. |
+| `FILLED` | Order fully executed. |
+| `CANCELED` | Canceled at the trader’s request. |
+| `PENDING_CANCEL` | Reserved for future use. |
+| `REJECTED` | Order rejected by the engine. |
+| `EXPIRED` | Order expired per time-in-force or venue rules (maintenance, liquidation, etc.). |
+| `EXPIRED_IN_MATCH` | Order expired because of self-trade prevention (STP). |
+
+### Order List Status (`listStatusType`)
+
+| Value | Description |
+|-------|-------------|
+| `RESPONSE` | Response to a failed list action. |
+| `EXEC_STARTED` | Order list placed or updated. |
+| `UPDATED` | Client order ID adjusted within the list. |
+| `ALL_DONE` | Order list finished executing. |
+
+### Order List Order Status (`listOrderStatus`)
+
+| Value | Description |
+|-------|-------------|
+| `EXECUTING` | List is active or updating. |
+| `ALL_DONE` | List no longer active. |
+| `REJECT` | List action failed (placement or cancellation). |
+
+### Contingency Types (`contingencyType`)
+
+`OCO`, `OTO`
+
+### Allocation Types (`allocationType`)
+
+`SOR`
+
+### Order Types (`orderTypes`, `type`)
+
+`LIMIT`, `MARKET`, `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, `TAKE_PROFIT_LIMIT`, `LIMIT_MAKER`
+
+### Order Response Types (`newOrderRespType`)
+
+`ACK`, `RESULT`, `FULL`
+
+### Working Floor (`workingFloor`)
+
+`EXCHANGE`, `SOR`
+
+### Order Side (`side`)
+
+`BUY`, `SELL`
+
+### Time in Force (`timeInForce`)
+
+| Value | Description |
+|-------|-------------|
+| `GTC` | Good ‘til canceled; order remains active until cancelled. |
+| `IOC` | Immediate-or-cancel; fill available quantity, cancel remainder. |
+| `FOK` | Fill-or-kill; cancel unless the full quantity can execute immediately. |
+
+### Rate Limiters (`rateLimitType`)
+
+| Value | Example Configuration |
+|-------|------------------------|
+| `REQUEST_WEIGHT` | `{ "rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 6000 }` |
+| `ORDERS` | `{ "rateLimitType": "ORDERS", "interval": "SECOND", "intervalNum": 1, "limit": 10 }` |
+| `RAW_REQUESTS` | `{ "rateLimitType": "RAW_REQUESTS", "interval": "MINUTE", "intervalNum": 5, "limit": 61000 }` |
+
+### Rate Limit Intervals (`interval`)
+
+`SECOND`, `MINUTE`, `DAY`
+
+### STP Modes (`selfTradePreventionMode`)
+
+`NONE`, `EXPIRE_MAKER`, `EXPIRE_TAKER`, `EXPIRE_BOTH`, `DECREMENT`
+
 ---
 
 ## Roadmap

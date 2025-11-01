@@ -134,3 +134,23 @@ The implementation enforces several safeguards:
 
 These values should be tuned for your account size and risk tolerance before
 live deployment.
+
+## 6. Error Codes
+
+Any REST endpoint invoked by the trading helpers can return a Binance error
+object. Errors follow a consistent structure with a numeric `code` and human
+readable `msg` string:
+
+```json
+{
+  "code": -1121,
+  "msg": "Invalid symbol."
+}
+```
+
+When an error occurs, inspect both fields to understand the root cause. The
+`code` uniquely identifies the failure scenario (for example, `-1121` indicates
+that the requested symbol does not exist), while the `msg` provides additional
+context for logging or end-user messaging. A full catalogue of response codes is
+maintained in Binance's official [Error Codes](https://binance-docs.github.io/apidocs/spot/en/#error-codes) reference; consult it when
+diagnosing unexpected responses.

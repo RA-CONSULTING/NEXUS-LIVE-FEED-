@@ -82,6 +82,7 @@ listed below:
 | `QGITA_STOP_LOSS` | Stop loss percentage. | `2` |
 | `QGITA_TAKE_PROFIT` | Take profit percentage. | `4` |
 | `QGITA_PAPER_TRADING` | Enable paper trading (`true`/`false`). | `true` |
+| `QGITA_SYMBOL_STATUS` | Optional trading phase guard that maps to Binance's new `symbolStatus` parameter (e.g. `TRADING`). | `TRADING` |
 
 Additional variables exist for tuning the QGITA detector (window size,
 curvature threshold, lighthouse consensus threshold, etc.). See the module
@@ -134,3 +135,14 @@ The implementation enforces several safeguards:
 
 These values should be tuned for your account size and risk tolerance before
 live deployment.
+
+## 6. Track Binance API Changelog Updates
+
+On 2025-10-28 Binance introduced an optional `symbolStatus` filter across depth
+and ticker endpoints for both REST and WebSocket APIs. The trading bot now
+exposes the `QGITA_SYMBOL_STATUS` environment variable so you can opt into the
+stricter behaviour without editing code. By default the bot passes
+`symbolStatus=TRADING` when fetching prices, which causes Binance to return
+error `-1220` if the symbol leaves the trading phase. Clear the variable (set
+it to an empty string) if you need to query symbols in maintenance phases while
+testing.

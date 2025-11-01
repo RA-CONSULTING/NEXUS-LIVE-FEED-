@@ -1,27 +1,9 @@
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-
-import { SeroProvider } from './contexts/SeroProvider';
+import { AuthProvider } from './contexts/AuthContext';
 import { LiveNexusDataProvider } from './contexts/LiveNexusDataContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-
-const NAV_ITEMS = [
-  { path: '/live', label: 'Live', emoji: '📡', description: 'Real-time planetary data feed' },
-  { path: '/map', label: 'Map', emoji: '🌍', description: 'Global sensor network & ley lines' },
-  { path: '/me', label: 'Me', emoji: '💚', description: 'Personal resonance profile' },
-  { path: '/insights', label: 'Insights', emoji: '⚛️', description: 'AI analysis & patterns' },
-  { path: '/more', label: 'More', emoji: '☰', description: 'Settings & advanced tools' },
-] as const;
-
-const Layout: React.FC = () => {
-  const { user } = useAuth();
-  const location = useLocation();
-
-  return (
-
-      </div>
-    </div>
-  );
-};
+import { SeroProvider } from './contexts/SeroProvider';
+import AureonLandingPage from './pages/AureonLandingPage';
 
 const App: React.FC = () => {
   return (
@@ -29,7 +11,9 @@ const App: React.FC = () => {
       <SeroProvider>
         <LiveNexusDataProvider>
           <Router>
-            <Layout />
+            <Routes>
+              <Route path="/" element={<AureonLandingPage />} />
+            </Routes>
           </Router>
         </LiveNexusDataProvider>
       </SeroProvider>

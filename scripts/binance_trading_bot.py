@@ -28,33 +28,15 @@ from datetime import datetime, timezone
 
 import numbers
 from decimal import Decimal
-from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 
+_HAS_REQUESTS = True
+_RequestsStubType = None
 try:  # pragma: no cover - optional dependency for live streaming
     import requests
 except Exception:  # pragma: no cover - optional dependency
-    def _stub_request(*_args, **_kwargs):  # pragma: no cover - safety guard
-        raise RuntimeError(
-            "The `requests` package is required for Binance REST calls. "
-            "Install it with `pip install requests`."
-        )
 
-    def _stub_get(*_args, **_kwargs):  # pragma: no cover - safety guard
-        raise RuntimeError(
-            "The `requests` package is required for Binance REST calls. "
-            "Install it with `pip install requests`."
-        )
-
-    class _RequestsStub:
-        _is_stub = True
-        request = staticmethod(_stub_request)
-        get = staticmethod(_stub_get)
-
-    requests = _RequestsStub()  # type: ignore[assignment]
-    requests._original_request = requests.request  # type: ignore[attr-defined]
-    requests._original_get = requests.get  # type: ignore[attr-defined]
 
 
 try:  # pragma: no cover - optional dependency for live streaming
@@ -169,20 +151,12 @@ def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
 def _ensure_requests() -> None:
     """Ensure the optional ``requests`` dependency is available."""
 
-    if getattr(requests, "_is_stub", False):
-        original = getattr(requests, "_original_request", None)
-        if getattr(requests, "request", None) is original:
+
             raise RuntimeError(
                 "The `requests` package is required for Binance REST calls. "
                 "Install it with `pip install requests`."
             )
-        return
 
-    if requests is None:  # pragma: no cover - defensive guard
-        raise RuntimeError(
-            "The `requests` package is required for Binance REST calls. "
-            "Install it with `pip install requests`."
-        )
 
 
 
@@ -287,7 +261,71 @@ class TradingConfig:
 
 
 
+
+def resolve_streams(
+    config: TradingConfig, streams: Optional[Iterable[str]] = None
+) -> List[str]:
+    """Return the effective Binance stream identifiers for ``config``."""
+
+    if streams is not None:
+        candidates = list(streams)
+    elif config.ws_streams is not None:
+        candidates = list(config.ws_streams)
+    else:
+        symbol = (config.symbol or "BTCUSDT").strip().lower()
+        interval = (config.ws_kline_interval or "1m").strip()
+        return [f"{symbol}@kline_{interval}"]
+
+    return _normalize_streams(candidates)
+
+
+def build_websocket_stream_url(
+    config: TradingConfig, streams: Optional[Iterable[str]] = None
+) -> str:
+    """Construct the Binance WebSocket URL for the selected ``streams``."""
+
+    resolved = resolve_streams(config, streams)
+    use_combined = config.ws_use_combined
+    if use_combined is None:
+        use_combined = len(resolved) > 1
+
+    base = config.ws_url.rstrip('/')
+
+    def _strip_suffix(text: str, suffix: str) -> str:
+        return text[: -len(suffix)] if text.endswith(suffix) else text
+
+    if use_combined:
+        base = _strip_suffix(base, '/ws').rstrip('/')
+        if not base.endswith('/stream'):
+            base = f"{base}/stream"
+        query = f"streams={'/'.join(resolved)}"
+        if config.ws_time_unit:
+            query += f"&timeUnit={config.ws_time_unit}"
+        return f"{base}?{query}"
+
+    base = _strip_suffix(base, '/stream').rstrip('/')
+    if not base.endswith('/ws'):
+        base = f"{base}/ws"
+    stream = resolved[0]
+    url = f"{base}/{stream}"
+    if config.ws_time_unit:
+        separator = '&' if '?' in url else '?'
+        url = f"{url}{separator}timeUnit={config.ws_time_unit}"
+    return url
+
+
+class BinanceAPIError(RuntimeError):
+    """Exception raised when the Binance REST API returns an error."""
+
+    def __init__(self, status: int, message: str, *, payload: Any | None = None):
+        detail = message or "Binance API request failed"
+        super().__init__(f"HTTP {status}: {detail}")
+        self.status = status
+        self.payload = payload
+
+
 class BinanceRESTClient:
+
     """Lightweight REST client for interacting with Binance."""
 
     def __init__(self, config: TradingConfig):
@@ -297,98 +335,22 @@ class BinanceRESTClient:
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
-    @staticmethod
-    def _stringify_param(value: Any) -> str:
-        if isinstance(value, bool):
-            return "true" if value else "false"
-        if isinstance(value, Decimal):
-            text = format(value, "f")
-        elif isinstance(value, numbers.Integral):
-            return str(int(value))
-        elif isinstance(value, numbers.Real):
-            text = format(Decimal(str(float(value))), "f")
-        else:
-            return str(value)
-
-        if "." in text:
-            text = text.rstrip("0").rstrip(".")
-        return text or "0"
-
-    def _prepare_params(self, params: Mapping[str, Any]) -> Dict[str, str]:
-        prepared: Dict[str, str] = {}
-        for key, value in params.items():
-            if value is None:
-                continue
-            prepared[str(key)] = self._stringify_param(value)
-        return prepared
-
-    def _signed_request(
-        self, method: str, path: str, params: Mapping[str, Any]
-    ) -> Mapping[str, Any]:
-        if not self.config.api_secret:
-            raise RuntimeError("API secret is required for signed requests")
-
-        prepared = self._prepare_params(params)
-        prepared["timestamp"] = str(_timestamp_ms())
-        prepared["signature"] = _hmac_signature(self.config.api_secret, prepared)
 
         _ensure_requests()
         response = requests.request(
             method,
             f"{self.config.base_url}{path}",
-            params=prepared,
+
             headers=self._headers(),
             timeout=10,
         )
         return self._parse_response(response)
 
-    def _parse_response(self, response) -> Any:
-        """Decode Binance REST/JSON-RPC style responses."""
 
-        try:
-            payload = response.json()
-        except ValueError:
-            response.raise_for_status()
-            return response.text
-
-        if isinstance(payload, Mapping) and "status" in payload:
-            status_raw = payload.get("status")
-            status: int
-            try:
-                status = int(status_raw)  # type: ignore[arg-type]
-            except (TypeError, ValueError):
-                status = getattr(response, "status_code", 200)
-
-            rate_limits = payload.get("rateLimits")
-            self.last_rate_limits = rate_limits if isinstance(rate_limits, list) else None
-
-            if status >= 400 or payload.get("error"):
-                error = payload.get("error")
-                if isinstance(error, Mapping):
-                    message = str(error.get("msg") or error.get("message") or error)
-                else:
-                    message = str(error or payload)
-                raise BinanceAPIError(status, message, payload=payload)
-
-            result = payload.get("result")
-            return result if result is not None else payload
-
-        self.last_rate_limits = None
-
-        status_code = getattr(response, "status_code", 200)
-        if status_code >= 400:
-            if isinstance(payload, Mapping):
-                message = str(
-                    payload.get("msg")
-                    or payload.get("message")
-                    or payload.get("error")
-                    or payload
-                )
-            else:
-                message = str(payload)
             raise BinanceAPIError(status_code, message, payload=payload)
 
         return payload
+
 
     def _build_prefixed_params(
         self, prefix: str, options: Optional[Mapping[str, Any]]
@@ -438,8 +400,7 @@ class BinanceRESTClient:
     ) -> float:
         """Return the latest spot price for ``symbol``."""
 
-        if getattr(requests, "_is_stub", False) or requests is None:  # pragma: no cover - dependency guard
-            raise RuntimeError("The 'requests' library is required for live price data")
+
         symbol = symbol or self.config.symbol
         params: Dict[str, Any] = {"symbol": symbol}
         status = symbol_status

@@ -25,10 +25,14 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Deque, Dict, Iterable, List, Optional
+from typing import Deque, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
-import requests
+
+try:  # pragma: no cover - optional dependency for REST interactions
+    import requests
+except ImportError:  # pragma: no cover - requests is optional in tests
+    requests = None  # type: ignore
 
 try:  # pragma: no cover - optional dependency for live streaming
     import websocket
@@ -55,6 +59,43 @@ def _hmac_signature(secret: str, params: Dict[str, str]) -> str:
     return hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
 
 
+def _parse_optional_bool(value: Optional[str]) -> Optional[bool]:
+    """Parse an optional boolean value from a string."""
+
+    if value is None:
+        return None
+    lowered = value.lower()
+    if lowered in {"1", "true", "yes", "on"}:
+        return True
+    if lowered in {"0", "false", "no", "off"}:
+        return False
+    return None
+
+
+def _normalize_streams(streams: Iterable[str]) -> List[str]:
+    """Normalize and validate Binance stream identifiers."""
+
+    normalized: List[str] = []
+    for stream in streams:
+        cleaned = stream.strip()
+        if not cleaned:
+            continue
+        normalized.append(cleaned.lower())
+    if not normalized:
+        raise ValueError("At least one valid stream identifier must be provided")
+    return normalized
+
+
+def _ensure_requests() -> None:
+    """Ensure the optional ``requests`` dependency is available."""
+
+    if requests is None:
+        raise RuntimeError(
+            "The `requests` package is required for Binance REST calls. "
+            "Install it with `pip install requests`."
+        )
+
+
 @dataclass
 class TradingConfig:
     """Runtime configuration for the trading bot."""
@@ -78,6 +119,12 @@ class TradingConfig:
     quantity_precision: int = 6
     momentum_window: int = 20
     volatility_window: int = 20
+    ws_kline_interval: str = "1m"
+    ws_streams: Optional[List[str]] = None
+    ws_use_combined: Optional[bool] = None
+    ws_time_unit: Optional[str] = None
+    ws_ping_interval: Optional[float] = 20.0
+    ws_ping_timeout: float = 10.0
 
     @classmethod
     def from_env(cls) -> "TradingConfig":
@@ -92,6 +139,33 @@ class TradingConfig:
             if lowered in {"0", "false", "no", "off"}:
                 return False
             return default
+
+        def _float(value: Optional[str], default: float) -> float:
+            if value is None:
+                return default
+            try:
+                return float(value)
+            except ValueError:
+                return default
+
+        def _float_optional(value: Optional[str], default: Optional[float]) -> Optional[float]:
+            if value is None:
+                return default
+            stripped = value.strip()
+            if not stripped:
+                return None
+            try:
+                return float(stripped)
+            except ValueError:
+                return default
+
+        def _parse_streams(value: Optional[str]) -> Optional[List[str]]:
+            if value is None:
+                return None
+            try:
+                return _normalize_streams(value.split(","))
+            except ValueError:
+                return None
 
         return cls(
             api_key=os.getenv("BINANCE_API_KEY", ""),
@@ -119,7 +193,62 @@ class TradingConfig:
             quantity_precision=int(os.getenv("QGITA_QUANTITY_PRECISION", "6")),
             momentum_window=int(os.getenv("QGITA_MOMENTUM_WINDOW", "20")),
             volatility_window=int(os.getenv("QGITA_VOLATILITY_WINDOW", "20")),
+            ws_kline_interval=os.getenv("QGITA_WS_KLINE_INTERVAL", "1m"),
+            ws_streams=_parse_streams(os.getenv("QGITA_WS_STREAMS")),
+            ws_use_combined=_parse_optional_bool(os.getenv("QGITA_WS_COMBINED")),
+            ws_time_unit=os.getenv("QGITA_WS_TIME_UNIT"),
+            ws_ping_interval=_float_optional(
+                os.getenv("QGITA_WS_PING_INTERVAL"), 20.0
+            ),
+            ws_ping_timeout=_float(os.getenv("QGITA_WS_PING_TIMEOUT"), 10.0),
         )
+
+
+def resolve_streams(
+    config: TradingConfig, overrides: Optional[Iterable[str]] = None
+) -> List[str]:
+    """Return the Binance stream identifiers for ``config``."""
+
+    if overrides is not None:
+        return _normalize_streams(overrides)
+    if config.ws_streams is not None:
+        return _normalize_streams(config.ws_streams)
+    symbol = config.symbol.lower()
+    interval = config.ws_kline_interval.strip().lower() or "1m"
+    return [f"{symbol}@kline_{interval}"]
+
+
+def build_websocket_stream_url(
+    config: TradingConfig, streams: Optional[Iterable[str]] = None
+) -> str:
+    """Construct the Binance WebSocket URL for the selected ``streams``."""
+
+    resolved_streams = resolve_streams(config, streams)
+    base = config.ws_url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    time_unit = (config.ws_time_unit or "").strip()
+    use_combined = config.ws_use_combined
+    if use_combined is None:
+        use_combined = len(resolved_streams) > 1
+
+    if use_combined:
+        if base.endswith("/ws"):
+            base = base[: -len("/ws")]
+        if not base.endswith("/stream"):
+            base = f"{base}/stream"
+        query_parts = [f"streams={'/'.join(resolved_streams)}"]
+        if time_unit:
+            query_parts.append(f"timeUnit={time_unit}")
+        query = "&".join(query_parts)
+        return f"{base}?{query}"
+
+    if base.endswith("/stream"):
+        base = base[: -len("/stream")]
+    if not base.endswith("/ws"):
+        base = f"{base}/ws"
+    stream_name = resolved_streams[0]
+    if time_unit:
+        return f"{base}/{stream_name}?timeUnit={time_unit}"
+    return f"{base}/{stream_name}"
 
 
 class BinanceRESTClient:
@@ -139,6 +268,7 @@ class BinanceRESTClient:
         params["timestamp"] = str(_timestamp_ms())
         params["signature"] = _hmac_signature(self.config.api_secret, params)
 
+        _ensure_requests()
         response = requests.request(
             method,
             f"{self.config.base_url}{path}",
@@ -158,6 +288,7 @@ class BinanceRESTClient:
         """Return the latest spot price for ``symbol``."""
 
         symbol = symbol or self.config.symbol
+        _ensure_requests()
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",
             params={"symbol": symbol},
@@ -515,12 +646,16 @@ class WebSocketRunner:
                 "`pip install websocket-client`."
             )
         self.bot = bot
-        stream_symbol = bot.config.symbol.lower()
-        self.url = f"{bot.config.ws_url}/{stream_symbol}@kline_1m"
+        self.streams = resolve_streams(bot.config)
+        self.url = build_websocket_stream_url(bot.config, self.streams)
         self._ws: Optional[websocket.WebSocketApp] = None
 
     def _on_open(self, ws: websocket.WebSocketApp) -> None:
-        LOGGER.info("🔌 WebSocket connected: %s", self.url)
+        LOGGER.info(
+            "🔌 WebSocket connected: %s | streams=%s",
+            self.url,
+            ",".join(self.streams),
+        )
 
     def _on_close(self, ws: websocket.WebSocketApp, status_code: int, msg: str) -> None:
         LOGGER.warning("🔌 WebSocket closed (%s): %s", status_code, msg)
@@ -528,15 +663,84 @@ class WebSocketRunner:
     def _on_error(self, ws: websocket.WebSocketApp, error: Exception) -> None:
         LOGGER.error("WebSocket error: %s", error)
 
+    def _on_ping(self, ws: websocket.WebSocketApp, message: bytes) -> None:
+        payload = message or b""
+        try:
+            ws.send(payload, opcode=websocket.ABNF.OPCODE_PONG)
+            LOGGER.debug("Sent pong response (%d bytes)", len(payload))
+        except Exception as exc:  # pragma: no cover - best effort pong
+            LOGGER.warning("Failed to send pong: %s", exc)
+
+    def _on_pong(self, ws: websocket.WebSocketApp, message: bytes) -> None:
+        LOGGER.debug("Received pong (%d bytes)", len(message or b""))
+
+    def _extract_price_event(self, payload: dict) -> Optional[Tuple[float, float]]:
+        """Return a (price, timestamp) tuple if ``payload`` contains one."""
+
+        try:
+            kline = payload.get("k")
+            if isinstance(kline, dict):
+                if not kline.get("x"):
+                    return None
+                close_price = float(kline["c"])
+                close_time = float(kline.get("T", payload.get("E", _timestamp_ms())))
+                return close_price, close_time / 1000.0
+
+            event_type = payload.get("e")
+            if event_type in {"trade", "aggTrade"}:
+                price = float(payload["p"])
+                timestamp = float(payload.get("T", payload.get("E", _timestamp_ms())))
+                return price, timestamp / 1000.0
+
+            if event_type in {"24hrMiniTicker", "24hrTicker", "1hTicker", "4hTicker", "1dTicker"}:
+                price = float(payload["c"])
+                timestamp = float(payload.get("E", _timestamp_ms()))
+                return price, timestamp / 1000.0
+
+            if event_type == "avgPrice":
+                price = float(payload["w"])
+                timestamp = float(payload.get("T", payload.get("E", _timestamp_ms())))
+                return price, timestamp / 1000.0
+
+            if {
+                "s",
+                "b",
+                "B",
+                "a",
+                "A",
+            }.issubset(payload.keys()) and "e" not in payload:
+                bid = float(payload["b"])
+                ask = float(payload["a"])
+                midpoint = (bid + ask) / 2.0
+                timestamp = float(payload.get("E", _timestamp_ms()))
+                return midpoint, timestamp / 1000.0
+        except (KeyError, TypeError, ValueError):
+            LOGGER.debug("Ignoring malformed payload: %s", payload)
+        return None
+
     def _on_message(self, ws: websocket.WebSocketApp, message: str) -> None:
-        payload = json.loads(message)
-        kline = payload.get("k")
-        if not kline:
+        try:
+            payload = json.loads(message)
+        except json.JSONDecodeError:
+            LOGGER.debug("Ignoring non-JSON message: %s", message)
             return
-        if kline.get("x"):
-            close_price = float(kline["c"])
-            close_time = float(kline["T"]) / 1000.0
-            self.bot.on_price(close_price, close_time)
+
+        if isinstance(payload, dict) and {"stream", "data"}.issubset(payload.keys()):
+            stream_name = payload.get("stream")
+            payload = payload.get("data")
+            LOGGER.debug("Combined stream update from %s", stream_name)
+
+        if not isinstance(payload, dict):
+            LOGGER.debug("Ignoring unexpected payload: %s", payload)
+            return
+
+        result = self._extract_price_event(payload)
+        if result is None:
+            LOGGER.debug("No price event extracted from payload: %s", payload)
+            return
+
+        price, timestamp = result
+        self.bot.on_price(price, timestamp)
 
     def start(self) -> None:
         self._ws = websocket.WebSocketApp(
@@ -545,9 +749,19 @@ class WebSocketRunner:
             on_close=self._on_close,
             on_error=self._on_error,
             on_message=self._on_message,
+            on_ping=self._on_ping,
+            on_pong=self._on_pong,
         )
         LOGGER.info("Starting price stream for %s", self.bot.config.symbol)
-        self._ws.run_forever(ping_interval=20, ping_timeout=10)
+        ping_interval = self.bot.config.ws_ping_interval
+        ping_timeout = self.bot.config.ws_ping_timeout
+        if ping_interval is None or ping_interval <= 0:
+            self._ws.run_forever(ping_interval=0, ping_timeout=ping_timeout)
+        else:
+            self._ws.run_forever(
+                ping_interval=ping_interval,
+                ping_timeout=ping_timeout,
+            )
 
 
 def configure_logging(verbose: bool) -> None:

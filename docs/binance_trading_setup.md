@@ -66,6 +66,49 @@ If the call succeeds, the credentials are ready for live trading. Any HTTP
 error indicates that the key lacks permission or the IP restrictions do not
 match.
 
+### Quick Connectivity Checks
+
+Before signing requests, it is helpful to verify that the Binance REST gateway
+is reachable and to inspect the server time. The endpoints below do not require
+authentication and are weighted lightly, so they are safe to call whenever you
+need to confirm connectivity.
+
+| Method | Endpoint | Weight | Purpose |
+|--------|----------|--------|---------|
+| `GET` | `/api/v3/ping` | 1 | Confirms that the REST API is reachable. Returns an empty JSON object `{}`. |
+| `GET` | `/api/v3/time` | 1 | Returns the current `serverTime` in milliseconds. Useful when synchronizing timestamps for signed requests. |
+| `GET` | `/api/v3/exchangeInfo` | 20 | Provides symbol metadata, trading rules, rate limits, and permission sets. Accepts optional query parameters such as `symbol`, `symbols`, `permissions`, `showPermissionSets`, and `symbolStatus`. |
+
+Example responses:
+
+```jsonc
+{}
+```
+
+```jsonc
+{
+  "serverTime": 1499827319559
+}
+```
+
+```jsonc
+{
+  "timezone": "UTC",
+  "serverTime": 1565246363776,
+  "symbols": [
+    {
+      "symbol": "ETHBTC",
+      "status": "TRADING",
+      "baseAsset": "ETH",
+      "quoteAsset": "BTC",
+      "orderTypes": ["LIMIT", "MARKET", "STOP_LOSS", "TAKE_PROFIT"],
+      "permissions": [],
+      "permissionSets": [["SPOT", "MARGIN"]]
+    }
+  ]
+}
+```
+
 ## 3. Configure Environment Variables
 
 The trading bot reads its configuration from environment variables, which makes

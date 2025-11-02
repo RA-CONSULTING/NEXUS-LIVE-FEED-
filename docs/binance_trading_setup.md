@@ -134,3 +134,37 @@ The implementation enforces several safeguards:
 
 These values should be tuned for your account size and risk tolerance before
 live deployment.
+
+## 6. Binance API Rate Limits
+
+Binance enforces rate limits at multiple layers. Every response includes the
+`X-MBX-USED-WEIGHT-(intervalNum)(intervalLetter)` headers that report the
+request weight accumulated by your IP for each defined interval. The interval
+letter values follow the mapping `SECOND → S`, `MINUTE → M`, `HOUR → H`, and
+`DAY → D`; the `intervalNum` represents how many of those units make up the
+window. For example, an interval of `5M` means a five-minute window.
+
+The [`/api/v3/exchangeInfo`](https://binance-docs.github.io/apidocs/spot/en/#exchange-information)
+endpoint returns a `rateLimits` array that enumerates the
+`RAW_REQUESTS`, `REQUEST_WEIGHT`, and `ORDERS` constraints. Each REST route has
+an associated request weight. Endpoints that operate on multiple symbols often
+carry higher weights.
+
+If you exceed a limit you will receive an HTTP `429` response. You are expected
+to back off before retrying. Ignoring the limit and continuing to send
+requests can escalate to an automatic IP ban signalled by HTTP `418`. Binance
+includes a `Retry-After` header alongside 429 and 418 responses. For 429s the
+value indicates how long to wait before retrying; for 418s it specifies how
+long the ban will last. Repeated violations cause bans to lengthen from two
+minutes up to three days. The limits are tied to the IP address, not to API
+keys.
+
+Successful order responses also include `X-MBX-ORDER-COUNT-(intervalNum)(intervalLetter)`
+headers so you can monitor the number of active orders against the account
+limits. If you surpass the allowed count you will receive a 429 without a
+`Retry-After` header. Failed or rejected orders are not guaranteed to include
+these headers.
+
+To check the current thresholds programmatically, query the
+`GET /api/v3/rateLimit/order` endpoint. The tracking is account-specific, so
+once orders fill you can place additional orders even within the same window.

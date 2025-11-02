@@ -28,7 +28,6 @@ from datetime import datetime, timezone
 
 import numbers
 from decimal import Decimal
-from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -37,24 +36,7 @@ _RequestsStubType = None
 try:  # pragma: no cover - optional dependency for live streaming
     import requests
 except Exception:  # pragma: no cover - optional dependency
-    _HAS_REQUESTS = False
 
-    class _RequestsStub:
-        _is_placeholder = True
-
-        def request(self, *args, **kwargs):  # pragma: no cover - placeholder
-            raise RuntimeError(
-                "The `requests` package is required for Binance REST calls. "
-                "Install it with `pip install requests`."
-            )
-
-        def get(self, *args, **kwargs):  # pragma: no cover - placeholder
-            return self.request(*args, **kwargs)
-
-    requests = _RequestsStub()  # type: ignore[assignment]
-    _RequestsStubType = _RequestsStub
-else:  # pragma: no cover - real dependency present
-    _RequestsStubType = None
 
 
 try:  # pragma: no cover - optional dependency for live streaming
@@ -109,115 +91,84 @@ def _normalize_streams(streams: Iterable[str]) -> List[str]:
     return normalized
 
 
+def _parse_streams(value: Optional[str]) -> Optional[List[str]]:
+    """Parse ``value`` into a list of normalized stream identifiers."""
+
+    if value is None:
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+
+    # Allow comma, semicolon, or whitespace separated values.
+    parts = raw.replace(";", ",").replace("\n", " ").split(",")
+    tokens: List[str] = []
+    for part in parts:
+        for token in part.strip().split():
+            if token:
+                tokens.append(token)
+
+    if not tokens:
+        return None
+
+    try:
+        return _normalize_streams(tokens)
+    except ValueError:
+        return None
+
+
+def _float(value: Optional[str], default: float) -> float:
+    """Return ``value`` parsed as a float or ``default`` if parsing fails."""
+
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _float_optional(value: Optional[str], default: Optional[float] = None) -> Optional[float]:
+    """Return ``value`` parsed as a float or ``default`` if unset/invalid."""
+
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
+    """Normalize symbol status strings used in public ticker queries."""
+
+    if value is None:
+        return None
+    candidate = value.strip().upper()
+    return candidate or None
+
+
 def _ensure_requests() -> None:
     """Ensure the optional ``requests`` dependency is available."""
 
-    if getattr(requests, "_is_placeholder", False):
-        request_attr = getattr(requests, "request", None)
-        func = getattr(request_attr, "__func__", request_attr)
-        if _RequestsStubType is not None and func is _RequestsStubType.request:
+
             raise RuntimeError(
                 "The `requests` package is required for Binance REST calls. "
                 "Install it with `pip install requests`."
             )
 
 
-_VALID_SYMBOL_STATUSES = {"TRADING", "HALT", "BREAK"}
 
 
-def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
-    """Return an uppercase symbol status when ``value`` is recognised."""
 
-    if value is None:
-        return None
-    status = value.strip().upper()
-    if not status:
-        return None
-    if status in _VALID_SYMBOL_STATUSES:
-        return status
-    return None
+class BinanceAPIError(RuntimeError):
+    """Exception raised when Binance returns an error payload."""
 
-
-def _float(value: Optional[str], default: float) -> float:
-    """Parse ``value`` as a float, falling back to ``default`` on failure."""
-
-    if value is None:
-        return default
-    text = value.strip()
-    if not text:
-        return default
-    try:
-        return float(text)
-    except ValueError:
-        return default
-
-
-def _float_optional(value: Optional[str], default: Optional[float]) -> Optional[float]:
-    """Parse an optional float while preserving explicit empty overrides."""
-
-    if value is None:
-        return default
-    text = value.strip()
-    if text == "":
-        return None
-    try:
-        return float(text)
-    except ValueError:
-        return default
-
-
-def _parse_streams(value: Optional[str]) -> Optional[List[str]]:
-    """Parse a comma separated stream list from environment configuration."""
-
-    if value is None:
-        return None
-    parts = [segment.strip() for segment in value.replace(";", ",").split(",")]
-    parts = [segment for segment in parts if segment]
-    if not parts:
-        return None
-    return _normalize_streams(parts)
-
-
-def _stringify_param(value: Any) -> Optional[str]:
-    """Return a canonical string representation for REST parameters."""
-
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, Decimal):
-        dec = value
-    elif isinstance(value, numbers.Integral):
-        return str(int(value))
-    elif isinstance(value, numbers.Real):
-        dec = Decimal(str(value))
-    else:
-        return str(value)
-
-    normalized = dec.normalize()
-    text = format(normalized, "f")
-    if "." in text:
-        text = text.rstrip("0").rstrip(".")
-    return text or "0"
-
-
-def _extract_error_message(payload: Any) -> str:
-    """Best-effort extraction of an error message from ``payload``."""
-
-    if isinstance(payload, Mapping):
-        for key in ("msg", "message", "error", "code"):
-            value = payload.get(key)
-            if isinstance(value, str) and value.strip():
-                return value
-            if isinstance(value, Mapping):
-                nested = _extract_error_message(value)
-                if nested:
-                    return nested
-    if payload is None:
-        return ""
-    return str(payload)
-
-
+    def __init__(self, status: int, message: str, *, payload: Any | None = None):
+        message = message or "Unknown Binance API error"
+        super().__init__(f"Binance API error (status {status}): {message}")
+        self.status = status
+        self.payload = payload
 
 
 @dataclass
@@ -384,67 +335,22 @@ class BinanceRESTClient:
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
-    def _prepare_params(self, params: Mapping[str, Any]) -> Dict[str, str]:
-        prepared: Dict[str, str] = {}
-        for key, value in params.items():
-            stringified = _stringify_param(value)
-            if stringified is not None:
-                prepared[str(key)] = stringified
-        return prepared
 
-    def _request(self, method: str, path: str, params: Mapping[str, str]) -> Any:
         _ensure_requests()
         response = requests.request(
             method,
             f"{self.config.base_url}{path}",
-            params=dict(params),
+
             headers=self._headers(),
             timeout=10,
         )
         return self._parse_response(response)
 
-    def _parse_response(self, response: Any) -> Any:
-        try:
-            payload = response.json()
-        except Exception:
-            payload = None
 
-        status_code = getattr(response, "status_code", 200)
-
-        if isinstance(payload, Mapping) and "status" in payload:
-            self.last_rate_limits = payload.get("rateLimits")
-            status_value = payload.get("status")
-            try:
-                status = int(status_value)
-            except (TypeError, ValueError):
-                # Non-numeric status (e.g. "ok"): treat as success wrapper
-                return payload.get("result", payload)
-            if status >= 400:
-                message = _extract_error_message(payload.get("error") or payload)
-                raise BinanceAPIError(status, message, payload=payload)
-            return payload.get("result", payload)
-
-        if isinstance(payload, Mapping):
-            self.last_rate_limits = payload.get("rateLimits")
-        else:
-            self.last_rate_limits = None
-
-        if status_code >= 400:
-            message = _extract_error_message(payload)
-            if not message and hasattr(response, "text"):
-                message = str(response.text)
             raise BinanceAPIError(status_code, message, payload=payload)
 
         return payload
 
-    def _signed_request(self, method: str, path: str, params: Mapping[str, Any]) -> Any:
-        if not self.config.api_secret:
-            raise RuntimeError("API secret is required for signed requests")
-
-        prepared = self._prepare_params(params)
-        prepared["timestamp"] = str(_timestamp_ms())
-        prepared["signature"] = _hmac_signature(self.config.api_secret, prepared)
-        return self._request(method, path, prepared)
 
     def _build_prefixed_params(
         self, prefix: str, options: Optional[Mapping[str, Any]]
@@ -494,11 +400,7 @@ class BinanceRESTClient:
     ) -> float:
         """Return the latest spot price for ``symbol``."""
 
-        if getattr(requests, "_is_placeholder", False):  # pragma: no cover - dependency guard
-            get_attr = getattr(requests, "get", None)
-            func = getattr(get_attr, "__func__", get_attr)
-            if _RequestsStubType is not None and func is _RequestsStubType.get:
-                raise RuntimeError("The 'requests' library is required for live price data")
+
         symbol = symbol or self.config.symbol
         params: Dict[str, Any] = {"symbol": symbol}
         status = symbol_status
@@ -1099,6 +1001,69 @@ class BinanceRESTClient:
         if extra_params:
             params.update({str(k): v for k, v in extra_params.items()})
         return self._signed_request("POST", "/api/v3/sor/order/test", params)
+
+
+def resolve_streams(config: TradingConfig) -> List[str]:
+    """Return the WebSocket stream identifiers for ``config``."""
+
+    if config.ws_streams:
+        streams = _normalize_streams(config.ws_streams)
+        if not streams:
+            raise ValueError("At least one valid stream identifier must be provided")
+        return streams
+
+    symbol = (config.symbol or "BTCUSDT").lower()
+    interval = config.ws_kline_interval or "1m"
+    return [f"{symbol}@kline_{interval}"]
+
+
+def _resolve_ws_endpoint(base_url: str, *, combined: bool) -> str:
+    trimmed = (base_url or DEFAULT_WS_URL).rstrip("/")
+    if combined:
+        if trimmed.endswith("/ws"):
+            trimmed = trimmed[:-3]
+        if not trimmed.endswith("/stream"):
+            trimmed = f"{trimmed}/stream"
+        return trimmed
+
+    if trimmed.endswith("/stream"):
+        trimmed = trimmed[:-7]
+    if not trimmed.endswith("/ws"):
+        trimmed = f"{trimmed}/ws"
+    return trimmed
+
+
+def build_websocket_stream_url(
+    config: TradingConfig, streams: Optional[Sequence[str]] = None
+) -> str:
+    """Build the Binance WebSocket URL respecting combined stream options."""
+
+    if streams is None:
+        resolved = resolve_streams(config)
+    else:
+        resolved = _normalize_streams(streams)
+
+    if not resolved:
+        raise ValueError("At least one stream is required")
+
+    use_combined = config.ws_use_combined
+    if use_combined is None:
+        use_combined = len(resolved) > 1
+
+    endpoint = _resolve_ws_endpoint(config.ws_url or DEFAULT_WS_URL, combined=use_combined)
+
+    time_unit = config.ws_time_unit.strip() if config.ws_time_unit else ""
+
+    if use_combined:
+        query = "streams=" + "/".join(resolved)
+        if time_unit:
+            query += f"&timeUnit={time_unit}"
+        return f"{endpoint}?{query}"
+
+    url = f"{endpoint}/{resolved[0]}"
+    if time_unit:
+        url += f"?timeUnit={time_unit}"
+    return url
 
 
 class PaperExchange:

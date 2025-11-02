@@ -6,7 +6,7 @@ This reference summarizes the Binance REST API filters that gate whether a new o
 
 | Filter | What it Guards | Pass Conditions | Sample `/exchangeInfo` Snippet |
 |--------|----------------|-----------------|-------------------------------|
-| `PRICE_FILTER` | Allowed price range and precision. | `price ≥ minPrice`, `price ≤ maxPrice`, `(price - minPrice) % tickSize == 0` for enabled fields. | ```json
+| `PRICE_FILTER` | Allowed price range and precision. | `price ≥ minPrice`, `price ≤ maxPrice`, `price % tickSize == 0` for enabled fields. | ```json
 {"filterType": "PRICE_FILTER", "minPrice": "0.00000100", "maxPrice": "100000.00000000", "tickSize": "0.00000100"}
 ``` |
 | `PERCENT_PRICE` | Max/min deviation from the weighted average price. | `price ≤ weightedAveragePrice * multiplierUp`, `price ≥ weightedAveragePrice * multiplierDown`. | ```json
@@ -15,7 +15,7 @@ This reference summarizes the Binance REST API filters that gate whether a new o
 | `PERCENT_PRICE_BY_SIDE` | Side-specific deviation from the weighted average price. | Buy: `price ≤ weightedAveragePrice * bidMultiplierUp` and `price ≥ weightedAveragePrice * bidMultiplierDown`. Sell: `price ≤ weightedAveragePrice * askMultiplierUp` and `price ≥ weightedAveragePrice * askMultiplierDown`. | ```json
 {"filterType": "PERCENT_PRICE_BY_SIDE", "bidMultiplierUp": "1.2", "bidMultiplierDown": "0.2", "askMultiplierUp": "5", "askMultiplierDown": "0.8", "avgPriceMins": 1}
 ``` |
-| `LOT_SIZE` | Quantity range and step for limit/stop orders. | `quantity ≥ minQty`, `quantity ≤ maxQty`, `(quantity - minQty) % stepSize == 0`. | ```json
+| `LOT_SIZE` | Quantity range and step for limit/stop orders. | `quantity ≥ minQty`, `quantity ≤ maxQty`, `quantity % stepSize == 0`. | ```json
 {"filterType": "LOT_SIZE", "minQty": "0.00100000", "maxQty": "100000.00000000", "stepSize": "0.00100000"}
 ``` |
 | `MIN_NOTIONAL` | Minimum notional value (price × qty). | `price * quantity ≥ minNotional`. `applyToMarket` controls whether market orders use the average price over `avgPriceMins`. | ```json
@@ -27,7 +27,7 @@ This reference summarizes the Binance REST API filters that gate whether a new o
 | `ICEBERG_PARTS` | Maximum number of visible slices for iceberg orders. | `ceil(quantity / icebergQty) ≤ limit`. | ```json
 {"filterType": "ICEBERG_PARTS", "limit": 10}
 ``` |
-| `MARKET_LOT_SIZE` | Quantity range and step for market orders. | Same structure as `LOT_SIZE`, but applied exclusively to market orders. | ```json
+| `MARKET_LOT_SIZE` | Quantity range and step for market orders. | `quantity ≥ minQty`, `quantity ≤ maxQty`, `quantity % stepSize == 0`. | ```json
 {"filterType": "MARKET_LOT_SIZE", "minQty": "0.00100000", "maxQty": "100000.00000000", "stepSize": "0.00100000"}
 ``` |
 | `MAX_NUM_ORDERS` | Maximum count of open orders on the symbol. | `openOrders ≤ maxNumOrders`. | ```json

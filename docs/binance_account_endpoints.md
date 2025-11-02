@@ -1,459 +1,1050 @@
-# Binance Account REST Endpoints
+# Binance Account Signed Endpoints (JSON-RPC Envelope)
 
-The following reference consolidates the signed account endpoints that the trading tooling in this repository relies on. Every request must include a valid `timestamp` (in milliseconds) and a signature generated with your API secret. Optional `recvWindow` parameters accept up to three decimal places to express microseconds and cannot exceed `60000`.
+This reference catalogs the JSON-RPC style account endpoints that the trading tooling in this repository calls. Every request must include a millisecond `timestamp` and a HMAC SHA-256 `signature` generated with the account's API secret. Optional `recvWindow` parameters accept up to three decimal places (microseconds) and cannot exceed `60000`.
 
-> **Note:** All endpoints listed below live under the `/api/v3/` path on `https://api.binance.com`. A `401`/`-1022` response usually indicates a missing or invalid signature.
+Unless otherwise specified, responses originate from an in-memory cache backed by the database. The Binance API continues to enforce the standard request weight limits described below.
 
-## Account Information — `GET /account`
+---
 
-Returns the current account profile along with balances. Use the `omitZeroBalances` flag to filter out assets that have zero free and locked amounts. Balances originate from in-memory caches backed by the database.
+## Account Status — `account.status`
 
-**Weight:** 20 (memory → database)
+Query high-level account information, including commission settings, flags indicating whether trading/withdrawals/deposits are enabled, and the current asset balances. When `omitZeroBalances` is set to `true`, only assets with a non-zero `free` or `locked` value are returned.
+
+- **Weight:** 20  
+- **Data Source:** Memory ⇒ Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `apiKey` | STRING | ✅ | API key issued by Binance |
+| `omitZeroBalances` | BOOLEAN |  | Exclude assets with zero balances (default `false`) |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000. Supports up to 3 decimal places. |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature using the API secret |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
 
 ```json
 {
-  "makerCommission": 15,
-  "takerCommission": 15,
-  "buyerCommission": 0,
-  "sellerCommission": 0,
-  "commissionRates": {
-    "maker": "0.00150000",
-    "taker": "0.00150000",
-    "buyer": "0.00000000",
-    "seller": "0.00000000"
+  "id": "605a6d20-6588-4cb9-afa0-b0ab087507ba",
+  "method": "account.status",
+  "params": {
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "83303b4a136ac1371795f465808367242685a9e3a42b22edb4d977d0696eb45c",
+    "timestamp": 1660801839480
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "605a6d20-6588-4cb9-afa0-b0ab087507ba",
+  "status": 200,
+  "result": {
+    "makerCommission": 15,
+    "takerCommission": 15,
+    "buyerCommission": 0,
+    "sellerCommission": 0,
+    "canTrade": true,
+    "canWithdraw": true,
+    "canDeposit": true,
+    "commissionRates": {
+      "maker": "0.00150000",
+      "taker": "0.00150000",
+      "buyer": "0.00000000",
+      "seller": "0.00000000"
+    },
+    "brokered": false,
+    "requireSelfTradePrevention": false,
+    "preventSor": false,
+    "updateTime": 1660801833000,
+    "accountType": "SPOT",
+    "balances": [
+      {
+        "asset": "BNB",
+        "free": "0.00000000",
+        "locked": "0.00000000"
+      },
+      {
+        "asset": "BTC",
+        "free": "1.3447112",
+        "locked": "0.08600000"
+      },
+      {
+        "asset": "USDT",
+        "free": "1021.21000000",
+        "locked": "0.00000000"
+      }
+    ],
+    "permissions": [
+      "SPOT"
+    ],
+    "uid": 354937868
   },
-  "canTrade": true,
-  "canWithdraw": true,
-  "canDeposit": true,
-  "brokered": false,
-  "requireSelfTradePrevention": false,
-  "preventSor": false,
-  "updateTime": 123456789,
-  "accountType": "SPOT",
-  "balances": [
+  "rateLimits": [
     {
-      "asset": "BTC",
-      "free": "4723846.89208129",
-      "locked": "0.00000000"
-    },
-    {
-      "asset": "LTC",
-      "free": "4763368.68006011",
-      "locked": "0.00000000"
-    }
-  ],
-  "permissions": ["SPOT"],
-  "uid": 354937868
-}
-```
-
-## Query Order — `GET /order`
-
-Checks the status of a single order by `orderId` or `origClientOrderId`. When both identifiers are supplied Binance resolves the `orderId` first and validates the original client ID against that record. Historical orders may omit the cumulative quote quantity (`cummulativeQuoteQty < 0`).
-
-**Weight:** 4 (memory → database)
-
-```json
-{
-  "symbol": "LTCBTC",
-  "orderId": 1,
-  "orderListId": -1,
-  "clientOrderId": "myOrder1",
-  "price": "0.1",
-  "origQty": "1.0",
-  "executedQty": "0.0",
-  "cummulativeQuoteQty": "0.0",
-  "status": "NEW",
-  "timeInForce": "GTC",
-  "type": "LIMIT",
-  "side": "BUY",
-  "stopPrice": "0.0",
-  "icebergQty": "0.0",
-  "time": 1499827319559,
-  "updateTime": 1499827319559,
-  "isWorking": true,
-  "workingTime": 1499827319559,
-  "origQuoteOrderQty": "0.000000",
-  "selfTradePreventionMode": "NONE"
-}
-```
-
-## Current Open Orders — `GET /openOrders`
-
-Lists outstanding orders for a symbol or (if no symbol is supplied) for the entire account. When omitting the symbol the response weight jumps from 6 to 80 due to the broader query scope.
-
-**Weight:** 6 per symbol (memory → database); 80 when `symbol` is omitted
-
-```json
-[
-  {
-    "symbol": "LTCBTC",
-    "orderId": 1,
-    "orderListId": -1,
-    "clientOrderId": "myOrder1",
-    "price": "0.1",
-    "origQty": "1.0",
-    "executedQty": "0.0",
-    "cummulativeQuoteQty": "0.0",
-    "status": "NEW",
-    "timeInForce": "GTC",
-    "type": "LIMIT",
-    "side": "BUY",
-    "stopPrice": "0.0",
-    "icebergQty": "0.0",
-    "time": 1499827319559,
-    "updateTime": 1499827319559,
-    "isWorking": true,
-    "origQuoteOrderQty": "0.000000",
-    "workingTime": 1499827319559,
-    "selfTradePreventionMode": "NONE"
-  }
-]
-```
-
-## All Orders — `GET /allOrders`
-
-Retrieves historical and active orders for a symbol with optional pagination via `orderId` or time windows (`startTime`/`endTime`). The time window cannot span more than 24 hours.
-
-**Weight:** 20 (database)
-
-```json
-[
-  {
-    "symbol": "LTCBTC",
-    "orderId": 1,
-    "orderListId": -1,
-    "clientOrderId": "myOrder1",
-    "price": "0.1",
-    "origQty": "1.0",
-    "executedQty": "0.0",
-    "cummulativeQuoteQty": "0.0",
-    "status": "NEW",
-    "timeInForce": "GTC",
-    "type": "LIMIT",
-    "side": "BUY",
-    "stopPrice": "0.0",
-    "icebergQty": "0.0",
-    "time": 1499827319559,
-    "updateTime": 1499827319559,
-    "isWorking": true,
-    "origQuoteOrderQty": "0.000000",
-    "workingTime": 1499827319559,
-    "selfTradePreventionMode": "NONE"
-  }
-]
-```
-
-## Query Order List — `GET /orderList`
-
-Fetches the state of an OCO (One Cancels the Other) order list by `orderListId` or `origClientOrderId`. One of the identifiers is mandatory.
-
-**Weight:** 4 (database)
-
-```json
-{
-  "orderListId": 27,
-  "contingencyType": "OCO",
-  "listStatusType": "EXEC_STARTED",
-  "listOrderStatus": "EXECUTING",
-  "listClientOrderId": "h2USkA5YQpaXHPIrkd96xE",
-  "transactionTime": 1565245656253,
-  "symbol": "LTCBTC",
-  "orders": [
-    {
-      "symbol": "LTCBTC",
-      "orderId": 4,
-      "clientOrderId": "qD1gy3kc3Gx0rihm9Y3xwS"
-    },
-    {
-      "symbol": "LTCBTC",
-      "orderId": 5,
-      "clientOrderId": "ARzZ9I00CPM8i3NhmU9Ega"
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
     }
   ]
 }
 ```
 
-## Query All Order Lists — `GET /allOrderList`
+---
 
-Returns paginated OCO order lists. Provide `fromId` **or** a time window (`startTime`/`endTime`). Time spans longer than 24 hours are rejected.
+## Order Status — `order.status`
 
-**Weight:** 20 (database)
+Check the execution status of an individual order. If both `orderId` and `origClientOrderId` are supplied, Binance first looks up the `orderId` and verifies that the `origClientOrderId` matches that record. Some historical orders may omit `cummulativeQuoteQty` (or return it as a negative value) when the data is unavailable.
 
-```json
-[
-  {
-    "orderListId": 29,
-    "contingencyType": "OCO",
-    "listStatusType": "EXEC_STARTED",
-    "listOrderStatus": "EXECUTING",
-    "listClientOrderId": "amEEAXryFzFwYF1FeRpUoZ",
-    "transactionTime": 1565245913483,
-    "symbol": "LTCBTC",
-    "orders": [
-      {
-        "symbol": "LTCBTC",
-        "orderId": 4,
-        "clientOrderId": "oD7aesZqjEGlZrbtRpy5zB"
-      },
-      {
-        "symbol": "LTCBTC",
-        "orderId": 5,
-        "clientOrderId": "Jr1h6xirOxgeJOUuYQS7V3"
-      }
-    ]
-  },
-  {
-    "orderListId": 28,
-    "contingencyType": "OCO",
-    "listStatusType": "EXEC_STARTED",
-    "listOrderStatus": "EXECUTING",
-    "listClientOrderId": "hG7hFNxJV6cZy3Ze4AUT4d",
-    "transactionTime": 1565245913407,
-    "symbol": "LTCBTC",
-    "orders": [
-      {
-        "symbol": "LTCBTC",
-        "orderId": 2,
-        "clientOrderId": "j6lFOfbmFMRjTYA7rRJ0LP"
-      },
-      {
-        "symbol": "LTCBTC",
-        "orderId": 3,
-        "clientOrderId": "z0KCjOdditiLS5ekAFtK81"
-      }
-    ]
-  }
-]
-```
+- **Weight:** 4  
+- **Data Source:** Memory ⇒ Database
 
-## Query Open Order Lists — `GET /openOrderList`
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair (e.g., `BTCUSDT`) |
+| `orderId` | LONG | ✅* | Search by Binance order ID |
+| `origClientOrderId` | STRING |  | Client-assigned identifier. Used if `orderId` not found. |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
 
-Retrieves currently executing OCO order lists.
-
-**Weight:** 6 (database)
-
-```json
-[
-  {
-    "orderListId": 31,
-    "contingencyType": "OCO",
-    "listStatusType": "EXEC_STARTED",
-    "listOrderStatus": "EXECUTING",
-    "listClientOrderId": "wuB13fmulKj3YjdqWEcsnp",
-    "transactionTime": 1565246080644,
-    "symbol": "LTCBTC",
-    "orders": [
-      {
-        "symbol": "LTCBTC",
-        "orderId": 4,
-        "clientOrderId": "r3EH2N76dHfLoSZWIUw1bT"
-      },
-      {
-        "symbol": "LTCBTC",
-        "orderId": 5,
-        "clientOrderId": "Cv1SnyPD3qhqpbjpYEHbd2"
-      }
-    ]
-  }
-]
-```
-
-## Account Trade List — `GET /myTrades`
-
-Returns fills for a symbol. Weight drops from 20 to 5 when an `orderId` filter is provided. Only specific parameter combinations are accepted (e.g., `symbol + orderId`, `symbol + startTime + endTime`). Time windows must not exceed 24 hours.
-
-**Weight:** 20 without `orderId`; 5 with `orderId` (memory → database)
-
-```json
-[
-  {
-    "symbol": "BNBBTC",
-    "id": 28457,
-    "orderId": 100234,
-    "orderListId": -1,
-    "price": "4.00000100",
-    "qty": "12.00000000",
-    "quoteQty": "48.000012",
-    "commission": "10.10000000",
-    "commissionAsset": "BNB",
-    "time": 1499865549590,
-    "isBuyer": true,
-    "isMaker": false,
-    "isBestMatch": true
-  }
-]
-```
-
-## Query Unfilled Order Count — `GET /rateLimit/order`
-
-Exposes the order rate-limit usage for each window. Useful for proactive throttling in automation.
-
-**Weight:** 40 (memory)
-
-```json
-[
-  {
-    "rateLimitType": "ORDERS",
-    "interval": "SECOND",
-    "intervalNum": 10,
-    "limit": 50,
-    "count": 0
-  },
-  {
-    "rateLimitType": "ORDERS",
-    "interval": "DAY",
-    "intervalNum": 1,
-    "limit": 160000,
-    "count": 0
-  }
-]
-```
-
-## Query Prevented Matches — `GET /myPreventedMatches`
-
-Lists trades that were canceled by the self-trade prevention (STP) rules. Supports lookups by `preventedMatchId`, by `orderId`, or by an `orderId` combined with pagination via `fromPreventedMatchId` and `limit`.
-
-**Weight:** 2 for invalid `symbol` or `preventedMatchId` queries; 20 when querying by `orderId` (database)
-
-```json
-[
-  {
-    "symbol": "BTCUSDT",
-    "preventedMatchId": 1,
-    "takerOrderId": 5,
-    "makerSymbol": "BTCUSDT",
-    "makerOrderId": 3,
-    "tradeGroupId": 1,
-    "selfTradePreventionMode": "EXPIRE_MAKER",
-    "price": "1.100000",
-    "makerPreventedQuantity": "1.300000",
-    "transactTime": 1669101687094
-  }
-]
-```
-
-## Query Allocations — `GET /myAllocations`
-
-Retrieves allocations produced by Smart Order Routing (SOR). Pagination is available through `fromAllocationId` and `limit`, and results can be filtered by order or time windows (≤ 24 hours).
-
-**Weight:** 20 (database)
-
-```json
-[
-  {
-    "symbol": "BTCUSDT",
-    "allocationId": 0,
-    "allocationType": "SOR",
-    "orderId": 1,
-    "orderListId": -1,
-    "price": "1.00000000",
-    "qty": "5.00000000",
-    "quoteQty": "5.00000000",
-    "commission": "0.00000000",
-    "commissionAsset": "BTC",
-    "time": 1687506878118,
-    "isBuyer": true,
-    "isMaker": false,
-    "isAllocator": false
-  }
-]
-```
-
-## Query Commission Rates — `GET /account/commission`
-
-Returns the layered commission rates for a symbol, including special/tax rates and the optional BNB discount configuration.
-
-**Weight:** 20 (database)
+**Example Request**
 
 ```json
 {
-  "symbol": "BTCUSDT",
-  "standardCommission": {
-    "maker": "0.00000010",
-    "taker": "0.00000020",
-    "buyer": "0.00000030",
-    "seller": "0.00000040"
-  },
-  "specialCommission": {
-    "maker": "0.01000000",
-    "taker": "0.02000000",
-    "buyer": "0.03000000",
-    "seller": "0.04000000"
-  },
-  "taxCommission": {
-    "maker": "0.00000112",
-    "taker": "0.00000114",
-    "buyer": "0.00000118",
-    "seller": "0.00000116"
-  },
-  "discount": {
-    "enabledForAccount": true,
-    "enabledForSymbol": true,
-    "discountAsset": "BNB",
-    "discount": "0.75000000"
+  "id": "aa62318a-5a97-4f3b-bdc7-640bbe33b291",
+  "method": "order.status",
+  "params": {
+    "symbol": "BTCUSDT",
+    "orderId": 12569099453,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "2c3aab5a078ee4ea465ecd95523b77289f61476c2f238ec10c55ea6cb11a6f35",
+    "timestamp": 1660801720951
   }
 }
 ```
 
-## Query Order Amendments — `GET /order/amendments`
-
-Lists the amendment history for a single order, optionally filtered from a specific execution ID.
-
-**Weight:** 4 (database)
-
-```json
-[
-  {
-    "symbol": "BTCUSDT",
-    "orderId": 9,
-    "executionId": 22,
-    "origClientOrderId": "W0fJ9fiLKHOJutovPK3oJp",
-    "newClientOrderId": "UQ1Np3bmQ71jJzsSDW9Vpi",
-    "origQty": "5.00000000",
-    "newQty": "4.00000000",
-    "time": 1741669661670
-  },
-  {
-    "symbol": "BTCUDST",
-    "orderId": 9,
-    "executionId": 25,
-    "origClientOrderId": "UQ1Np3bmQ71jJzsSDW9Vpi",
-    "newClientOrderId": "5uS0r35ohuQyDlCzZuYXq2",
-    "origQty": "4.00000000",
-    "newQty": "3.00000000",
-    "time": 1741672924895
-  }
-]
-```
-
-## Query Relevant Filters — `GET /myFilters`
-
-Displays the exchange, symbol, and asset-level filters that apply to the account. This is the only endpoint that surfaces `MAX_ASSET` filter assignments.
-
-**Weight:** 40 (memory)
+**Example Response**
 
 ```json
 {
-  "exchangeFilters": [
+  "id": "aa62318a-5a97-4f3b-bdc7-640bbe33b291",
+  "status": 200,
+  "result": {
+    "symbol": "BTCUSDT",
+    "orderId": 12569099453,
+    "orderListId": -1,
+    "clientOrderId": "4d96324ff9d44481926157",
+    "price": "23416.10000000",
+    "origQty": "0.00847000",
+    "executedQty": "0.00847000",
+    "cummulativeQuoteQty": "198.33521500",
+    "status": "FILLED",
+    "timeInForce": "GTC",
+    "type": "LIMIT",
+    "side": "SELL",
+    "stopPrice": "0.00000000",
+    "trailingDelta": 10,
+    "trailingTime": -1,
+    "icebergQty": "0.00000000",
+    "time": 1660801715639,
+    "updateTime": 1660801717945,
+    "isWorking": true,
+    "workingTime": 1660801715639,
+    "origQuoteOrderQty": "0.00000000",
+    "strategyId": 37463720,
+    "strategyType": 1000000,
+    "selfTradePreventionMode": "NONE",
+    "preventedMatchId": 0,
+    "preventedQuantity": "1.200000"
+  },
+  "rateLimits": [
     {
-      "filterType": "EXCHANGE_MAX_NUM_ORDERS",
-      "maxNumOrders": 1000
-    }
-  ],
-  "symbolFilters": [
-    {
-      "filterType": "MAX_NUM_ORDER_LISTS",
-      "maxNumOrderLists": 20
-    }
-  ],
-  "assetFilters": [
-    {
-      "filterType": "MAX_ASSET",
-      "asset": "JPY",
-      "limit": "1000000.00000000"
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 4
     }
   ]
 }
 ```
 
+---
+
+## Open Orders — `openOrders.status`
+
+Fetch the execution status of all open orders. Passing a `symbol` restricts the results to that market; omitting it returns every open order at a cost of 80 weight units.
+
+- **Weight:** 6 with `symbol`; 80 without `symbol`  
+- **Data Source:** Memory ⇒ Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING |  | Trading pair. When omitted, all symbols are returned. |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "55f07876-4f6f-4c47-87dc-43e5fff3f2e7",
+  "method": "openOrders.status",
+  "params": {
+    "symbol": "BTCUSDT",
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "d632b3fdb8a81dd44f82c7c901833309dd714fe508772a89b0a35b0ee0c48b89",
+    "timestamp": 1660813156812
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "55f07876-4f6f-4c47-87dc-43e5fff3f2e7",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 12569099453,
+      "orderListId": -1,
+      "clientOrderId": "4d96324ff9d44481926157",
+      "price": "23416.10000000",
+      "origQty": "0.00847000",
+      "executedQty": "0.00720000",
+      "origQuoteOrderQty": "0.000000",
+      "cummulativeQuoteQty": "172.43931000",
+      "status": "PARTIALLY_FILLED",
+      "timeInForce": "GTC",
+      "type": "LIMIT",
+      "side": "SELL",
+      "stopPrice": "0.00000000",
+      "icebergQty": "0.00000000",
+      "time": 1660801715639,
+      "updateTime": 1660801717945,
+      "isWorking": true,
+      "workingTime": 1660801715639,
+      "origQuoteOrderQty": "0.00000000",
+      "selfTradePreventionMode": "NONE"
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 6
+    }
+  ]
+}
+```
+
+---
+
+## Order History — `allOrders`
+
+Return active, canceled, and filled orders for a symbol over a limited time range (≤ 24 hours) or starting from a specific `orderId`. When `startTime`/`endTime` are supplied, `orderId` is ignored.
+
+- **Weight:** 20  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `orderId` | LONG |  | Fetch orders with ID ≥ `orderId` |
+| `startTime` | LONG |  | Millisecond UNIX timestamp |
+| `endTime` | LONG |  | Millisecond UNIX timestamp |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "734235c2-13d2-4574-be68-723e818c08f3",
+  "method": "allOrders",
+  "params": {
+    "symbol": "BTCUSDT",
+    "startTime": 1660780800000,
+    "endTime": 1660867200000,
+    "limit": 5,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "f50a972ba7fad92842187643f6b930802d4e20bce1ba1e788e856e811577bd42",
+    "timestamp": 1661955123341
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "734235c2-13d2-4574-be68-723e818c08f3",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 12569099453,
+      "orderListId": -1,
+      "clientOrderId": "4d96324ff9d44481926157",
+      "price": "23416.10000000",
+      "origQty": "0.00847000",
+      "executedQty": "0.00847000",
+      "cummulativeQuoteQty": "198.33521500",
+      "status": "FILLED",
+      "timeInForce": "GTC",
+      "type": "LIMIT",
+      "side": "SELL",
+      "stopPrice": "0.00000000",
+      "icebergQty": "0.00000000",
+      "time": 1660801715639,
+      "updateTime": 1660801717945,
+      "isWorking": true,
+      "workingTime": 1660801715639,
+      "origQuoteOrderQty": "0.00000000",
+      "selfTradePreventionMode": "NONE",
+      "preventedMatchId": 0,
+      "preventedQuantity": "1.200000"
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Order List Status — `orderList.status`
+
+Retrieve the execution state of an OCO order list by `orderListId` or `origClientOrderId`. When both are provided, Binance uses `origClientOrderId` and ignores `orderListId`.
+
+- **Weight:** 4  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `origClientOrderId` | STRING | ✅* | Query by OCO `listClientOrderId` |
+| `orderListId` | INT | ✅* | Binance OCO list identifier |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "b53fd5ff-82c7-4a04-bd64-5f9dc42c2100",
+  "method": "orderList.status",
+  "params": {
+    "origClientOrderId": "08985fedd9ea2cf6b28996",
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "d12f4e8892d46c0ddfbd43d556ff6d818581b3be22a02810c2c20cb719aed6a4",
+    "timestamp": 1660801713965
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "b53fd5ff-82c7-4a04-bd64-5f9dc42c2100",
+  "status": 200,
+  "result": {
+    "orderListId": 1274512,
+    "contingencyType": "OCO",
+    "listStatusType": "EXEC_STARTED",
+    "listOrderStatus": "EXECUTING",
+    "listClientOrderId": "08985fedd9ea2cf6b28996",
+    "transactionTime": 1660801713793,
+    "symbol": "BTCUSDT",
+    "orders": [
+      {
+        "symbol": "BTCUSDT",
+        "orderId": 12569138901,
+        "clientOrderId": "BqtFCj5odMoWtSqGk2X9tU"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "orderId": 12569138902,
+        "clientOrderId": "jLnZpj5enfMXTuhKB1d0us"
+      }
+    ]
+  },
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 4
+    }
+  ]
+}
+```
+
+---
+
+## Open Order Lists — `openOrderLists.status`
+
+Return the currently executing OCO order lists for the account.
+
+- **Weight:** 6  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "3a4437e2-41a3-4c19-897c-9cadc5dce8b6",
+  "method": "openOrderLists.status",
+  "params": {
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "1bea8b157dd78c3da30359bddcd999e4049749fe50b828e620e12f64e8b433c9",
+    "timestamp": 1660801713831
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "3a4437e2-41a3-4c19-897c-9cadc5dce8b6",
+  "status": 200,
+  "result": [
+    {
+      "orderListId": 0,
+      "contingencyType": "OCO",
+      "listStatusType": "EXEC_STARTED",
+      "listOrderStatus": "EXECUTING",
+      "listClientOrderId": "08985fedd9ea2cf6b28996",
+      "transactionTime": 1660801713793,
+      "symbol": "BTCUSDT",
+      "orders": [
+        {
+          "symbol": "BTCUSDT",
+          "orderId": 4,
+          "clientOrderId": "CUhLgTXnX5n2c0gWiLpV4d"
+        },
+        {
+          "symbol": "BTCUSDT",
+          "orderId": 5,
+          "clientOrderId": "1ZqG7bBuYwaF4SU8CwnwHm"
+        }
+      ]
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 6
+    }
+  ]
+}
+```
+
+---
+
+## Order List History — `allOrderLists`
+
+List historical OCO order lists. Time windows must not exceed 24 hours. If `startTime`/`endTime` are supplied, `fromId` is ignored.
+
+- **Weight:** 20  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `fromId` | INT |  | Return order lists with ID ≥ `fromId` |
+| `startTime` | LONG |  | Millisecond UNIX timestamp |
+| `endTime` | LONG |  | Millisecond UNIX timestamp |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "8617b7b3-1b3d-4dec-94cd-eefd929b8ceb",
+  "method": "allOrderLists",
+  "params": {
+    "startTime": 1660780800000,
+    "endTime": 1660867200000,
+    "limit": 5,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "c8e1484db4a4a02d0e84dfa627eb9b8298f07ebf12fcc4eaf86e4a565b2712c2",
+    "timestamp": 1661955123341
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "8617b7b3-1b3d-4dec-94cd-eefd929b8ceb",
+  "status": 200,
+  "result": [
+    {
+      "orderListId": 1274512,
+      "contingencyType": "OCO",
+      "listStatusType": "EXEC_STARTED",
+      "listOrderStatus": "EXECUTING",
+      "listClientOrderId": "08985fedd9ea2cf6b28996",
+      "transactionTime": 1660801713793,
+      "symbol": "BTCUSDT",
+      "orders": [
+        {
+          "symbol": "BTCUSDT",
+          "orderId": 12569138901,
+          "clientOrderId": "BqtFCj5odMoWtSqGk2X9tU"
+        },
+        {
+          "symbol": "BTCUSDT",
+          "orderId": 12569138902,
+          "clientOrderId": "jLnZpj5enfMXTuhKB1d0us"
+        }
+      ]
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Trade History — `myTrades`
+
+Retrieve fills for a symbol. Provide `orderId` to reduce the weight from 20 to 5. Supported combinations include `symbol + orderId`, `symbol + startTime + endTime`, and `symbol + fromId`.
+
+- **Weight:** 20 without `orderId`; 5 with `orderId`  
+- **Data Source:** Memory ⇒ Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `orderId` | LONG |  | Filter trades related to the specified order |
+| `startTime` | LONG |  | Millisecond UNIX timestamp |
+| `endTime` | LONG |  | Millisecond UNIX timestamp |
+| `fromId` | INT |  | Return trades with ID ≥ `fromId` (cannot be combined with time filters) |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "f4ce6a53-a29d-4f70-823b-4ab59391d6e8",
+  "method": "myTrades",
+  "params": {
+    "symbol": "BTCUSDT",
+    "startTime": 1660780800000,
+    "endTime": 1660867200000,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc",
+    "timestamp": 1661955125250
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "f4ce6a53-a29d-4f70-823b-4ab59391d6e8",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "id": 1650422481,
+      "orderId": 12569099453,
+      "orderListId": -1,
+      "price": "23416.10000000",
+      "qty": "0.00635000",
+      "quoteQty": "148.69223500",
+      "commission": "0.00000000",
+      "commissionAsset": "BNB",
+      "time": 1660801715793,
+      "isBuyer": false,
+      "isMaker": true,
+      "isBestMatch": true
+    },
+    {
+      "symbol": "BTCUSDT",
+      "id": 1650422482,
+      "orderId": 12569099453,
+      "orderListId": -1,
+      "price": "23416.50000000",
+      "qty": "0.00212000",
+      "quoteQty": "49.64298000",
+      "commission": "0.00000000",
+      "commissionAsset": "BNB",
+      "time": 1660801715793,
+      "isBuyer": false,
+      "isMaker": true,
+      "isBestMatch": true
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Unfilled Order Count — `account.rateLimits.orders`
+
+Return the current unfilled order usage for each throttle window. Helpful for proactive rate limiting within automation.
+
+- **Weight:** 40  
+- **Data Source:** Memory
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "d3783d8d-f8d1-4d2c-b8a0-b7596af5a664",
+  "method": "account.rateLimits.orders",
+  "params": {
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "76289424d6e288f4dc47d167ac824e859dabf78736f4348abbbac848d719eb94",
+    "timestamp": 1660801839500
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "d3783d8d-f8d1-4d2c-b8a0-b7596af5a664",
+  "status": 200,
+  "result": [
+    {
+      "rateLimitType": "ORDERS",
+      "interval": "SECOND",
+      "intervalNum": 10,
+      "limit": 50,
+      "count": 0
+    },
+    {
+      "rateLimitType": "ORDERS",
+      "interval": "DAY",
+      "intervalNum": 1,
+      "limit": 160000,
+      "count": 0
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 40
+    }
+  ]
+}
+```
+
+---
+
+## Prevented Matches — `myPreventedMatches`
+
+Show orders that expired due to self-trade prevention (STP). Supported lookup combinations include `symbol + preventedMatchId`, `symbol + orderId`, and `symbol + orderId + fromPreventedMatchId (+ limit)`.
+
+- **Weight:** 2 for invalid `symbol`/`preventedMatchId`; 20 when querying by `orderId`  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `preventedMatchId` | LONG |  | Filter by prevented match ID |
+| `orderId` | LONG |  | Filter prevented matches for an order |
+| `fromPreventedMatchId` | LONG |  | Pagination cursor |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "g4ce6a53-a39d-4f71-823b-4ab5r391d6y8",
+  "method": "myPreventedMatches",
+  "params": {
+    "symbol": "BTCUSDT",
+    "orderId": 35,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc",
+    "timestamp": 1673923281052
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "g4ce6a53-a39d-4f71-823b-4ab5r391d6y8",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "preventedMatchId": 1,
+      "takerOrderId": 5,
+      "makerSymbol": "BTCUSDT",
+      "makerOrderId": 3,
+      "tradeGroupId": 1,
+      "selfTradePreventionMode": "EXPIRE_MAKER",
+      "price": "1.100000",
+      "makerPreventedQuantity": "1.300000",
+      "transactTime": 1669101687094
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Allocations — `myAllocations`
+
+Retrieve allocations generated by Smart Order Routing (SOR). Results can be filtered by `orderId`, `fromAllocationId`, or time range (≤ 24 hours).
+
+- **Weight:** 20  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `startTime` | LONG |  | Millisecond UNIX timestamp |
+| `endTime` | LONG |  | Millisecond UNIX timestamp |
+| `fromAllocationId` | INT |  | Pagination cursor |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `orderId` | LONG |  | Filter allocations for an order |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `timestamp` | LONG |  | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "g4ce6a53-a39d-4f71-823b-4ab5r391d6y8",
+  "method": "myAllocations",
+  "params": {
+    "symbol": "BTCUSDT",
+    "orderId": 500,
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc",
+    "timestamp": 1673923281052
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "g4ce6a53-a39d-4f71-823b-4ab5r391d6y8",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "allocationId": 0,
+      "allocationType": "SOR",
+      "orderId": 500,
+      "orderListId": -1,
+      "price": "1.00000000",
+      "qty": "0.10000000",
+      "quoteQty": "0.10000000",
+      "commission": "0.00000000",
+      "commissionAsset": "BTC",
+      "time": 1687319487614,
+      "isBuyer": false,
+      "isMaker": false,
+      "isAllocator": false
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Commission Rates — `account.commission`
+
+Return the current commission configuration for a symbol, including standard, special, and tax rates as well as the BNB discount settings.
+
+- **Weight:** 20  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `apiKey` | STRING | ✅ | API key |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0",
+  "method": "account.commission",
+  "params": {
+    "symbol": "BTCUSDT",
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "signature": "c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc",
+    "timestamp": 1673923281052
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0",
+  "status": 200,
+  "result": {
+    "symbol": "BTCUSDT",
+    "standardCommission": {
+      "maker": "0.00000010",
+      "taker": "0.00000020",
+      "buyer": "0.00000030",
+      "seller": "0.00000040"
+    },
+    "specialCommission": {
+      "maker": "0.01000000",
+      "taker": "0.02000000",
+      "buyer": "0.03000000",
+      "seller": "0.04000000"
+    },
+    "taxCommission": {
+      "maker": "0.00000112",
+      "taker": "0.00000114",
+      "buyer": "0.00000118",
+      "seller": "0.00000116"
+    },
+    "discount": {
+      "enabledForAccount": true,
+      "enabledForSymbol": true,
+      "discountAsset": "BNB",
+      "discount": "0.75000000"
+    }
+  },
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 20
+    }
+  ]
+}
+```
+
+---
+
+## Order Amendments — `order.amendments`
+
+List amendments performed on a single order. Use `fromExecutionId` to paginate older amendments.
+
+- **Weight:** 4  
+- **Data Source:** Database
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `orderId` | LONG | ✅ | Binance order ID |
+| `fromExecutionId` | LONG |  | Return amendments with execution ID ≥ value |
+| `limit` | INT |  | Defaults to 500; max 1000 |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "6f5ebe91-01d9-43ac-be99-57cf062e0e30",
+  "method": "order.amendments",
+  "params": {
+    "orderId": "23",
+    "recvWindow": 5000,
+    "symbol": "BTCUSDT",
+    "timestamp": 1741925524887,
+    "apiKey": "N3Swv7WaBF7S2rzA12UkPunM3udJiDddbgv1W7CzFGnsQXH9H62zzSCST0CndjeE",
+    "signature": "0eed2e9d95b6868ea5ec21da0d14538192ef344c30ecf9fe83d58631699334dc"
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "6f5ebe91-01d9-43ac-be99-57cf062e0e30",
+  "status": 200,
+  "result": [
+    {
+      "symbol": "BTCUSDT",
+      "orderId": 23,
+      "executionId": 60,
+      "origClientOrderId": "my_pending_order",
+      "newClientOrderId": "xbxXh5SSwaHS7oUEOCI88B",
+      "origQty": "7.00000000",
+      "newQty": "5.00000000",
+      "time": 1741924229819
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 4
+    }
+  ]
+}
+```
+
+---
+
+## Relevant Filters — `myFilters`
+
+Return the exchange, symbol, and asset-level filters applied to the account. This endpoint is the only way to surface `MAX_ASSET` filter assignments.
+
+- **Weight:** 40  
+- **Data Source:** Memory
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `symbol` | STRING | ✅ | Trading pair |
+| `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
+
+**Example Request**
+
+```json
+{
+  "id": "74R4febb-d142-46a2-977d-90533eb4d97g",
+  "method": "myFilters",
+  "params": {
+    "recvWindow": 5000,
+    "symbol": "BTCUSDT",
+    "timestamp": 1758008841149,
+    "apiKey": "nQ6kG5gDExDd5MZSO0MfOOWEVZmdkRllpNMfm1FjMjkMnmw1NUd3zPDfvcnDJlil",
+    "signature": "7edc54dd0493dd5bc47adbab9b17bfc9b378d55c20511ae5a168456d3d37aa3a"
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "1758009606869",
+  "status": 200,
+  "result": {
+    "exchangeFilters": [
+      {
+        "filterType": "EXCHANGE_MAX_NUM_ORDERS",
+        "maxNumOrders": 1000
+      }
+    ],
+    "symbolFilters": [
+      {
+        "filterType": "MAX_NUM_ORDER_LISTS",
+        "maxNumOrderLists": 20
+      }
+    ],
+    "assetFilters": [
+      {
+        "filterType": "MAX_ASSET",
+        "asset": "JPY",
+        "limit": "1000000.00000000"
+      }
+    ]
+  }
+}
+```

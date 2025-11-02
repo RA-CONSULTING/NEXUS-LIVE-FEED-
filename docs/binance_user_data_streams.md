@@ -4,6 +4,8 @@ _Last updated: 2025-10-24_
 
 This reference summarizes the realtime account-level events that Binance pushes over a User Data Stream subscription. The stream is accessed via the WebSocket API using an API key. Both SBE and JSON payloads are supported and all JSON timestamps are expressed in milliseconds.
 
+
+
 ## Account Update (`outboundAccountPosition`)
 
 `outboundAccountPosition` is emitted whenever a balance changes. Only the assets affected by the triggering event are included in the payload.

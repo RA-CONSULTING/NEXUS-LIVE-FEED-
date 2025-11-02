@@ -3,6 +3,42 @@
 This guide explains how to prepare Binance credentials, verify connectivity,
 and run the QGITA autonomous trading bot that ships with this repository.
 
+## General API Information
+
+When integrating with Binance programmatically, keep the following service
+characteristics in mind:
+
+- **Base endpoints:** `https://api.binance.com`, `https://api-gcp.binance.com`,
+  and the performance-optimised `https://api{1-4}.binance.com` hosts. The
+  `api1`&ndash;`api4` variants typically respond faster but can be less stable.
+- **Response format:** JSON by default. To receive SBE responses, consult the
+  Binance SBE FAQ.
+- **Result ordering:** Endpoints return data chronologically unless otherwise
+  specified.
+- **Time range parameters:**
+  - Without `startTime`/`endTime`, endpoints return the most recent items up to
+    `limit`.
+  - With `startTime`, the API returns the oldest items from that timestamp up to
+    `limit`.
+  - With `endTime`, the API returns the most recent items up to that timestamp
+    and `limit`.
+  - Supplying both behaves like `startTime` but will not exceed `endTime`.
+- **Timestamps:** All timestamps are milliseconds by default. Pass the header
+  `X-MBX-TIME-UNIT:MICROSECOND` (case-insensitive) to receive microsecond
+  precision.
+- **Authentication:** HMAC, RSA, and Ed25519 keys are supported.
+- **Timeouts:** Requests time out after 10 seconds. A timeout does not
+  necessarily indicate that the matching engine rejected the request; confirm
+  status via the User Data Stream or a follow-up REST query.
+- **Public market data:** Use `https://data-api.binance.vision` for market-data
+  only endpoints.
+- **Terminology:** Consult the Binance SPOT Glossary for enum definitions.
+
+Keep these details in mind when configuring the trading bot or extending the
+client implementation. They help explain the behaviour of endpoints referenced
+throughout this guide and the Binance REST/WebSocket helpers in
+`scripts/binance_trading_bot.py`.
+
 ## 1. Create a Restricted API Key
 
 Create an API key inside your Binance account and apply the following
@@ -82,6 +118,7 @@ listed below:
 | `QGITA_STOP_LOSS` | Stop loss percentage. | `2` |
 | `QGITA_TAKE_PROFIT` | Take profit percentage. | `4` |
 | `QGITA_PAPER_TRADING` | Enable paper trading (`true`/`false`). | `true` |
+| `QGITA_SYMBOL_STATUS` | Optional trading phase guard that maps to Binance's new `symbolStatus` parameter (e.g. `TRADING`). | `TRADING` |
 
 Additional variables exist for tuning the QGITA detector (window size,
 curvature threshold, lighthouse consensus threshold, etc.). See the module
@@ -121,7 +158,15 @@ Use `--account-info` to print the account balances and confirm trading access:
 python scripts/binance_trading_bot.py --live --account-info
 ```
 
-## 5. Risk Controls
+## 5. Understand Exchange Filters
+
+Binance enforces price, quantity, notional, and order-count filters across
+symbols, the entire exchange, and specific assets. Consult the
+[Binance Exchange Filters Reference](./binance_exchange_filters.md) for a
+complete breakdown before promoting QGITA to production so every submission
+conforms to those limits on the first attempt.
+
+## 6. Risk Controls
 
 The implementation enforces several safeguards:
 
@@ -135,29 +180,3 @@ The implementation enforces several safeguards:
 These values should be tuned for your account size and risk tolerance before
 live deployment.
 
-## 6. Binance Request Security Primer
-
-Binance assigns a **security type** to every REST method. If a method lists a
-security type (for example, `New order (TRADE)`), the request must be
-**SIGNED**, meaning that the query string requires an HMAC SHA256 signature and
-the call must include a valid API key in the `X-MBX-APIKEY` header. When no
-security type is specified, the endpoint is public and can be called without a
-signature.
-
-Key takeaways when preparing keys for the QGITA bot:
-
-- **SIGNED endpoints need API keys.** Most trading and account methods fall into
-  this category. A few legacy `listenKey` endpoints are currently exempt from
-  signing, but you should still authenticate when possible.
-- **Protect both key and secret.** Store them outside of source control,
-  restrict their permissions (e.g., `TRADE`, `USER_DATA`) to the minimum needed
-  for the bot, and rotate them if you observe unusual account activity.
-- **Trading is opt-in.** Newly created keys cannot trade until you explicitly
-  enable the `Enable Spot & Margin Trading` permission in Binance's API
-  Management console.
-- **Separate duties if needed.** You can create one key for trading operations
-  and another with `USER_DATA` access for monitoring, limiting blast radius if a
-  secret leaks.
-
-Treat the keys like passwords: never share them, and revoke them immediately if
-you suspect compromise.

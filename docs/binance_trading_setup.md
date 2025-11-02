@@ -3,41 +3,7 @@
 This guide explains how to prepare Binance credentials, verify connectivity,
 and run the QGITA autonomous trading bot that ships with this repository.
 
-## General API Information
 
-When integrating with Binance programmatically, keep the following service
-characteristics in mind:
-
-- **Base endpoints:** `https://api.binance.com`, `https://api-gcp.binance.com`,
-  and the performance-optimised `https://api{1-4}.binance.com` hosts. The
-  `api1`&ndash;`api4` variants typically respond faster but can be less stable.
-- **Response format:** JSON by default. To receive SBE responses, consult the
-  Binance SBE FAQ.
-- **Result ordering:** Endpoints return data chronologically unless otherwise
-  specified.
-- **Time range parameters:**
-  - Without `startTime`/`endTime`, endpoints return the most recent items up to
-    `limit`.
-  - With `startTime`, the API returns the oldest items from that timestamp up to
-    `limit`.
-  - With `endTime`, the API returns the most recent items up to that timestamp
-    and `limit`.
-  - Supplying both behaves like `startTime` but will not exceed `endTime`.
-- **Timestamps:** All timestamps are milliseconds by default. Pass the header
-  `X-MBX-TIME-UNIT:MICROSECOND` (case-insensitive) to receive microsecond
-  precision.
-- **Authentication:** HMAC, RSA, and Ed25519 keys are supported.
-- **Timeouts:** Requests time out after 10 seconds. A timeout does not
-  necessarily indicate that the matching engine rejected the request; confirm
-  status via the User Data Stream or a follow-up REST query.
-- **Public market data:** Use `https://data-api.binance.vision` for market-data
-  only endpoints.
-- **Terminology:** Consult the Binance SPOT Glossary for enum definitions.
-
-Keep these details in mind when configuring the trading bot or extending the
-client implementation. They help explain the behaviour of endpoints referenced
-throughout this guide and the Binance REST/WebSocket helpers in
-`scripts/binance_trading_bot.py`.
 
 ## 1. Create a Restricted API Key
 
@@ -101,6 +67,49 @@ if __name__ == "__main__":
 If the call succeeds, the credentials are ready for live trading. Any HTTP
 error indicates that the key lacks permission or the IP restrictions do not
 match.
+
+### Quick Connectivity Checks
+
+Before signing requests, it is helpful to verify that the Binance REST gateway
+is reachable and to inspect the server time. The endpoints below do not require
+authentication and are weighted lightly, so they are safe to call whenever you
+need to confirm connectivity.
+
+| Method | Endpoint | Weight | Purpose |
+|--------|----------|--------|---------|
+| `GET` | `/api/v3/ping` | 1 | Confirms that the REST API is reachable. Returns an empty JSON object `{}`. |
+| `GET` | `/api/v3/time` | 1 | Returns the current `serverTime` in milliseconds. Useful when synchronizing timestamps for signed requests. |
+| `GET` | `/api/v3/exchangeInfo` | 20 | Provides symbol metadata, trading rules, rate limits, and permission sets. Accepts optional query parameters such as `symbol`, `symbols`, `permissions`, `showPermissionSets`, and `symbolStatus`. |
+
+Example responses:
+
+```jsonc
+{}
+```
+
+```jsonc
+{
+  "serverTime": 1499827319559
+}
+```
+
+```jsonc
+{
+  "timezone": "UTC",
+  "serverTime": 1565246363776,
+  "symbols": [
+    {
+      "symbol": "ETHBTC",
+      "status": "TRADING",
+      "baseAsset": "ETH",
+      "quoteAsset": "BTC",
+      "orderTypes": ["LIMIT", "MARKET", "STOP_LOSS", "TAKE_PROFIT"],
+      "permissions": [],
+      "permissionSets": [["SPOT", "MARGIN"]]
+    }
+  ]
+}
+```
 
 ## 3. Configure Environment Variables
 

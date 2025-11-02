@@ -18,6 +18,8 @@ To understand how the command center actually conducts those layers moment by mo
 
 For a technical inventory of the full data pipeline—from field sensors and network transport to AI services, rendering engines, and display surfaces—consult the [Nexus Live Visuals Architecture](docs/nexus_live_visuals_architecture.md). It captures the definitive sensor taxonomy, transmission budgets, AI stack, visualization toolkit, and signature live experiences now powering NEXUS-LIVE.
 
+If you are integrating Binance market data streams, reference the [Binance WebSocket API rate limits](docs/binance_rate_limits.md) guide for connection quotas, weight accounting, and ban recovery strategies.
+
 ## Installing the A.L.F.I.E. Evolution Pack
 
 An automated installer for the Evolution runtime ships with this repository under `scripts/install_alfie_evolution.py`. It extracts the pack, validates every file against the provided checksums, prints the boot plan contained in `alfie_sandbox_manifest.json`, and emits a `alfie_runtime_state.json` snapshot that encodes the Γ safety targets.

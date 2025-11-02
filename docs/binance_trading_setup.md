@@ -3,6 +3,10 @@
 This guide explains how to prepare Binance credentials, verify connectivity,
 and run the QGITA autonomous trading bot that ships with this repository.
 
+If you need a quick refresher on the public market data surface that the bot
+polls for order flow and price signals, see the companion reference,
+[`Binance Market Data REST Endpoints`](binance_market_data_endpoints.md).
+
 ## 1. Create a Restricted API Key
 
 Create an API key inside your Binance account and apply the following

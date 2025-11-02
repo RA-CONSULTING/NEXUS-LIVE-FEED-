@@ -4,32 +4,7 @@ _Last updated: 2025-10-24_
 
 This reference summarizes the realtime account-level events that Binance pushes over a User Data Stream subscription. The stream is accessed via the WebSocket API using an API key. Both SBE and JSON payloads are supported and all JSON timestamps are expressed in milliseconds.
 
-## Session Authentication
 
-Only Ed25519 API keys are supported when authenticating a WebSocket session. After establishing the connection you can bind an API key to the session so that subsequent requests do not have to repeat the `apiKey` and `signature` parameters. Once authenticated, the server performs eligible requests on behalf of the API key owner. `timestamp` parameters are still required for signed requests.
-
-### Authenticate after connection
-
-- `session.logon` – authenticate the connection or switch to a different API key.
-- `session.status` – query the current session state and confirm which API key is active.
-- `session.logout` – clear the API key associated with the connection.
-
-If the authenticated API key becomes invalid during the session (for example due to IP restrictions, key deletion, or missing permissions) the next request will fail and the session will be revoked with a 401 response:
-
-```json
-{
-  "id": null,
-  "status": 401,
-  "error": {
-    "code": -2015,
-    "msg": "Invalid API-key, IP, or permissions for action."
-  }
-}
-```
-
-### Authorize ad hoc requests
-
-Only one API key can be attached to a WebSocket connection at a time. The authenticated key is used by default, but individual requests may explicitly supply an `apiKey` and `signature` to authorize that request with a different key—useful, for instance, when placing an order with a TRADE key while leaving a USER_DATA key logged in for general activity.
 
 ## Account Update (`outboundAccountPosition`)
 

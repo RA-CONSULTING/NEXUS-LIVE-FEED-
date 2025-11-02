@@ -7,7 +7,8 @@ integrations can anticipate latency and data staleness.
 
 ## Asynchronous Responses
 
-Most API calls return immediately with whatever data is currently available. Additional fields
+The API system is asynchronous, so some delay in the response is normal and expected.
+Most calls return immediately with whatever data is currently available, and additional fields
 may continue streaming in once upstream services respond. A short delay between request and
 final payload is therefore normal and not considered an error condition.
 
@@ -16,14 +17,15 @@ final payload is therefore normal and not considered an error condition.
 Each endpoint declares the data sources it consults. Sources are evaluated from left to right;
 if the first source does not contain the requested datum, the resolver cascades to the next one.
 
-| Priority | Source          | Description |
-| -------- | --------------- | ----------- |
-| 1        | Matching Engine | Direct feed from the Nexus Matching Engine. Provides the most up-to-date real-time state but may omit historical context. |
-| 2        | Memory          | Values cached in local or external in-memory stores. Useful for recent lookups with minimal latency. |
-| 3        | Database        | Authoritative record pulled straight from persistent storage. Ensures completeness at the cost of higher access latency. |
+| Priority | Source          | Latency  | Description |
+| :------: | --------------- | -------- | ----------- |
+| 1        | Matching Engine | lowest   | Direct feed from the Nexus Matching Engine that produces the response in-line, yielding the freshest view of state. |
+| 2        | Memory          | low      | Values retrieved from the API server's local or external cache. Great for recent lookups with minimal overhead. |
+| 3        | Database        | moderate | Authoritative record from persistent storage. Guarantees completeness at the cost of higher access latency. |
 
-Some endpoints reference multiple sources (e.g. `Memory ⇒ Database`). In those cases the endpoint
-first checks the left-most entry and only continues when no value is found.
+Some endpoints reference multiple sources (for example, `Memory ⇒ Database`). In those cases the endpoint
+first checks the left-most entry and only continues when no value is found, ensuring the latest available data is returned while still providing a fallback for completeness. In the
+`Memory ⇒ Database` chain that means the cache is queried first, and only if it misses does the system pull from the database.
 
 ## Implementation Notes
 

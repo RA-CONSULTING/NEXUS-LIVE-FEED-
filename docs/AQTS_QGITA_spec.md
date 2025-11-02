@@ -242,7 +242,8 @@ The Aureon Quantum Trading System (AQTS) combines quantum geometry insight with 
 ## API ENUM Definitions
 
 The AQTS execution layer harmonises with Binance-style REST and WebSocket interfaces. The following enumerations keep the
-frontend, orchestration services, and documentation aligned on the canonical values expected by those APIs.
+frontend, orchestration services, and documentation aligned on the canonical values expected by those APIs. The values apply
+uniformly across both the REST API and WebSocket API contracts.
 
 ### Symbol Status (`status`)
 
@@ -255,22 +256,23 @@ frontend, orchestration services, and documentation aligned on the canonical val
 
 ### Account & Symbol Permissions (`permissions`)
 
-`SPOT`, `MARGIN`, `LEVERAGED`, followed by trade-group identifiers `TRD_GRP_002` … `TRD_GRP_025` denote the allowed venues or
-internal routing cohorts for a credential or instrument.
+| Value | Description |
+|-------|-------------|
+| `SPOT` | Default spot trading permission for accounts and instruments. |
 
 ### Order Status (`status`)
 
 | Value | Description |
 |-------|-------------|
-| `NEW` | Order accepted by the matching engine. |
-| `PENDING_NEW` | Awaiting activation while a related list order completes. |
-| `PARTIALLY_FILLED` | Order filled in part. |
-| `FILLED` | Order fully executed. |
-| `CANCELED` | Canceled at the trader’s request. |
-| `PENDING_CANCEL` | Reserved for future use. |
-| `REJECTED` | Order rejected by the engine. |
-| `EXPIRED` | Order expired per time-in-force or venue rules (maintenance, liquidation, etc.). |
-| `EXPIRED_IN_MATCH` | Order expired because of self-trade prevention (STP). |
+| `NEW` | The order has been accepted by the engine. |
+| `PENDING_NEW` | The order is in a pending phase until the working order of an order list has been fully filled. |
+| `PARTIALLY_FILLED` | A part of the order has been filled. |
+| `FILLED` | The order has been completed. |
+| `CANCELED` | The order has been canceled by the user. |
+| `PENDING_CANCEL` | Currently unused. |
+| `REJECTED` | The order was not accepted by the engine and not processed. |
+| `EXPIRED` | The order was canceled according to the order type's rules (e.g. LIMIT FOK orders with no fill, LIMIT IOC or MARKET orders that partially fill) or by the exchange (e.g. orders canceled during liquidation, orders canceled during maintenance). |
+| `EXPIRED_IN_MATCH` | The order was expired by the exchange due to STP (e.g. an order with EXPIRE_TAKER will match with existing orders on the book with the same account or same `tradeGroupId`). |
 
 ### Order List Status (`listStatusType`)
 
@@ -317,9 +319,9 @@ internal routing cohorts for a credential or instrument.
 
 | Value | Description |
 |-------|-------------|
-| `GTC` | Good ‘til canceled; order remains active until cancelled. |
-| `IOC` | Immediate-or-cancel; fill available quantity, cancel remainder. |
-| `FOK` | Fill-or-kill; cancel unless the full quantity can execute immediately. |
+| `GTC` | Good Til Canceled — an order will be on the book unless it is canceled. |
+| `IOC` | Immediate Or Cancel — an order will try to fill as much as it can before the order expires. |
+| `FOK` | Fill or Kill — an order will expire if the full order cannot be filled upon execution. |
 
 ### Rate Limiters (`rateLimitType`)
 

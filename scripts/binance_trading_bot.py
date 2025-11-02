@@ -25,16 +25,13 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
+
 import numbers
 from decimal import Decimal
 from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import numpy as np
 
-try:  # pragma: no cover - optional dependency for REST interactions
-    import requests
-except ImportError:  # pragma: no cover - requests is optional in tests
-    requests = None  # type: ignore
 
 try:  # pragma: no cover - optional dependency for live streaming
     import websocket
@@ -261,51 +258,7 @@ class TradingConfig:
         )
 
 
-def resolve_streams(
-    config: TradingConfig, overrides: Optional[Iterable[str]] = None
-) -> List[str]:
-    """Return the Binance stream identifiers for ``config``."""
 
-    if overrides is not None:
-        return _normalize_streams(overrides)
-    if config.ws_streams is not None:
-        return _normalize_streams(config.ws_streams)
-    symbol = config.symbol.lower()
-    interval = config.ws_kline_interval.strip().lower() or "1m"
-    return [f"{symbol}@kline_{interval}"]
-
-
-def build_websocket_stream_url(
-    config: TradingConfig, streams: Optional[Iterable[str]] = None
-) -> str:
-    """Construct the Binance WebSocket URL for the selected ``streams``."""
-
-    resolved_streams = resolve_streams(config, streams)
-    base = config.ws_url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
-    time_unit = (config.ws_time_unit or "").strip()
-    use_combined = config.ws_use_combined
-    if use_combined is None:
-        use_combined = len(resolved_streams) > 1
-
-    if use_combined:
-        if base.endswith("/ws"):
-            base = base[: -len("/ws")]
-        if not base.endswith("/stream"):
-            base = f"{base}/stream"
-        query_parts = [f"streams={'/'.join(resolved_streams)}"]
-        if time_unit:
-            query_parts.append(f"timeUnit={time_unit}")
-        query = "&".join(query_parts)
-        return f"{base}?{query}"
-
-    if base.endswith("/stream"):
-        base = base[: -len("/stream")]
-    if not base.endswith("/ws"):
-        base = f"{base}/ws"
-    stream_name = resolved_streams[0]
-    if time_unit:
-        return f"{base}/{stream_name}?timeUnit={time_unit}"
-    return f"{base}/{stream_name}"
 
 
 class BinanceRESTClient:
@@ -313,38 +266,12 @@ class BinanceRESTClient:
 
     def __init__(self, config: TradingConfig):
         self.config = config
+        self.last_rate_limits: List[dict] | None = None
 
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
-    def _format_value(self, value: Any) -> str:
-        """Convert ``value`` to a string accepted by the Binance API."""
 
-        if isinstance(value, bool):
-            return "true" if value else "false"
-        if isinstance(value, numbers.Integral) and not isinstance(value, bool):
-            return str(int(value))
-        if isinstance(value, Decimal):
-            text = format(value, "f")
-            if "." in text:
-                text = text.rstrip("0").rstrip(".")
-            return text or "0"
-        if isinstance(value, numbers.Real):
-            text = format(float(value), "f")
-            if "." in text:
-                text = text.rstrip("0").rstrip(".")
-            return text or "0"
-        return str(value)
-
-    def _prepare_params(self, params: Mapping[str, Any]) -> Dict[str, str]:
-        prepared: Dict[str, str] = {}
-        for key, value in params.items():
-            if value is None:
-                continue
-            prepared[str(key)] = self._format_value(value)
-        return prepared
-
-    def _signed_request(self, method: str, path: str, params: Mapping[str, Any]) -> dict:
         if not self.config.api_secret:
             raise RuntimeError("API secret is required for signed requests")
 
@@ -360,8 +287,7 @@ class BinanceRESTClient:
             headers=self._headers(),
             timeout=10,
         )
-        response.raise_for_status()
-        return response.json()
+        return self._parse_response(response)
 
     def _build_prefixed_params(
         self, prefix: str, options: Optional[Mapping[str, Any]]
@@ -411,6 +337,8 @@ class BinanceRESTClient:
     ) -> float:
         """Return the latest spot price for ``symbol``."""
 
+        if requests is None:  # pragma: no cover - dependency guard
+            raise RuntimeError("The 'requests' library is required for live price data")
         symbol = symbol or self.config.symbol
         params: Dict[str, Any] = {"symbol": symbol}
         status = symbol_status
@@ -424,9 +352,14 @@ class BinanceRESTClient:
             params=params,
             timeout=10,
         )
-        response.raise_for_status()
-        payload = response.json()
-        return float(payload["price"])
+        payload = self._parse_response(response)
+        if isinstance(payload, Mapping) and "price" in payload:
+            return float(payload["price"])
+        raise BinanceAPIError(
+            response.status_code,
+            "Missing price field in response",
+            payload=payload,
+        )
 
     def _new_order_payload(
         self,

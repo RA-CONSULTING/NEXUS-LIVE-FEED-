@@ -28,9 +28,14 @@ from datetime import datetime, timezone
 
 import numbers
 from decimal import Decimal
-from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Tuple
+<n
 
 import numpy as np
+
+try:  # pragma: no cover - optional dependency for live streaming
+    import requests
+except Exception:  # pragma: no cover - optional dependency
+    requests = None  # type: ignore[assignment]
 
 
 try:  # pragma: no cover - optional dependency for live streaming
@@ -95,82 +100,6 @@ def _ensure_requests() -> None:
         )
 
 
-def _parse_streams(value: Optional[str]) -> Optional[List[str]]:
-    """Parse an environment value into Binance stream identifiers."""
-
-    if value is None:
-        return None
-
-    text = value.strip()
-    if not text:
-        return None
-
-    candidates: List[str]
-    if text.startswith("["):
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError:
-            parsed = None
-        if isinstance(parsed, list):
-            candidates = [str(item) for item in parsed if item is not None]
-        elif isinstance(parsed, str):
-            candidates = [parsed]
-        else:
-            candidates = text.replace(";", ",").split(",")
-    else:
-        normalized = text.replace(";", ",")
-        pieces = []
-        for chunk in normalized.split(","):
-            pieces.extend(part for part in chunk.split() if part)
-        candidates = pieces
-
-    try:
-        streams = _normalize_streams(candidates)
-    except ValueError:
-        return None
-    return streams
-
-
-def _float(value: Optional[str], default: float) -> float:
-    """Parse a float from ``value`` with ``default`` fallback."""
-
-    if value is None:
-        return default
-    text = value.strip()
-    if not text:
-        return default
-    try:
-        return float(text)
-    except ValueError:
-        return default
-
-
-def _float_optional(value: Optional[str], default: Optional[float]) -> Optional[float]:
-    """Parse an optional float from ``value`` with ``default`` fallback."""
-
-    if value is None:
-        return default
-    text = value.strip()
-    if not text:
-        return default
-    lowered = text.lower()
-    if lowered in {"none", "null", "off", "false"}:
-        return None
-    try:
-        return float(text)
-    except ValueError:
-        return default
-
-
-def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
-    """Parse the optional ``symbolStatus`` trading phase guard."""
-
-    if value is None:
-        return "TRADING"
-    text = value.strip()
-    if not text or text.lower() in {"none", "null", "any", "*"}:
-        return None
-    return text.upper()
 
 
 @dataclass
@@ -219,6 +148,8 @@ class TradingConfig:
             return default
 
 
+        raw_status = os.getenv("QGITA_SYMBOL_STATUS")
+        _symbol_status = raw_status.upper() if raw_status else None
 
         return cls(
             api_key=os.getenv("BINANCE_API_KEY", ""),

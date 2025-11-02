@@ -64,6 +64,7 @@ class TradingConfig:
     api_key: str = ""
     api_secret: str = ""
     symbol: str = "BTCUSDT"
+    symbol_status: Optional[str] = "TRADING"
     base_url: str = DEFAULT_REST_URL
     ws_url: str = DEFAULT_WS_URL
     position_size_usdt: float = 100.0
@@ -95,10 +96,14 @@ class TradingConfig:
                 return False
             return default
 
+        raw_status = os.getenv("QGITA_SYMBOL_STATUS", "TRADING")
+        _symbol_status = raw_status if raw_status else None
+
         return cls(
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             symbol=os.getenv("QGITA_SYMBOL", "BTCUSDT").upper(),
+            symbol_status=_symbol_status,
             base_url=os.getenv("QGITA_BINANCE_URL", DEFAULT_REST_URL),
             ws_url=os.getenv("QGITA_BINANCE_WS", DEFAULT_WS_URL),
             position_size_usdt=float(os.getenv("QGITA_POSITION_SIZE", "100")),
@@ -218,13 +223,23 @@ class BinanceRESTClient:
 
         return self._signed_request("GET", "/api/v3/account", {})
 
-    def get_price(self, symbol: Optional[str] = None) -> float:
+    def get_price(
+        self,
+        symbol: Optional[str] = None,
+        *,
+        symbol_status: Optional[str] = None,
+    ) -> float:
         """Return the latest spot price for ``symbol``."""
 
         symbol = symbol or self.config.symbol
+        params = {"symbol": symbol}
+        status = symbol_status if symbol_status is not None else self.config.symbol_status
+        if status:
+            params["symbolStatus"] = status
+
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",
-            params={"symbol": symbol},
+            params=params,
             timeout=10,
         )
         response.raise_for_status()

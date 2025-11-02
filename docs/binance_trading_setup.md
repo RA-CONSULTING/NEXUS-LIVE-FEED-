@@ -3,6 +3,8 @@
 This guide explains how to prepare Binance credentials, verify connectivity,
 and run the QGITA autonomous trading bot that ships with this repository.
 
+
+
 ## 1. Create a Restricted API Key
 
 Create an API key inside your Binance account and apply the following
@@ -66,6 +68,49 @@ If the call succeeds, the credentials are ready for live trading. Any HTTP
 error indicates that the key lacks permission or the IP restrictions do not
 match.
 
+### Quick Connectivity Checks
+
+Before signing requests, it is helpful to verify that the Binance REST gateway
+is reachable and to inspect the server time. The endpoints below do not require
+authentication and are weighted lightly, so they are safe to call whenever you
+need to confirm connectivity.
+
+| Method | Endpoint | Weight | Purpose |
+|--------|----------|--------|---------|
+| `GET` | `/api/v3/ping` | 1 | Confirms that the REST API is reachable. Returns an empty JSON object `{}`. |
+| `GET` | `/api/v3/time` | 1 | Returns the current `serverTime` in milliseconds. Useful when synchronizing timestamps for signed requests. |
+| `GET` | `/api/v3/exchangeInfo` | 20 | Provides symbol metadata, trading rules, rate limits, and permission sets. Accepts optional query parameters such as `symbol`, `symbols`, `permissions`, `showPermissionSets`, and `symbolStatus`. |
+
+Example responses:
+
+```jsonc
+{}
+```
+
+```jsonc
+{
+  "serverTime": 1499827319559
+}
+```
+
+```jsonc
+{
+  "timezone": "UTC",
+  "serverTime": 1565246363776,
+  "symbols": [
+    {
+      "symbol": "ETHBTC",
+      "status": "TRADING",
+      "baseAsset": "ETH",
+      "quoteAsset": "BTC",
+      "orderTypes": ["LIMIT", "MARKET", "STOP_LOSS", "TAKE_PROFIT"],
+      "permissions": [],
+      "permissionSets": [["SPOT", "MARGIN"]]
+    }
+  ]
+}
+```
+
 ## 3. Configure Environment Variables
 
 The trading bot reads its configuration from environment variables, which makes
@@ -82,6 +127,7 @@ listed below:
 | `QGITA_STOP_LOSS` | Stop loss percentage. | `2` |
 | `QGITA_TAKE_PROFIT` | Take profit percentage. | `4` |
 | `QGITA_PAPER_TRADING` | Enable paper trading (`true`/`false`). | `true` |
+| `QGITA_SYMBOL_STATUS` | Optional trading phase guard that maps to Binance's new `symbolStatus` parameter (e.g. `TRADING`). | `TRADING` |
 
 Additional variables exist for tuning the QGITA detector (window size,
 curvature threshold, lighthouse consensus threshold, etc.). See the module
@@ -121,7 +167,15 @@ Use `--account-info` to print the account balances and confirm trading access:
 python scripts/binance_trading_bot.py --live --account-info
 ```
 
-## 5. Risk Controls
+## 5. Understand Exchange Filters
+
+Binance enforces price, quantity, notional, and order-count filters across
+symbols, the entire exchange, and specific assets. Consult the
+[Binance Exchange Filters Reference](./binance_exchange_filters.md) for a
+complete breakdown before promoting QGITA to production so every submission
+conforms to those limits on the first attempt.
+
+## 6. Risk Controls
 
 The implementation enforces several safeguards:
 
@@ -135,20 +189,3 @@ The implementation enforces several safeguards:
 These values should be tuned for your account size and risk tolerance before
 live deployment.
 
-## 6. Trading Endpoint Helpers
-
-The `BinanceRESTClient` used by the bot now wraps the complete suite of spot
-trading endpoints exposed by Binance's `/api/v3` REST API. In addition to basic
-order placement, you can programmatically:
-
-- submit and validate new orders (`new_order`, `test_new_order`),
-- cancel individual orders or every open order on a symbol,
-- issue cancel-replace requests with fine-grained control over order behaviour,
-- amend open orders while retaining book priority,
-- manage OCO/OTO/OTOCO order lists through dedicated helpers, and
-- interact with Smart Order Routing (SOR) by calling `new_sor_order` or its test
-  variant.
-
-Each helper accepts keyword arguments that map directly to the parameters
-documented in the Binance API specification, while the client automatically
-handles timestamping, signing, and conversion to the wire format.

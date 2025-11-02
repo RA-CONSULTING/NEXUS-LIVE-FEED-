@@ -25,10 +25,21 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Deque, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Deque, Dict, Iterable, List, Optional
+
+from collections.abc import Mapping
+
+try:  # pragma: no cover - optional dependency for runtime HTTP requests
+    import requests  # type: ignore
+except ImportError:  # pragma: no cover - library may be optional in some environments
+    requests = None  # type: ignore
+
+if TYPE_CHECKING:  # pragma: no cover - typing aid only
+    from requests import Response
+else:  # pragma: no cover - fallback when requests is unavailable
+    Response = Any  # type: ignore[misc,assignment]
 
 import numpy as np
-import requests
 
 try:  # pragma: no cover - optional dependency for live streaming
     import websocket
@@ -122,16 +133,82 @@ class TradingConfig:
         )
 
 
+class BinanceAPIError(RuntimeError):
+    """Exception raised when the Binance REST API indicates an error."""
+
+    def __init__(self, status: int, message: str, *, payload: Any | None = None):
+        super().__init__(f"Binance API error ({status}): {message}")
+        self.status = status
+        self.payload = payload
+
+
 class BinanceRESTClient:
     """Lightweight REST client for interacting with Binance."""
 
     def __init__(self, config: TradingConfig):
         self.config = config
+        self.last_rate_limits: List[dict] | None = None
 
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
+    def _parse_response(self, response: Response) -> Any:
+        """Return the JSON payload, normalising wrapper formats when present."""
+
+        status_code = response.status_code
+        self.last_rate_limits = None
+        try:
+            payload = response.json()
+        except ValueError as exc:  # pragma: no cover - propagate malformed JSON
+            response.raise_for_status()
+            raise BinanceAPIError(status_code, "Invalid JSON response") from exc
+
+        if isinstance(payload, dict):
+            # Preserve rate limit metadata when provided by a proxy service
+            rate_limits = payload.get("rateLimits")
+            if isinstance(rate_limits, list):
+                self.last_rate_limits = list(rate_limits)
+
+            status = int(payload.get("status", status_code) or status_code)
+            error = payload.get("error")
+            if status >= 400 or error:
+                message = self._error_message(error or payload)
+                raise BinanceAPIError(status, message, payload=payload)
+
+            if "result" in payload:
+                result = payload["result"]
+                if isinstance(result, Mapping):
+                    return dict(result)
+                return result  # type: ignore[return-value]
+
+            if "msg" in payload or "code" in payload:
+                # Raw Binance error envelope without wrapper
+                message = self._error_message(payload)
+                raise BinanceAPIError(status_code, message, payload=payload)
+
+            return payload
+
+        if status_code >= 400:
+            raise BinanceAPIError(status_code, str(payload), payload=payload)
+
+        return payload
+
+    @staticmethod
+    def _error_message(data: Any) -> str:
+        if isinstance(data, Mapping):
+            for key in ("msg", "message", "error", "code"):
+                value = data.get(key)
+                if isinstance(value, str) and value:
+                    return value
+                if value is not None and not isinstance(value, Mapping):
+                    return str(value)
+        if isinstance(data, str):
+            return data
+        return "Unknown error"
+
     def _signed_request(self, method: str, path: str, params: Dict[str, str]) -> dict:
+        if requests is None:  # pragma: no cover - dependency guard
+            raise RuntimeError("The 'requests' library is required for live trading")
         if not self.config.api_secret:
             raise RuntimeError("API secret is required for signed requests")
 
@@ -146,8 +223,7 @@ class BinanceRESTClient:
             headers=self._headers(),
             timeout=10,
         )
-        response.raise_for_status()
-        return response.json()
+        return self._parse_response(response)
 
     def get_account(self) -> dict:
         """Return account information (signed endpoint)."""
@@ -157,15 +233,22 @@ class BinanceRESTClient:
     def get_price(self, symbol: Optional[str] = None) -> float:
         """Return the latest spot price for ``symbol``."""
 
+        if requests is None:  # pragma: no cover - dependency guard
+            raise RuntimeError("The 'requests' library is required for live price data")
         symbol = symbol or self.config.symbol
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",
             params={"symbol": symbol},
             timeout=10,
         )
-        response.raise_for_status()
-        payload = response.json()
-        return float(payload["price"])
+        payload = self._parse_response(response)
+        if isinstance(payload, Mapping) and "price" in payload:
+            return float(payload["price"])
+        raise BinanceAPIError(
+            response.status_code,
+            "Missing price field in response",
+            payload=payload,
+        )
 
     def place_order(
         self,

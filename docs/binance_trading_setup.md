@@ -134,3 +134,30 @@ The implementation enforces several safeguards:
 
 These values should be tuned for your account size and risk tolerance before
 live deployment.
+
+## 6. Binance Request Security Primer
+
+Binance assigns a **security type** to every REST method. If a method lists a
+security type (for example, `New order (TRADE)`), the request must be
+**SIGNED**, meaning that the query string requires an HMAC SHA256 signature and
+the call must include a valid API key in the `X-MBX-APIKEY` header. When no
+security type is specified, the endpoint is public and can be called without a
+signature.
+
+Key takeaways when preparing keys for the QGITA bot:
+
+- **SIGNED endpoints need API keys.** Most trading and account methods fall into
+  this category. A few legacy `listenKey` endpoints are currently exempt from
+  signing, but you should still authenticate when possible.
+- **Protect both key and secret.** Store them outside of source control,
+  restrict their permissions (e.g., `TRADE`, `USER_DATA`) to the minimum needed
+  for the bot, and rotate them if you observe unusual account activity.
+- **Trading is opt-in.** Newly created keys cannot trade until you explicitly
+  enable the `Enable Spot & Margin Trading` permission in Binance's API
+  Management console.
+- **Separate duties if needed.** You can create one key for trading operations
+  and another with `USER_DATA` access for monitoring, limiting blast radius if a
+  secret leaks.
+
+Treat the keys like passwords: never share them, and revoke them immediately if
+you suspect compromise.

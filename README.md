@@ -18,7 +18,7 @@ To understand how the command center actually conducts those layers moment by mo
 
 For a technical inventory of the full data pipeline—from field sensors and network transport to AI services, rendering engines, and display surfaces—consult the [Nexus Live Visuals Architecture](docs/nexus_live_visuals_architecture.md). It captures the definitive sensor taxonomy, transmission budgets, AI stack, visualization toolkit, and signature live experiences now powering NEXUS-LIVE.
 
-For guidance on how backend endpoints resolve their data, including the priority order between the Matching Engine, in-memory caches, and persistent databases, see the [API Data Source Resolution guide](docs/api_data_sources.md).
+
 
 ## Installing the A.L.F.I.E. Evolution Pack
 

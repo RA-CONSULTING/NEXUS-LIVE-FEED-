@@ -26,10 +26,9 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-
 import numbers
 from decimal import Decimal
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+<n
 
 import numpy as np
 
@@ -101,94 +100,6 @@ def _ensure_requests() -> None:
         )
 
 
-def _float(value: Optional[str], default: float) -> float:
-    """Return ``value`` parsed as ``float`` or ``default`` when not provided."""
-
-    if value is None or value == "":
-        return default
-    try:
-        return float(value)
-    except (TypeError, ValueError):  # pragma: no cover - defensive fallback
-        return default
-
-
-def _float_optional(value: Optional[str], default: Optional[float] = None) -> Optional[float]:
-    """Parse an optional float while preserving ``None`` when unset."""
-
-    if value is None or value == "":
-        return default
-    try:
-        return float(value)
-    except (TypeError, ValueError):  # pragma: no cover - defensive fallback
-        return default
-
-
-def _parse_streams(value: Optional[Sequence[str] | str]) -> Optional[List[str]]:
-    """Parse a stream specification from environment variables."""
-
-    if value is None:
-        return None
-    if isinstance(value, str):
-        parts = value.split(",")
-    else:
-        parts = list(value)
-    try:
-        return _normalize_streams(parts)
-    except ValueError:
-        return None
-
-
-def resolve_streams(config: "TradingConfig") -> List[str]:
-    """Return the Binance stream identifiers that should be consumed."""
-
-    if config.ws_streams:
-        return _normalize_streams(config.ws_streams)
-    symbol_stream = f"{config.symbol.lower()}@kline_{config.ws_kline_interval.lower()}"
-    return [symbol_stream]
-
-
-def _ensure_suffix(base_url: str, suffix: str) -> str:
-    base = base_url.rstrip("/")
-    desired = suffix.lstrip("/")
-    if base.endswith(desired):
-        return base
-    if desired == "stream" and base.endswith("ws"):
-        return f"{base[:-2]}stream"
-    if desired == "ws" and base.endswith("stream"):
-        return f"{base[:-6]}ws"
-    return f"{base}/{desired}"
-
-
-def build_websocket_stream_url(
-    config: "TradingConfig", streams: Optional[Sequence[str]] = None
-) -> str:
-    """Build the Binance WebSocket URL based on the provided configuration."""
-
-    resolved_streams = list(streams or resolve_streams(config))
-    if not resolved_streams:
-        raise ValueError("At least one stream must be provided")
-
-    use_combined = config.ws_use_combined
-    if use_combined is None:
-        use_combined = len(resolved_streams) > 1
-
-    base_url = config.ws_url or DEFAULT_WS_URL
-    if use_combined:
-        base = _ensure_suffix(base_url, "stream")
-        stream_spec = "/".join(resolved_streams)
-        url = f"{base}?streams={stream_spec}"
-    else:
-        base = _ensure_suffix(base_url, "ws")
-        if len(resolved_streams) > 1:  # pragma: no cover - configuration safeguard
-            raise ValueError(
-                "Multiple streams require combined mode. Set ws_use_combined=True."
-            )
-        url = f"{base}/{resolved_streams[0]}"
-
-    if config.ws_time_unit:
-        separator = "&" if "?" in url else "?"
-        url = f"{url}{separator}timeUnit={config.ws_time_unit}"
-    return url
 
 
 @dataclass
@@ -244,7 +155,7 @@ class TradingConfig:
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             symbol=os.getenv("QGITA_SYMBOL", "BTCUSDT").upper(),
-            symbol_status=_symbol_status,
+            symbol_status=_parse_symbol_status(os.getenv("QGITA_SYMBOL_STATUS")),
             base_url=os.getenv("QGITA_BINANCE_URL", DEFAULT_REST_URL),
             ws_url=os.getenv("QGITA_BINANCE_WS", DEFAULT_WS_URL),
             position_size_usdt=float(os.getenv("QGITA_POSITION_SIZE", "100")),
@@ -360,6 +271,12 @@ class BinanceRESTClient:
         if requests is None:  # pragma: no cover - dependency guard
             raise RuntimeError("The 'requests' library is required for live price data")
         symbol = symbol or self.config.symbol
+        params: Dict[str, Any] = {"symbol": symbol}
+        status = symbol_status
+        if status is None:
+            status = self.config.symbol_status
+        if status:
+            params["symbolStatus"] = status
 
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",

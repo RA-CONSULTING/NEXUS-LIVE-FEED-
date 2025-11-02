@@ -6,6 +6,21 @@ Unless otherwise specified, responses originate from an in-memory cache backed b
 
 ---
 
+## Error Codes
+
+All account endpoints can return an error payload instead of the usual result object. When an operation fails, Binance responds with a numeric `code` and a descriptive `msg` explaining the failure condition. A minimal example looks like:
+
+```json
+{
+  "code": -1121,
+  "msg": "Invalid symbol."
+}
+```
+
+The JSON-RPC gateway mirrors this structure by embedding the payload above inside the response envelope's `error` field while setting `status` to the associated HTTP error code. Reference the official Binance [Error Codes](https://binance-docs.github.io/apidocs/spot/en/#error-codes) catalogue for the authoritative list of `code` values and troubleshooting guidance.
+
+---
+
 ## Account Status — `account.status`
 
 Query high-level account information, including commission settings, flags indicating whether trading/withdrawals/deposits are enabled, and the current asset balances. When `omitZeroBalances` is set to `true`, only assets with a non-zero `free` or `locked` value are returned.

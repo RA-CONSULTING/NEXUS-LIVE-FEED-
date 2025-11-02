@@ -25,8 +25,10 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Deque, Dict, Iterable, List, Optional
+from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional
 
+import numbers
+from decimal import Decimal
 import numpy as np
 import requests
 
@@ -131,11 +133,38 @@ class BinanceRESTClient:
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
-    def _signed_request(self, method: str, path: str, params: Dict[str, str]) -> dict:
+    def _format_value(self, value: Any) -> str:
+        """Convert ``value`` to a string accepted by the Binance API."""
+
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, numbers.Integral) and not isinstance(value, bool):
+            return str(int(value))
+        if isinstance(value, Decimal):
+            text = format(value, "f")
+            if "." in text:
+                text = text.rstrip("0").rstrip(".")
+            return text or "0"
+        if isinstance(value, numbers.Real):
+            text = format(float(value), "f")
+            if "." in text:
+                text = text.rstrip("0").rstrip(".")
+            return text or "0"
+        return str(value)
+
+    def _prepare_params(self, params: Mapping[str, Any]) -> Dict[str, str]:
+        prepared: Dict[str, str] = {}
+        for key, value in params.items():
+            if value is None:
+                continue
+            prepared[str(key)] = self._format_value(value)
+        return prepared
+
+    def _signed_request(self, method: str, path: str, params: Mapping[str, Any]) -> dict:
         if not self.config.api_secret:
             raise RuntimeError("API secret is required for signed requests")
 
-        params = dict(params)
+        params = self._prepare_params(params)
         params["timestamp"] = str(_timestamp_ms())
         params["signature"] = _hmac_signature(self.config.api_secret, params)
 
@@ -148,6 +177,41 @@ class BinanceRESTClient:
         )
         response.raise_for_status()
         return response.json()
+
+    def _build_prefixed_params(
+        self, prefix: str, options: Optional[Mapping[str, Any]]
+    ) -> Dict[str, Any]:
+        if not options:
+            return {}
+
+        suffix_map = {
+            "client_order_id": "ClientOrderId",
+            "iceberg_qty": "IcebergQty",
+            "price": "Price",
+            "stop_price": "StopPrice",
+            "trailing_delta": "TrailingDelta",
+            "time_in_force": "TimeInForce",
+            "strategy_id": "StrategyId",
+            "strategy_type": "StrategyType",
+            "peg_price_type": "PegPriceType",
+            "peg_offset_type": "PegOffsetType",
+            "peg_offset_value": "PegOffsetValue",
+            "side": "Side",
+            "type": "Type",
+            "quantity": "Quantity",
+            "stop_limit_price": "StopLimitPrice",
+            "stop_limit_time_in_force": "StopLimitTimeInForce",
+        }
+
+        formatted: Dict[str, Any] = {}
+        for key, value in options.items():
+            if value is None:
+                continue
+            suffix = suffix_map.get(key)
+            if suffix is None:
+                suffix = "".join(part.capitalize() for part in key.split("_"))
+            formatted[f"{prefix}{suffix}"] = value
+        return formatted
 
     def get_account(self) -> dict:
         """Return account information (signed endpoint)."""
@@ -167,24 +231,584 @@ class BinanceRESTClient:
         payload = response.json()
         return float(payload["price"])
 
+    def _new_order_payload(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        time_in_force: Optional[str] = None,
+        quantity: Optional[float] = None,
+        quote_order_qty: Optional[float] = None,
+        price: Optional[float] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        stop_price: Optional[float] = None,
+        trailing_delta: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        peg_price_type: Optional[str] = None,
+        peg_offset_value: Optional[int] = None,
+        peg_offset_type: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "side": side,
+            "type": order_type,
+        }
+        if time_in_force is not None:
+            params["timeInForce"] = time_in_force
+        if quantity is not None:
+            params["quantity"] = quantity
+        if quote_order_qty is not None:
+            params["quoteOrderQty"] = quote_order_qty
+        if price is not None:
+            params["price"] = price
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if strategy_id is not None:
+            params["strategyId"] = strategy_id
+        if strategy_type is not None:
+            params["strategyType"] = strategy_type
+        if stop_price is not None:
+            params["stopPrice"] = stop_price
+        if trailing_delta is not None:
+            params["trailingDelta"] = trailing_delta
+        if iceberg_qty is not None:
+            params["icebergQty"] = iceberg_qty
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if peg_price_type is not None:
+            params["pegPriceType"] = peg_price_type
+        if peg_offset_value is not None:
+            params["pegOffsetValue"] = peg_offset_value
+        if peg_offset_type is not None:
+            params["pegOffsetType"] = peg_offset_type
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return params
+
+    def new_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        time_in_force: Optional[str] = None,
+        quantity: Optional[float] = None,
+        quote_order_qty: Optional[float] = None,
+        price: Optional[float] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        stop_price: Optional[float] = None,
+        trailing_delta: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        peg_price_type: Optional[str] = None,
+        peg_offset_value: Optional[int] = None,
+        peg_offset_type: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params = self._new_order_payload(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            time_in_force=time_in_force,
+            quantity=quantity,
+            quote_order_qty=quote_order_qty,
+            price=price,
+            new_client_order_id=new_client_order_id,
+            strategy_id=strategy_id,
+            strategy_type=strategy_type,
+            stop_price=stop_price,
+            trailing_delta=trailing_delta,
+            iceberg_qty=iceberg_qty,
+            new_order_resp_type=new_order_resp_type,
+            self_trade_prevention_mode=self_trade_prevention_mode,
+            peg_price_type=peg_price_type,
+            peg_offset_value=peg_offset_value,
+            peg_offset_type=peg_offset_type,
+            recv_window=recv_window,
+            extra_params=extra_params,
+        )
+        return self._signed_request("POST", "/api/v3/order", params)
+
+    def test_new_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        time_in_force: Optional[str] = None,
+        quantity: Optional[float] = None,
+        quote_order_qty: Optional[float] = None,
+        price: Optional[float] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        stop_price: Optional[float] = None,
+        trailing_delta: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        peg_price_type: Optional[str] = None,
+        peg_offset_value: Optional[int] = None,
+        peg_offset_type: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        compute_commission_rates: Optional[bool] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params = self._new_order_payload(
+            symbol=symbol,
+            side=side,
+            order_type=order_type,
+            time_in_force=time_in_force,
+            quantity=quantity,
+            quote_order_qty=quote_order_qty,
+            price=price,
+            new_client_order_id=new_client_order_id,
+            strategy_id=strategy_id,
+            strategy_type=strategy_type,
+            stop_price=stop_price,
+            trailing_delta=trailing_delta,
+            iceberg_qty=iceberg_qty,
+            new_order_resp_type=new_order_resp_type,
+            self_trade_prevention_mode=self_trade_prevention_mode,
+            peg_price_type=peg_price_type,
+            peg_offset_value=peg_offset_value,
+            peg_offset_type=peg_offset_type,
+            recv_window=recv_window,
+            extra_params=extra_params,
+        )
+        if compute_commission_rates is not None:
+            params["computeCommissionRates"] = compute_commission_rates
+        return self._signed_request("POST", "/api/v3/order/test", params)
+
     def place_order(
         self,
         *,
         symbol: Optional[str] = None,
         side: str,
-        quantity: float,
+        quantity: Optional[float] = None,
         order_type: str = "MARKET",
+        price: Optional[float] = None,
+        time_in_force: Optional[str] = None,
+        quote_order_qty: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
     ) -> dict:
-        """Place a live order. Paper mode is handled elsewhere."""
+        """Convenience wrapper that mirrors the previous ``place_order`` API."""
 
-        symbol = symbol or self.config.symbol
-        params = {
+        resolved_symbol = symbol or self.config.symbol
+        return self.new_order(
+            symbol=resolved_symbol,
+            side=side,
+            order_type=order_type,
+            time_in_force=time_in_force,
+            quantity=quantity,
+            quote_order_qty=quote_order_qty,
+            price=price,
+            extra_params=extra_params,
+        )
+
+    def cancel_order(
+        self,
+        *,
+        symbol: str,
+        order_id: Optional[int] = None,
+        orig_client_order_id: Optional[str] = None,
+        new_client_order_id: Optional[str] = None,
+        cancel_restrictions: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {"symbol": symbol}
+        if order_id is not None:
+            params["orderId"] = order_id
+        if orig_client_order_id is not None:
+            params["origClientOrderId"] = orig_client_order_id
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if cancel_restrictions is not None:
+            params["cancelRestrictions"] = cancel_restrictions
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("DELETE", "/api/v3/order", params)
+
+    def cancel_all_open_orders(
+        self,
+        *,
+        symbol: str,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {"symbol": symbol}
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("DELETE", "/api/v3/openOrders", params)
+
+    def cancel_replace_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        cancel_replace_mode: str,
+        time_in_force: Optional[str] = None,
+        quantity: Optional[float] = None,
+        quote_order_qty: Optional[float] = None,
+        price: Optional[float] = None,
+        cancel_new_client_order_id: Optional[str] = None,
+        cancel_orig_client_order_id: Optional[str] = None,
+        cancel_order_id: Optional[int] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        stop_price: Optional[float] = None,
+        trailing_delta: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        cancel_restrictions: Optional[str] = None,
+        order_rate_limit_exceeded_mode: Optional[str] = None,
+        peg_price_type: Optional[str] = None,
+        peg_offset_value: Optional[int] = None,
+        peg_offset_type: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
             "symbol": symbol,
             "side": side,
             "type": order_type,
-            "quantity": f"{quantity:.{self.config.quantity_precision}f}",
+            "cancelReplaceMode": cancel_replace_mode,
         }
-        return self._signed_request("POST", "/api/v3/order", params)
+        if time_in_force is not None:
+            params["timeInForce"] = time_in_force
+        if quantity is not None:
+            params["quantity"] = quantity
+        if quote_order_qty is not None:
+            params["quoteOrderQty"] = quote_order_qty
+        if price is not None:
+            params["price"] = price
+        if cancel_new_client_order_id is not None:
+            params["cancelNewClientOrderId"] = cancel_new_client_order_id
+        if cancel_orig_client_order_id is not None:
+            params["cancelOrigClientOrderId"] = cancel_orig_client_order_id
+        if cancel_order_id is not None:
+            params["cancelOrderId"] = cancel_order_id
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if strategy_id is not None:
+            params["strategyId"] = strategy_id
+        if strategy_type is not None:
+            params["strategyType"] = strategy_type
+        if stop_price is not None:
+            params["stopPrice"] = stop_price
+        if trailing_delta is not None:
+            params["trailingDelta"] = trailing_delta
+        if iceberg_qty is not None:
+            params["icebergQty"] = iceberg_qty
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if cancel_restrictions is not None:
+            params["cancelRestrictions"] = cancel_restrictions
+        if order_rate_limit_exceeded_mode is not None:
+            params["orderRateLimitExceededMode"] = order_rate_limit_exceeded_mode
+        if peg_price_type is not None:
+            params["pegPriceType"] = peg_price_type
+        if peg_offset_value is not None:
+            params["pegOffsetValue"] = peg_offset_value
+        if peg_offset_type is not None:
+            params["pegOffsetType"] = peg_offset_type
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/order/cancelReplace", params)
+
+    def amend_order_keep_priority(
+        self,
+        *,
+        symbol: str,
+        new_qty: float,
+        order_id: Optional[int] = None,
+        orig_client_order_id: Optional[str] = None,
+        new_client_order_id: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {"symbol": symbol, "newQty": new_qty}
+        if order_id is not None:
+            params["orderId"] = order_id
+        if orig_client_order_id is not None:
+            params["origClientOrderId"] = orig_client_order_id
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request(
+            "PUT", "/api/v3/order/amend/keepPriority", params
+        )
+
+    def new_order_list_oco(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        quantity: float,
+        above_type: str,
+        below_type: str,
+        list_client_order_id: Optional[str] = None,
+        above_options: Optional[Mapping[str, Any]] = None,
+        below_options: Optional[Mapping[str, Any]] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "side": side,
+            "quantity": quantity,
+            "aboveType": above_type,
+            "belowType": below_type,
+        }
+        if list_client_order_id is not None:
+            params["listClientOrderId"] = list_client_order_id
+        params.update(self._build_prefixed_params("above", above_options))
+        params.update(self._build_prefixed_params("below", below_options))
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/orderList/oco", params)
+
+    def new_order_list_oto(
+        self,
+        *,
+        symbol: str,
+        working_type: str,
+        working_side: str,
+        working_quantity: float,
+        pending_type: str,
+        pending_side: str,
+        pending_quantity: float,
+        list_client_order_id: Optional[str] = None,
+        working_options: Optional[Mapping[str, Any]] = None,
+        pending_options: Optional[Mapping[str, Any]] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "workingType": working_type,
+            "workingSide": working_side,
+            "workingQuantity": working_quantity,
+            "pendingType": pending_type,
+            "pendingSide": pending_side,
+            "pendingQuantity": pending_quantity,
+        }
+        if list_client_order_id is not None:
+            params["listClientOrderId"] = list_client_order_id
+        params.update(self._build_prefixed_params("working", working_options))
+        params.update(self._build_prefixed_params("pending", pending_options))
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/orderList/oto", params)
+
+    def new_order_list_otoco(
+        self,
+        *,
+        symbol: str,
+        working_type: str,
+        working_side: str,
+        working_quantity: float,
+        pending_side: str,
+        pending_quantity: float,
+        pending_above_type: str,
+        pending_below_type: str,
+        list_client_order_id: Optional[str] = None,
+        working_options: Optional[Mapping[str, Any]] = None,
+        pending_above_options: Optional[Mapping[str, Any]] = None,
+        pending_below_options: Optional[Mapping[str, Any]] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "workingType": working_type,
+            "workingSide": working_side,
+            "workingQuantity": working_quantity,
+            "pendingSide": pending_side,
+            "pendingQuantity": pending_quantity,
+            "pendingAboveType": pending_above_type,
+            "pendingBelowType": pending_below_type,
+        }
+        if list_client_order_id is not None:
+            params["listClientOrderId"] = list_client_order_id
+        params.update(self._build_prefixed_params("working", working_options))
+        params.update(self._build_prefixed_params("pendingAbove", pending_above_options))
+        params.update(self._build_prefixed_params("pendingBelow", pending_below_options))
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/orderList/otoco", params)
+
+    def cancel_order_list(
+        self,
+        *,
+        symbol: str,
+        order_list_id: Optional[int] = None,
+        list_client_order_id: Optional[str] = None,
+        new_client_order_id: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {"symbol": symbol}
+        if order_list_id is not None:
+            params["orderListId"] = order_list_id
+        if list_client_order_id is not None:
+            params["listClientOrderId"] = list_client_order_id
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("DELETE", "/api/v3/orderList", params)
+
+    def new_sor_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        quantity: float,
+        time_in_force: Optional[str] = None,
+        price: Optional[float] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "side": side,
+            "type": order_type,
+            "quantity": quantity,
+        }
+        if time_in_force is not None:
+            params["timeInForce"] = time_in_force
+        if price is not None:
+            params["price"] = price
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if strategy_id is not None:
+            params["strategyId"] = strategy_id
+        if strategy_type is not None:
+            params["strategyType"] = strategy_type
+        if iceberg_qty is not None:
+            params["icebergQty"] = iceberg_qty
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/sor/order", params)
+
+    def test_new_sor_order(
+        self,
+        *,
+        symbol: str,
+        side: str,
+        order_type: str,
+        quantity: float,
+        time_in_force: Optional[str] = None,
+        price: Optional[float] = None,
+        new_client_order_id: Optional[str] = None,
+        strategy_id: Optional[int] = None,
+        strategy_type: Optional[int] = None,
+        iceberg_qty: Optional[float] = None,
+        new_order_resp_type: Optional[str] = None,
+        self_trade_prevention_mode: Optional[str] = None,
+        recv_window: Optional[float] = None,
+        compute_commission_rates: Optional[bool] = None,
+        extra_params: Optional[Mapping[str, Any]] = None,
+    ) -> dict:
+        params: Dict[str, Any] = {
+            "symbol": symbol,
+            "side": side,
+            "type": order_type,
+            "quantity": quantity,
+        }
+        if time_in_force is not None:
+            params["timeInForce"] = time_in_force
+        if price is not None:
+            params["price"] = price
+        if new_client_order_id is not None:
+            params["newClientOrderId"] = new_client_order_id
+        if strategy_id is not None:
+            params["strategyId"] = strategy_id
+        if strategy_type is not None:
+            params["strategyType"] = strategy_type
+        if iceberg_qty is not None:
+            params["icebergQty"] = iceberg_qty
+        if new_order_resp_type is not None:
+            params["newOrderRespType"] = new_order_resp_type
+        if self_trade_prevention_mode is not None:
+            params["selfTradePreventionMode"] = self_trade_prevention_mode
+        if recv_window is not None:
+            params["recvWindow"] = recv_window
+        if compute_commission_rates is not None:
+            params["computeCommissionRates"] = compute_commission_rates
+        if extra_params:
+            params.update({str(k): v for k, v in extra_params.items()})
+        return self._signed_request("POST", "/api/v3/sor/order/test", params)
 
 
 class PaperExchange:

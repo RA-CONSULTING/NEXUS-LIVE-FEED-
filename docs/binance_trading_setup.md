@@ -134,3 +134,21 @@ The implementation enforces several safeguards:
 
 These values should be tuned for your account size and risk tolerance before
 live deployment.
+
+## 6. Trading Endpoint Helpers
+
+The `BinanceRESTClient` used by the bot now wraps the complete suite of spot
+trading endpoints exposed by Binance's `/api/v3` REST API. In addition to basic
+order placement, you can programmatically:
+
+- submit and validate new orders (`new_order`, `test_new_order`),
+- cancel individual orders or every open order on a symbol,
+- issue cancel-replace requests with fine-grained control over order behaviour,
+- amend open orders while retaining book priority,
+- manage OCO/OTO/OTOCO order lists through dedicated helpers, and
+- interact with Smart Order Routing (SOR) by calling `new_sor_order` or its test
+  variant.
+
+Each helper accepts keyword arguments that map directly to the parameters
+documented in the Binance API specification, while the client automatically
+handles timestamping, signing, and conversion to the wire format.

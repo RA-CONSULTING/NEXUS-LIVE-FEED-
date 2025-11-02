@@ -25,10 +25,10 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
->>>>> main
-
 import numbers
 from decimal import Decimal
+from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Tuple
+
 import numpy as np
 
 try:  # pragma: no cover - optional dependency for REST interactions
@@ -98,6 +98,84 @@ def _ensure_requests() -> None:
         )
 
 
+def _parse_streams(value: Optional[str]) -> Optional[List[str]]:
+    """Parse an environment value into Binance stream identifiers."""
+
+    if value is None:
+        return None
+
+    text = value.strip()
+    if not text:
+        return None
+
+    candidates: List[str]
+    if text.startswith("["):
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            parsed = None
+        if isinstance(parsed, list):
+            candidates = [str(item) for item in parsed if item is not None]
+        elif isinstance(parsed, str):
+            candidates = [parsed]
+        else:
+            candidates = text.replace(";", ",").split(",")
+    else:
+        normalized = text.replace(";", ",")
+        pieces = []
+        for chunk in normalized.split(","):
+            pieces.extend(part for part in chunk.split() if part)
+        candidates = pieces
+
+    try:
+        streams = _normalize_streams(candidates)
+    except ValueError:
+        return None
+    return streams
+
+
+def _float(value: Optional[str], default: float) -> float:
+    """Parse a float from ``value`` with ``default`` fallback."""
+
+    if value is None:
+        return default
+    text = value.strip()
+    if not text:
+        return default
+    try:
+        return float(text)
+    except ValueError:
+        return default
+
+
+def _float_optional(value: Optional[str], default: Optional[float]) -> Optional[float]:
+    """Parse an optional float from ``value`` with ``default`` fallback."""
+
+    if value is None:
+        return default
+    text = value.strip()
+    if not text:
+        return default
+    lowered = text.lower()
+    if lowered in {"none", "null", "off", "false"}:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return default
+
+
+def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
+    """Parse the optional ``symbolStatus`` trading phase guard."""
+
+    if value is None:
+        return "TRADING"
+    text = value.strip()
+    if not text or text.lower() in {"none", "null", "any", "*"}:
+        return None
+    return text.upper()
+
+
 @dataclass
 class TradingConfig:
     """Runtime configuration for the trading bot."""
@@ -149,7 +227,7 @@ class TradingConfig:
             api_key=os.getenv("BINANCE_API_KEY", ""),
             api_secret=os.getenv("BINANCE_API_SECRET", ""),
             symbol=os.getenv("QGITA_SYMBOL", "BTCUSDT").upper(),
-            symbol_status=_symbol_status,
+            symbol_status=_parse_symbol_status(os.getenv("QGITA_SYMBOL_STATUS")),
             base_url=os.getenv("QGITA_BINANCE_URL", DEFAULT_REST_URL),
             ws_url=os.getenv("QGITA_BINANCE_WS", DEFAULT_WS_URL),
             position_size_usdt=float(os.getenv("QGITA_POSITION_SIZE", "100")),
@@ -334,6 +412,12 @@ class BinanceRESTClient:
         """Return the latest spot price for ``symbol``."""
 
         symbol = symbol or self.config.symbol
+        params: Dict[str, Any] = {"symbol": symbol}
+        status = symbol_status
+        if status is None:
+            status = self.config.symbol_status
+        if status:
+            params["symbolStatus"] = status
 
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",

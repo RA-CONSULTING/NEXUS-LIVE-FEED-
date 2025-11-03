@@ -1067,3 +1067,75 @@ through the public data mirror.
     ]
   }
   ```
+
+## Mining Coin Catalogue — `GET /sapi/v1/mining/pub/coinList` · `method: "mining.coinList"`
+
+Enumerates every asset supported by Binance Pool along with its algorithm metadata. The endpoint is
+a zero-parameter market data call surfaced under the SAPI mining namespace, so it does not require
+API key signing and carries a negligible request weight. Use it to populate dropdown selectors for
+hashrate monitoring or to validate user input when bootstrapping mining dashboards.
+
+- **Weight:** 1
+- **Parameters:** _none_
+- **Notes:** Values are returned in ascending `poolIndex` order. The list is versioned centrally by
+  Binance; clients should treat `coinId` as an opaque identifier and persist `algoId`/`algoName`
+  pairs when they need to filter by hashing algorithm.
+- **Data source:** Memory ⇒ Database
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `coinName` | STRING | Ticker-style symbol for the minable asset (e.g., `BTC`). |
+| `coinId` | INTEGER | Stable identifier for the asset within Binance Pool. |
+| `poolIndex` | INTEGER | Sort order for display within the Binance Pool UI. |
+| `algoId` | INTEGER | Stable identifier for the hashing algorithm. |
+| `algoName` | STRING | Human-readable algorithm name (e.g., `sha256`). |
+
+**Sample REST request**
+
+```bash
+curl -s "https://api.binance.com/sapi/v1/mining/pub/coinList"
+```
+
+**Sample JSON-RPC request**
+
+```json
+{
+  "id": "8e3d8738-1fb7-4d15-8104-cb0287f9a055",
+  "method": "mining.coinList",
+  "params": {}
+}
+```
+
+**Response**
+
+```json
+{
+  "id": "8e3d8738-1fb7-4d15-8104-cb0287f9a055",
+  "status": 200,
+  "result": [
+    {
+      "coinName": "BTC",
+      "coinId": 1,
+      "poolIndex": 0,
+      "algoId": 1,
+      "algoName": "sha256"
+    },
+    {
+      "coinName": "BCH",
+      "coinId": 2,
+      "poolIndex": 1,
+      "algoId": 1,
+      "algoName": "sha256"
+    }
+  ],
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 6000,
+      "count": 1
+    }
+  ]
+}
+```

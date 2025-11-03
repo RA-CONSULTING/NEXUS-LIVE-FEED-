@@ -44,8 +44,23 @@ def test_build_request_frame_returns_json_when_requested() -> None:
     decoded = json.loads(frame_text)
     assert decoded["id"] == "42"
     assert decoded["method"] == "order.place"
-    assert decoded["apiKey"] == "api-key"
-    assert decoded["params"]["timestamp"] == 1234567890000
+    assert "apiKey" not in decoded
+
+    params_payload = decoded["params"]
+    assert params_payload["timestamp"] == 1234567890000
+    assert params_payload["apiKey"] == "api-key"
+
+    expected_signature = _manual_signature(
+        {
+            "apiKey": "api-key",
+            "side": "SELL",
+            "symbol": "ETHUSDT",
+            "timestamp": 1234567890000,
+            "type": "MARKET",
+        },
+        "secret",
+    )
+    assert params_payload["signature"] == expected_signature
     # The helper should not mutate the original mapping.
     assert "timestamp" not in params
 

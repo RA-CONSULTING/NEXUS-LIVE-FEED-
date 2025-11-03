@@ -1,12 +1,16 @@
 """Utilities for building signed private WebSocket requests.
 
 The Binance private WebSocket API (and other exchange JSON-RPC endpoints)
-expect each request frame to carry an ``id``, a method name, a ``params``
-object, the API key, and an HMAC signature computed over the parameters.
+expect each request frame to carry an ``id``, a method name and a ``params``
+object that already embeds both the API key and the HMAC signature of the
+parameters. This mirrors the JSON-RPC examples in the trading documentation
+where credentials live alongside the business fields such as ``symbol`` or
+``price``.
 
 This module provides a small helper that normalises the request parameters,
-computes the signature deterministically, and optionally returns the payload
-as a JSON encoded string ready to be sent as a text frame.
+computes the signature deterministically, injects the credentials into the
+``params`` mapping, and optionally returns the payload as a JSON encoded
+string ready to be sent as a text frame.
 
 The implementation is intentionally dependency free so it can be imported
 from both production code and tests without pulling in third‑party modules.
@@ -106,12 +110,21 @@ def build_request_frame(
         timestamp_ms = int(time.time() * 1000)
     payload.setdefault("timestamp", timestamp_ms)
 
+    if "signature" in payload:
+        raise ValueError("Signature must not be pre-populated in params")
+
+    if "apiKey" in payload and payload["apiKey"] != api_key:
+        raise ValueError("API key in params does not match provided api_key")
+    payload.setdefault("apiKey", api_key)
+
+    signature = sign_params(payload, api_secret)
+    payload_with_signature = dict(payload)
+    payload_with_signature["signature"] = signature
+
     frame = {
         "id": request_id if request_id is not None else str(uuid.uuid4()),
         "method": method,
-        "params": dict(payload),
-        "apiKey": api_key,
-        "signature": sign_params(payload, api_secret),
+        "params": payload_with_signature,
     }
 
     if as_text:

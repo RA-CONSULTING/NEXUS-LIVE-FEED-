@@ -109,6 +109,34 @@ through the public data mirror.
   }
   ```
 
+## Mining Algorithm Catalogue – `GET /sapi/v1/mining/pub/algoList` · `method: "mining.algoList"`
+
+- **Weight:** 1
+- **Parameters:** none
+- **Notes:** Returns the catalog of proof-of-work algorithms that Binance's mining pool supports.
+  Each entry includes the public-facing name, the numeric `algoId` used when configuring endpoints
+  such as hashpower marketplace orders, an internal `poolIndex`, and the hash rate `unit`. The
+  payload is static until Binance lists a new algorithm, making it safe to cache for long periods. No
+  API key is required despite the `sapi` prefix.
+- **Data source:** Memory
+- **RPC request:** Not currently mirrored on the Spot JSON-RPC gateway; call the REST route.
+- **Response:**
+
+  ```json
+  {
+    "code": 0,
+    "msg": "",
+    "data": [
+      {
+        "algoName": "sha256",
+        "algoId": 1,
+        "poolIndex": 0,
+        "unit": "h/s"
+      }
+    ]
+  }
+  ```
+
 ## Recent Trades – `GET /api/v3/trades` · `method: "trades.recent"`
 
 - **Weight:** 25

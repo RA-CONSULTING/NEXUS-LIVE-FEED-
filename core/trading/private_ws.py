@@ -1,15 +1,11 @@
-"""Utilities for building signed private WebSocket requests.
+"""Utilities for constructing Binance WebSocket API request frames.
 
-The Binance private WebSocket API (and other exchange JSON-RPC endpoints)
-expect each request frame to carry an ``id``, a method name, a ``params``
-object, the API key, and an HMAC signature computed over the parameters.
 
-This module provides a small helper that normalises the request parameters,
-computes the signature deterministically, and optionally returns the payload
-as a JSON encoded string ready to be sent as a text frame.
 
-The implementation is intentionally dependency free so it can be imported
-from both production code and tests without pulling in third‑party modules.
+This module streamlines both flows by normalising parameters, performing light
+validation, and optionally serialising the payload to JSON. The helpers remain
+dependency-free so they can be imported from tests or utility scripts without
+pulling in heavy third-party modules.
 """
 
 from __future__ import annotations
@@ -19,7 +15,160 @@ import hmac
 import json
 import time
 import uuid
-from typing import Any, Mapping, MutableMapping
+from typing import Any, Mapping, MutableMapping, Sequence
+
+
+def _validate_method(method: str) -> str:
+    if not isinstance(method, str) or not method:
+        raise ValueError("method must be a non-empty string")
+    return method
+
+
+def _ensure_mapping(params: Mapping[str, Any] | None) -> MutableMapping[str, Any]:
+    if params is None:
+        return {}
+    if not isinstance(params, Mapping):
+        raise TypeError("params must be a mapping or None")
+    return dict(params)
+
+
+def _apply_return_rate_limits(
+    params: MutableMapping[str, Any],
+    return_rate_limits: bool | None,
+) -> None:
+    if return_rate_limits is None:
+        return
+    if not isinstance(return_rate_limits, bool):
+        raise TypeError("return_rate_limits must be a boolean or None")
+    params["returnRateLimits"] = return_rate_limits
+
+
+def build_public_request(
+    method: str,
+    params: Mapping[str, Any] | None = None,
+    *,
+    request_id: str | int | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Construct a JSON-RPC frame for public WebSocket API requests."""
+
+    _validate_method(method)
+
+    payload = _ensure_mapping(params)
+    frame: MutableMapping[str, Any] = {
+        "id": request_id if request_id is not None else str(uuid.uuid4()),
+        "method": method,
+    }
+    if payload:
+        frame["params"] = dict(payload)
+    if as_text:
+        return json.dumps(frame, separators=(",", ":"))
+    return dict(frame)
+
+
+def ping_request(
+    *,
+    request_id: str | int | None = None,
+    return_rate_limits: bool | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return a ``ping`` request frame used to test connection health."""
+
+    params: MutableMapping[str, Any] = {}
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "ping",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
+
+
+def server_time_request(
+    *,
+    request_id: str | int | None = None,
+    return_rate_limits: bool | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return a ``time`` request frame to query the server timestamp."""
+
+    params: MutableMapping[str, Any] = {}
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "time",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
+
+
+_VALID_SYMBOL_STATUSES = {"TRADING", "HALT", "BREAK"}
+
+
+def exchange_info_request(
+    *,
+    symbol: str | None = None,
+    symbols: Sequence[str] | None = None,
+    permissions: Sequence[str] | str | None = None,
+    show_permission_sets: bool | None = None,
+    symbol_status: str | None = None,
+    return_rate_limits: bool | None = None,
+    request_id: str | int | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return an ``exchangeInfo`` request frame with validation applied."""
+
+    filters = [value is not None for value in (symbol, symbols, permissions)]
+    if sum(filters) > 1:
+        raise ValueError("Specify only one of symbol, symbols, or permissions")
+
+    if symbol_status is not None:
+        if not isinstance(symbol_status, str):
+            raise TypeError("symbol_status must be a string or None")
+        if symbol_status not in _VALID_SYMBOL_STATUSES:
+            valid = ", ".join(sorted(_VALID_SYMBOL_STATUSES))
+            raise ValueError(f"symbol_status must be one of: {valid}")
+        if symbol is not None or symbols is not None:
+            raise ValueError("symbol_status cannot be combined with symbol or symbols")
+
+    params: MutableMapping[str, Any] = {}
+    if symbol is not None:
+        if not isinstance(symbol, str) or not symbol:
+            raise ValueError("symbol must be a non-empty string when provided")
+        params["symbol"] = symbol
+
+    if symbols is not None:
+        if isinstance(symbols, (str, bytes)):
+            raise TypeError("symbols must be a sequence of symbol strings")
+        materialised = list(symbols)
+        if not materialised:
+            raise ValueError("symbols must contain at least one symbol when provided")
+        params["symbols"] = materialised
+
+    if permissions is not None:
+        if isinstance(permissions, (str, bytes)):
+            params["permissions"] = permissions
+        else:
+            materialised = list(permissions)
+            if not materialised:
+                raise ValueError("permissions must contain at least one permission when provided")
+            params["permissions"] = materialised
+
+    if show_permission_sets is not None:
+        if not isinstance(show_permission_sets, bool):
+            raise TypeError("show_permission_sets must be a boolean or None")
+        params["showPermissionSets"] = show_permission_sets
+
+    if symbol_status is not None:
+        params["symbolStatus"] = symbol_status
+
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "exchangeInfo",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
 
 
 def _stringify(value: Any) -> str:
@@ -96,22 +245,27 @@ def build_request_frame(
 
     if not api_key:
         raise ValueError("API key is required for private WebSocket requests")
-    if params is None:
-        params = {}
-    if not isinstance(params, Mapping):
-        raise TypeError("params must be a mapping or None")
 
-    payload: MutableMapping[str, Any] = dict(params)
+    payload = _ensure_mapping(params)
     if timestamp_ms is None:
         timestamp_ms = int(time.time() * 1000)
     payload.setdefault("timestamp", timestamp_ms)
 
+    if "signature" in payload:
+        raise ValueError("Signature must not be pre-populated in params")
+
+    if "apiKey" in payload and payload["apiKey"] != api_key:
+        raise ValueError("API key in params does not match provided api_key")
+    payload.setdefault("apiKey", api_key)
+
+    signature = sign_params(payload, api_secret)
+    payload_with_signature = dict(payload)
+    payload_with_signature["signature"] = signature
+
     frame = {
         "id": request_id if request_id is not None else str(uuid.uuid4()),
         "method": method,
-        "params": dict(payload),
-        "apiKey": api_key,
-        "signature": sign_params(payload, api_secret),
+        "params": payload_with_signature,
     }
 
     if as_text:
@@ -119,99 +273,5 @@ def build_request_frame(
     return frame
 
 
-def _is_missing(value: Any) -> bool:
-    """Return ``True`` when ``value`` should be treated as unset."""
 
-    if value is None:
-        return True
-    if isinstance(value, str) and value.strip() == "":
-        return True
-    return False
-
-
-def _require(params: Mapping[str, Any], *, order_type: str, keys: tuple[str, ...]) -> None:
-    """Ensure ``keys`` are present for ``order_type`` or raise ``ValueError``."""
-
-    missing = [key for key in keys if _is_missing(params.get(key))]
-    if missing:
-        joined = ", ".join(missing)
-        raise ValueError(f"{order_type} order requires parameters: {joined}")
-
-
-def _require_any(params: Mapping[str, Any], *, order_type: str, options: tuple[str, ...]) -> None:
-    """Ensure at least one of ``options`` is present for ``order_type``."""
-
-    if not any(not _is_missing(params.get(option)) for option in options):
-        joined = " or ".join(options)
-        raise ValueError(f"{order_type} order requires at least one of: {joined}")
-
-
-def _validate_order_place_params(params: Mapping[str, Any]) -> None:
-    """Validate parameters for ``order.place`` requests."""
-
-    order_type = str(params.get("type", "")).upper()
-    if not order_type:
-        raise ValueError("order type is required for order.place requests")
-
-    _require(params, order_type=order_type, keys=("symbol", "side", "type"))
-
-    if order_type == "LIMIT":
-        _require(params, order_type=order_type, keys=("price", "quantity", "timeInForce"))
-    elif order_type == "LIMIT_MAKER":
-        _require(params, order_type=order_type, keys=("price", "quantity"))
-    elif order_type == "MARKET":
-        _require_any(params, order_type=order_type, options=("quantity", "quoteOrderQty"))
-    elif order_type in {"STOP_LOSS", "TAKE_PROFIT"}:
-        _require(params, order_type=order_type, keys=("quantity",))
-        _require_any(params, order_type=order_type, options=("stopPrice", "trailingDelta"))
-    elif order_type in {"STOP_LOSS_LIMIT", "TAKE_PROFIT_LIMIT"}:
-        _require(params, order_type=order_type, keys=("price", "quantity", "timeInForce"))
-        _require_any(params, order_type=order_type, options=("stopPrice", "trailingDelta"))
-    else:
-        raise ValueError(f"Unsupported order type: {order_type}")
-
-
-def build_order_place_request(
-    *,
-    symbol: str,
-    side: str,
-    order_type: str,
-    api_key: str,
-    api_secret: str,
-    request_id: str | int | None = None,
-    timestamp_ms: int | None = None,
-    as_text: bool = False,
-    **extra_params: Any,
-) -> dict[str, Any] | str:
-    """Build a signed ``order.place`` WebSocket request frame.
-
-    The helper enforces Binance's mandatory parameter rules for the most common
-    order types before delegating to :func:`build_request_frame`.
-    """
-
-    if _is_missing(symbol):
-        raise ValueError("symbol is required for order.place requests")
-
-    normalized_side = side.upper()
-    if normalized_side not in {"BUY", "SELL"}:
-        raise ValueError("side must be either 'BUY' or 'SELL'")
-
-    normalized_type = order_type.upper()
-    params: dict[str, Any] = {"symbol": symbol, "side": normalized_side, "type": normalized_type}
-    params.update(extra_params)
-
-    _validate_order_place_params(params)
-
-    return build_request_frame(
-        "order.place",
-        params,
-        api_key=api_key,
-        api_secret=api_secret,
-        request_id=request_id,
-        timestamp_ms=timestamp_ms,
-        as_text=as_text,
-    )
-
-
-__all__ = ["build_order_place_request", "build_request_frame", "sign_params"]
 

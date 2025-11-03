@@ -46,7 +46,8 @@ security guide.
 Authenticate the current WebSocket connection with an API key signed request.
 After a successful login subsequent signed calls may omit the `apiKey` and
 `signature` fields; the session stays bound to the authenticated key until it is
-replaced or explicitly cleared.
+replaced or explicitly cleared. You must still provide the `timestamp` parameter
+for every SIGNED request even when the session is authenticated.
 
 - **Weight:** 2
 - **Data source:** Memory
@@ -151,3 +152,33 @@ parameters.
 Multiple `session.logon` calls on the same connection replace the active API key.
 A subsequent `session.logout` only clears the binding; the socket itself remains
 open for continued use.
+
+## Session revocation
+
+If the authenticated API key becomes invalid (for example, its IP whitelist no
+longer matches, it is deleted, or its permissions change), the next authorized
+request fails and the socket automatically revokes the session. The server
+returns an HTTP-like 401 status with the following payload:
+
+```json
+{
+  "id": null,
+  "status": 401,
+  "error": {
+    "code": -2015,
+    "msg": "Invalid API-key, IP, or permissions for action."
+  }
+}
+```
+
+Once revoked, you must call `session.logon` again before sending additional
+SIGNED requests.
+
+## Authorize ad hoc requests
+
+An authenticated connection can only track one active API key at a time. When a
+request explicitly includes `apiKey` and `signature`, those values override the
+authenticated key for that single call. This allows you to keep a USER_DATA key
+bound to the connection while submitting specific signed requests with a TRADE
+key. Each request still needs its own signature regardless of the active
+session.

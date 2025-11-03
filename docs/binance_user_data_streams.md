@@ -6,6 +6,17 @@ This reference summarizes the realtime account-level events that Binance pushes 
 
 
 
+```json
+{
+  "subscriptionId": 0,
+in
+}
+```
+
+| Field | Description |
+|-------|-------------|
+
+
 ## Account Update (`outboundAccountPosition`)
 
 `outboundAccountPosition` is emitted whenever a balance changes. Only the assets affected by the triggering event are included in the payload.
@@ -54,6 +65,8 @@ This reference summarizes the realtime account-level events that Binance pushes 
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`balanceUpdate`). |
+| `E` | Event time. |
 | `a` | Asset. |
 | `d` | Balance delta. |
 | `T` | Clear time. |
@@ -196,10 +209,15 @@ An additional `listStatus` event accompanies `executionReport` events for order 
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`listStatus`). |
+| `E` | Event time. |
 | `g` | Order list ID. |
 | `c` | Contingency type (for example, `OCO`). |
 | `l` | List status type. |
 | `L` | List order status. |
+| `r` | List reject reason. |
+| `C` | List client order ID. |
+| `T` | Transaction time. |
 | `O` | Orders in the list, each with symbol (`s`), order ID (`i`), and client order ID (`c`). |
 
 ## Session Lifecycle Events
@@ -237,6 +255,8 @@ Emitted when an external system locks or unlocks a portion of the spot wallet ba
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`externalLockUpdate`). |
+| `E` | Event time. |
 | `a` | Asset affected by the external lock. |
 | `d` | Delta applied to the lock. |
 | `T` | Transaction time. |
@@ -246,4 +266,3 @@ Emitted when an external system locks or unlocks a portion of the spot wallet ba
 - Subscribe to the user data stream via the WebSocket API after creating a listen key with a signed REST request.
 - Keep the listen key alive by calling the keep-alive endpoint every 30 minutes.
 - Close the stream explicitly when logging out or switching sessions to receive the `eventStreamTerminated` confirmation.
-

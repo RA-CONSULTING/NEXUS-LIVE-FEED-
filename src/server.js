@@ -9,6 +9,7 @@ import { findAndNeutralizeImbalance } from './latticeHarmonizer.js';
 import { generateContent } from './geminiClient.js'; // Import the new Gemini client
 import { loadForecastSummary } from '../core/forecastAnalyzer.js';
 import anchorsDataset from '../data/nexus_anchors.json' assert { type: 'json' };
+import { extractRequestParameters } from './lib/requestParameters.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,8 @@ const serveFile = (res, filePath) => {
 };
 
 const serveAppAsset = (req, res) => {
-  const url = new URL(req.url || '/', `http://${req.headers.host}`);
+  const host = req.headers.host || 'localhost';
+  const url = new URL(req.url || '/', `http://${host}`);
   const pathname = decodeURIComponent(url.pathname);
   const requestedPath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   const absolutePath = path.join(DIST_DIR, requestedPath);
@@ -90,7 +92,12 @@ const maskValue = (value) =>
   value ? `${value.slice(0, 4)}…${value.slice(-4)} (len=${value.length})` : '(missing)';
 
 const server = http.createServer(async (req, res) => {
-  if (req.url === '/stream') {
+  const method = (req.method || 'GET').toUpperCase();
+  const baseUrl = `http://${req.headers.host || 'localhost'}`;
+  const requestUrl = new URL(req.url || '/', baseUrl);
+  const pathname = requestUrl.pathname;
+
+  if (method === 'GET' && pathname === '/stream') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -105,7 +112,7 @@ const server = http.createServer(async (req, res) => {
     req.on('close', () => {
       clearInterval(interval);
     });
-  } else if (req.url === '/harmonize') {
+  } else if (method === 'GET' && pathname === '/harmonize') {
     try {
       const imbalance = await findAndNeutralizeImbalance();
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -114,7 +121,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Failed to identify energetic imbalance' }));
     }
-  } else if (req.url === '/celestial-chart') {
+  } else if (method === 'GET' && pathname === '/celestial-chart') {
     const pythonExecutable = 'python';
     const scriptPath = './celestial_cartography.py';
 
@@ -131,29 +138,33 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Failed to generate celestial chart' }));
       }
     });
-  } else if (req.url === '/generate-narrative' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', async () => {
-      try {
-        const { prompt } = JSON.parse(body);
-        if (!prompt) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ error: 'Prompt is required' }));
-        }
+  } else if (method === 'POST' && pathname === '/generate-narrative') {
+    try {
+      const { params } = await extractRequestParameters(req, baseUrl);
+      const prompt = params.prompt;
 
-        const result = await generateContent(prompt);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result));
-      } catch (err) {
-        console.error(err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Failed to generate narrative' }));
+      if (typeof prompt !== 'string' || prompt.trim() === '') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Prompt is required' }));
+        return;
       }
-    });
-  } else if (req.url === '/generate-threat-assessment' && req.method === 'GET') {
+
+      const result = await generateContent(prompt);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : 'Failed to generate narrative';
+      const isClientError = err instanceof Error && (
+        message.startsWith('Invalid') ||
+        message.includes('must be an object') ||
+        message.includes('Request aborted')
+      );
+      const status = isClientError ? 400 : 500;
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: message }));
+    }
+  } else if (method === 'GET' && pathname === '/generate-threat-assessment') {
     exec('git diff --shortstat', async (err, stdout, stderr) => {
       if (err) {
         console.error(`exec error: ${err}`);
@@ -174,7 +185,7 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Failed to generate threat assessment' }));
       }
     });
-  } else if (req.url === '/bio-resonance-stream') {
+  } else if (method === 'GET' && pathname === '/bio-resonance-stream') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -190,11 +201,11 @@ const server = http.createServer(async (req, res) => {
     req.on('close', () => {
       pythonProcess.kill();
     });
-  } else if (req.url === '/harmonize-bio-resonance') {
+  } else if (method === 'GET' && pathname === '/harmonize-bio-resonance') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: 'Bio-resonance harmonization initiated.' }));
 
-  } else if (req.url === '/api/keys-status') {
+  } else if (method === 'GET' && pathname === '/api/keys-status') {
     const status = Object.fromEntries(
       KEY_NAMES.map((name) => {
         const value = process.env[name] || '';
@@ -204,13 +215,12 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(status));
-  } else if (req.method === 'GET' && req.url?.startsWith('/api/anchors')) {
+  } else if (method === 'GET' && pathname.startsWith('/api/anchors')) {
     try {
-      const url = new URL(req.url, `http://${req.headers.host}`);
-      const segments = url.pathname.split('/').filter(Boolean);
+      const segments = requestUrl.pathname.split('/').filter(Boolean);
 
       const parseMinWeight = () => {
-        const value = url.searchParams.get('minWeight');
+        const value = requestUrl.searchParams.get('minWeight');
         if (value === null || value === '') {
           return null;
         }
@@ -224,7 +234,7 @@ const server = http.createServer(async (req, res) => {
       };
 
       const parseConsent = () => {
-        const value = url.searchParams.get('consent');
+        const value = requestUrl.searchParams.get('consent');
         if (value === null || value === '') {
           return null;
         }
@@ -333,7 +343,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: error.message }));
     }
-  } else if (req.method === 'GET' && req.url?.startsWith('/api/forecasts')) {
+  } else if (method === 'GET' && pathname.startsWith('/api/forecasts')) {
     try {
       const payload = await loadForecastSummary();
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -343,7 +353,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to load forecast window.' }));
     }
-  } else if (req.method === 'GET') {
+  } else if (method === 'GET') {
     serveAppAsset(req, res);
   } else {
     res.writeHead(404, { 'Content-Type': 'application/json' });

@@ -31,12 +31,12 @@ from decimal import Decimal
 
 import numpy as np
 
-_HAS_REQUESTS = True
-_RequestsStubType = None
+from typing import Any, Deque, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+
 try:  # pragma: no cover - optional dependency for live streaming
     import requests
 except Exception:  # pragma: no cover - optional dependency
-
+    requests = None  # type: ignore[assignment]
 
 
 try:  # pragma: no cover - optional dependency for live streaming
@@ -151,11 +151,11 @@ def _parse_symbol_status(value: Optional[str]) -> Optional[str]:
 def _ensure_requests() -> None:
     """Ensure the optional ``requests`` dependency is available."""
 
-
-            raise RuntimeError(
-                "The `requests` package is required for Binance REST calls. "
-                "Install it with `pip install requests`."
-            )
+    if requests is None:  # type: ignore[name-defined]
+        raise RuntimeError(
+            "The `requests` package is required for Binance REST calls. "
+            "Install it with `pip install requests`."
+        )
 
 
 
@@ -335,21 +335,133 @@ class BinanceRESTClient:
     def _headers(self) -> Dict[str, str]:
         return {"X-MBX-APIKEY": self.config.api_key}
 
-
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+        headers: Optional[Mapping[str, str]] = None,
+    ) -> Any:
         _ensure_requests()
+        request_headers: Dict[str, str] = dict(self._headers())
+        if headers:
+            request_headers.update(headers)
+
         response = requests.request(
             method,
             f"{self.config.base_url}{path}",
-
-            headers=self._headers(),
+            params=params,
+            data=data,
+            headers=request_headers,
             timeout=10,
         )
         return self._parse_response(response)
 
+    def _parse_response(self, response: Any) -> Any:
+        self.last_rate_limits = None
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            text = getattr(response, "text", "")
+            raise BinanceAPIError(
+                response.status_code,
+                "Invalid JSON response",
+                payload=text or None,
+            ) from exc
 
-            raise BinanceAPIError(status_code, message, payload=payload)
+        if isinstance(payload, Mapping):
+            rate_limits = payload.get("rateLimits")
+            if isinstance(rate_limits, list):
+                self.last_rate_limits = rate_limits
+            elif "rateLimits" in payload:
+                self.last_rate_limits = None
+
+            is_enveloped = any(
+                key in payload for key in ("result", "error", "status", "rateLimits", "id")
+            )
+            if is_enveloped:
+                status_value = payload.get("status")
+                status_code = response.status_code
+                if isinstance(status_value, numbers.Integral):
+                    status_code = int(status_value)
+                elif isinstance(status_value, str):
+                    try:
+                        status_code = int(status_value)
+                    except ValueError:
+                        pass
+
+                error_obj = payload.get("error")
+                if status_code >= 400 or error_obj is not None:
+                    message = ""
+                    if isinstance(error_obj, Mapping):
+                        for key in ("msg", "message", "error"):
+                            value = error_obj.get(key)
+                            if isinstance(value, str):
+                                message = value
+                                break
+                        if not message and "code" in error_obj:
+                            message = str(error_obj["code"])
+                    elif isinstance(error_obj, str):
+                        message = error_obj
+
+                    if not message and isinstance(payload.get("msg"), str):
+                        message = str(payload["msg"])
+                    if not message and isinstance(payload.get("message"), str):
+                        message = str(payload["message"])
+
+                    raise BinanceAPIError(
+                        status_code,
+                        message or "Binance API request failed",
+                        payload=payload,
+                    )
+
+                if "result" in payload:
+                    return payload["result"]
+
+        if response.status_code >= 400:
+            message = ""
+            if isinstance(payload, Mapping):
+                for key in ("msg", "message", "error"):
+                    value = payload.get(key)
+                    if isinstance(value, str):
+                        message = value
+                        break
+                if not message and "code" in payload:
+                    message = str(payload["code"])
+            else:
+                message = str(payload)
+
+            raise BinanceAPIError(
+                response.status_code,
+                message or "Binance API request failed",
+                payload=payload,
+            )
 
         return payload
+
+    def _signed_request(
+        self,
+        method: str,
+        path: str,
+        params: Optional[Mapping[str, Any]] = None,
+    ) -> Any:
+        if not self.config.api_secret:
+            raise RuntimeError(
+                "Binance API secret is required for signed requests"
+            )
+
+        query: Dict[str, Any] = {}
+        if params:
+            query.update(params)
+        query.setdefault("timestamp", _timestamp_ms())
+        query.setdefault("recvWindow", 5000)
+
+        str_params: Dict[str, str] = {key: str(value) for key, value in query.items()}
+        signature = _hmac_signature(self.config.api_secret, str_params)
+        str_params["signature"] = signature
+        return self._request(method, path, params=str_params)
 
 
     def _build_prefixed_params(
@@ -409,6 +521,7 @@ class BinanceRESTClient:
         if status:
             params["symbolStatus"] = status
 
+        _ensure_requests()
         response = requests.get(
             f"{self.config.base_url}/api/v3/ticker/price",
             params=params,

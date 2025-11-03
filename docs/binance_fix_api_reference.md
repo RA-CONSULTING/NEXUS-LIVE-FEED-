@@ -1,58 +1,79 @@
 # Binance Spot FIX API Reference
 
-This document captures the Binance Spot FIX API contract, including session types, authentication, operational safeguards, and the order and market data messages available to clients. It is intended as a quick reference when implementing or troubleshooting FIX connectivity alongside the existing REST/WebSocket tooling.
+This document captures the Binance Spot FIX API contract for order entry, drop copy, and market data connectivity. It highlights the current Spot Testnet endpoints, authentication requirements, operational safeguards, and the message catalogue developers rely on when integrating FIX alongside REST or WebSocket tooling.
 
 ## 1. General Requirements
 
-- **Transport:** All FIX connections must be established over TLS. Use a native TCP+TLS client or tunnel the session through a TLS proxy such as `stunnel`.
-- **Timeouts:** Requests time out after 10 seconds if the matching engine has not responded. The server returns `-1007 TIMEOUT` and the final order state must be resolved by checking the User Data Stream or querying the order.
-- **Keys:** Only Ed25519 API keys are supported. Generate a dedicated FIX key pair and keep the private key secure.
+- **Exchange scope:** The FIX interfaces are available for the Spot exchange only.
+- **Transport:** All sessions must negotiate TLS. Use a TCP+TLS client directly or terminate TLS through a local proxy such as `stunnel`.
+- **Timeouts:** Requests wait up to 10 seconds for the matching engine. After that the API responds with `-1007 TIMEOUT` and the final order state must be confirmed via User Data Stream or follow-up queries.
+- **Keys:** Only Ed25519 API keys are supported. Generate dedicated FIX keys and protect the private component.
+- **Encoding:** Messages are ASCII with SOH (`0x01`) delimiters; only printable ASCII characters are accepted.
 
 ## 2. Session Types and Endpoints
 
 | Session | Endpoint | Capabilities | Eligible Permissions |
 |---------|----------|--------------|----------------------|
-| Order Entry | `tcp+tls://fix-oe.binance.com:9000` | Submit, cancel, and amend orders. Query message and order rate limits. Receives all `ExecutionReport <8>` and `List Status <N>` events. | `FIX_API` |
-| Drop Copy | `tcp+tls://fix-dc.binance.com:9000` | Receive `ExecutionReport <8>` and `List Status <N>` for the account. | `FIX_API`, `FIX_API_READ_ONLY` |
-| Market Data | `tcp+tls://fix-md.binance.com:9000` | Subscribe to market data streams and query active instruments. No order placement. | `FIX_API`, `FIX_API_READ_ONLY` |
+| Order Entry | `tcp+tls://fix-oe.testnet.binance.vision:9000` | Submit, cancel, amend, and query usage limits. Receives all `ExecutionReport <8>` and `List Status <N>` messages. | `FIX_API` |
+| Drop Copy | `tcp+tls://fix-dc.testnet.binance.vision:9000` | Receive all `ExecutionReport <8>` and `List Status <N>` events for the account. | `FIX_API`, `FIX_API_READ_ONLY` |
+| Market Data | `tcp+tls://fix-md.testnet.binance.vision:9000` | Subscribe to market data streams and query active instruments (no order placement). | `FIX_API`, `FIX_API_READ_ONLY` |
 
-## 3. Connection Lifecycle
+QuickFIX schemas are provided for each session type. Review them before generating message classes or validation rules.
 
-1. Establish the TLS socket.
-2. Send a `Logon <A>` message immediately after connecting. The server confirms with its own `Logon <A>` response.
-3. Maintain the negotiated heartbeat interval (`HeartBtInt (108)`, 5–60 seconds). If either side detects silence for one interval it must send `TestRequest <1>` and expect a `Heartbeat <0>` carrying the same `TestReqID (112)`.
-4. Respond to `News <B>` messages announcing maintenance by establishing a new connection and gracefully logging out of the old one.
-5. Always send `Logout <5>` before disconnecting. Failure to do so renders the `SenderCompID (49)` unusable for twice the heartbeat interval.
+## 3. API Key Permissions
 
-## 4. Message Ordering and Responses
+- **Order Entry:** Requires the `FIX_API` permission.
+- **Drop Copy:** Accepts `FIX_API` or `FIX_API_READ_ONLY` permissions.
+- **Market Data:** Accepts `FIX_API` or `FIX_API_READ_ONLY` permissions.
 
-- `MessageHandling (25035)` in the initial logon determines matching engine ordering:
-  - `UNORDERED (1)`: Allows the server to route client messages out of sequence for higher throughput.
-  - `SEQUENTIAL (2)`: Enforces strict `MsgSeqNum (34)` order when forwarding to the engine.
-- `ResponseMode (25036)` controls downstream notifications:
-  - `EVERYTHING (1)`: Default. Every session receives all successful execution reports and list updates for the account.
-  - `ONLY_ACKS (2)`: Sessions receive only synchronous acknowledgements.
+All FIX sessions require Ed25519 keys.
 
-## 5. Timing Security
+## 4. Connection Lifecycle
 
-Include `SendingTime (52)` in every message. Optionally set `RecvWindow (25000)`—in milliseconds, up to 60,000—to limit how long the server will accept the request. Messages are processed only when:
+1. Open the TLS socket and send `Logon <A>` immediately. The server confirms with its own logon. Resend requests (`MsgType 2`) are not supported.
+2. Negotiate a heartbeat interval (`HeartBtInt (108)`) between 5 and 60 seconds. Both sides monitor the cadence:
+   - If the **server** receives no traffic for one interval it issues `TestRequest <1>`. Failure to respond with `Heartbeat <0>` echoing the `TestReqID (112)` within one more interval leads to `Logout <5>` and disconnection.
+   - If the **client** detects silence for one interval it should send `TestRequest <1>` and expect a `Heartbeat <0>` with the same `TestReqID (112)`. Missing the response indicates the session should be re-established.
+   - If neither side sends any traffic within one interval the server proactively sends `Heartbeat <0>`.
+3. Maintenance windows are announced with repeating `News <B>` messages (every 10 seconds for 10 minutes). Upon receipt, establish a new session and gracefully close the current one. If the client does not logout within 10 seconds of the final notice the server will close the connection.
+4. Always send `Logout <5>` before disconnecting. Omitting the logout leaves the `SenderCompID (49)` unusable for twice the heartbeat interval.
+
+## 5. Message Ordering and Response Mode
+
+| Field | Options | Notes |
+|-------|---------|-------|
+| `MessageHandling (25035)` | `UNORDERED (1)` • `SEQUENTIAL (2)` | Declared in the initial logon. `UNORDERED` allows in-flight reordering for higher throughput; `SEQUENTIAL` enforces strict `MsgSeqNum (34)` delivery. Regardless of mode the client must increment `MsgSeqNum` by exactly one per message. |
+| `ResponseMode (25036)` | `EVERYTHING (1)` • `ONLY_ACKS (2)` | Controls which `ExecutionReport <8>` and `ListStatus <N>` messages each session receives. The default is `EVERYTHING`, broadcasting all order flow for the account. |
+
+By default all concurrent order entry sessions receive successful execution and list status events, including those originating outside FIX.
+
+## 6. Timing Security
+
+Every request requires `SendingTime (52)` in UTC. `RecvWindow (25000)` is optional (defaults to 5,000 ms for logon only) and caps the acceptable latency in milliseconds (maximum 60,000 ms, supports millisecond fractions). Requests are processed when the following logic passes:
 
 ```text
-SendingTime < serverTime + 1 second
-serverTime - SendingTime <= RecvWindow
+serverTime = getCurrentTime()
+if (SendingTime < serverTime + 1 second) and (serverTime - SendingTime) <= RecvWindow:
+    serverTime = getCurrentTime()
+    if (serverTime - SendingTime) <= RecvWindow:
+        forward request to Matching Engine
+    else:
+        reject request
+else:
+    reject request
 ```
 
-## 6. Authenticating the Logon
+## 7. Logon Authentication
 
-The logon payload is signed with the Ed25519 private key associated with the API key. Construct the signature string by concatenating the following fields in order, separated with the SOH character:
+`Logon <A>` messages authenticate the session and must be the first payload the client sends.
 
-1. `MsgType (35)`
-2. `SenderCompId (49)`
-3. `TargetCompId (56)`
-4. `MsgSeqNum (34)`
-5. `SendingTime (52)`
-
-Sign the ASCII payload, base64-encode the signature, and place it in `RawData (96)`. `RawDataLength (95)` must match the length of the encoded signature. `Username (553)` carries the API key.
+- `Username (553)`: the API key.
+- `RawData (96)`: Ed25519 signature over the concatenation of `MsgType`, `SenderCompID`, `TargetCompID`, `MsgSeqNum`, and `SendingTime`, separated by SOH. `RawDataLength (95)` must match the encoded signature length.
+- `EncryptMethod (98)`: must be `0`.
+- `HeartBtInt (108)`: heartbeat interval in seconds (5–60).
+- `ResetSeqNumFlag (141)`: must be `Y`.
+- `MessageHandling (25035)` and optional `ResponseMode (25036)` configure sequencing and downstream behaviour.
+- `DropCopyFlag (9406)`: set to `Y` only when logging into Drop Copy sessions.
 
 ### Sample Python Helper
 
@@ -88,7 +109,7 @@ raw_data = logon_raw_data(
 )
 ```
 
-For validation, signing the canonical example below should yield `4MHXelVVcpkdwuLbl6n73HQUXUf1dse2PCgT1DYqW9w8AVZ1RACFGM+5UdlGPrQHrgtS3CvsRURC1oj73j8gCA==`:
+To verify an implementation, the canonical values below produce the signature `4MHXelVVcpkdwuLbl6n73HQUXUf1dse2PCgT1DYqW9w8AVZ1RACFGM+5UdlGPrQHrgtS3CvsRURC1oj73j8gCA==`:
 
 | Field | Value |
 |-------|-------|
@@ -98,112 +119,164 @@ For validation, signing the canonical example below should yield `4MHXelVVcpkdwu
 | `MsgSeqNum (34)` | `1` |
 | `SendingTime (52)` | `20240627-11:17:25.223` |
 
-## 7. Session Envelope
+### Sample Logon Exchange
 
-Every message starts with the header fields `BeginString (8)`, `BodyLength (9)`, `MsgType (35)`, `SenderCompID (49)`, `TargetCompID (56)`, `MsgSeqNum (34)`, `SendingTime (52)`, and optional `RecvWindow (25000)`. Messages end with `CheckSum (10)`. All tags use printable ASCII or SOH as separators, and client order identifiers must match the regex `^[a-zA-Z0-9-_]{1,36}$`.
+```
+8=FIX.4.4|9=248|35=A|34=1|49=5JQmUOsm|52=20240612-08:52:21.613|56=SPOT|95=88|96=KhJLbZqADWknfTAcp0ZjyNz36Kxa4ffvpNf9nTIc+K5l35h+vA1vzDRvLAEQckyl6VDOwJ53NOBnmmRYxQvQBQ==|98=0|108=30|141=Y|553=W5rcOD30c0gT4jHK8oX5d5NbzWoa0k4SFVoTHIFNJVZ3NuRpYb6ZyJznj8THyx5d|25035=1|10=000|
+8=FIX.4.4|9=113|35=A|34=1|49=SPOT|52=20240612-08:52:21.636837|56=5JQmUOsm|98=0|108=30|25037=4392a152-3481-4499-921a-6d42c50702e2|10=051|
+```
 
-## 8. Limits
+## 8. Message Envelope and Data Types
 
-- **Message throughput:**
-  - Order Entry: 10,000 messages per 10 seconds
-  - Drop Copy: 60 messages per 60 seconds
-  - Market Data: 2,000 messages per 60 seconds
-- **Connections per account:**
-  - Order Entry/Drop Copy: Up to 10 concurrent TCP sessions, 15 connection attempts in 30 seconds
-  - Market Data: Up to 100 concurrent TCP sessions, 300 connection attempts in 300 seconds
-- **Unfilled orders:** Query `LimitQuery <XLQ>` for current usage. Exceeding the limit causes order rejections.
+- **Header:** `BeginString (8)` → `BodyLength (9)` → `MsgType (35)` → `SenderCompID (49)` → `TargetCompID (56)` → `MsgSeqNum (34)` → `SendingTime (52)` → optional `RecvWindow (25000)`.
+- **Trailer:** `CheckSum (10)` is a three-digit, zero-padded modulo-256 checksum over the entire message (including SOH characters).
+- **Client Identifiers:** `ClOrdID`, `OrigClOrdID`, `MDReqID`, `ClListID`, `OrigClListID`, and `CancelClOrdID` must satisfy `^[a-zA-Z0-9-_]{1,36}$`. `SenderCompID` and `TargetCompID` must match `^[a-zA-Z0-9-_]{1,8}$`.
+- **Timestamps:** UTC strings support seconds, milliseconds, or microseconds precision (e.g., `20240612-08:52:21.636837`).
 
-Use `LimitQuery <XLQ>` to monitor quotas. The `LimitResponse <XLR>` returns the current counts, maxima, and reset cadence for each tracked limit.
+Common data types:
+
+| Type | Description |
+|------|-------------|
+| `BOOLEAN` | Enum `Y` or `N`. |
+| `CHAR` | Single character. |
+| `INT` | Signed 64-bit integer. |
+| `LENGTH`, `NUMINGROUP` | Unsigned 64-bit integer. |
+| `PRICE`, `QTY` | Fixed-point numbers (precision defined per symbol). |
+| `SEQNUM` | Unsigned 32-bit integer (wraps after `4,294,967,295`). |
+| `STRING` | Printable ASCII sequence. |
+| `UTCTIMESTAMP` | `YYYYMMDD-hh:mm:ss[.SSS][SSS]` formats. |
 
 ## 9. Administrative Messages
 
-| MsgType | Name | Purpose |
-|---------|------|---------|
-| `0` | `Heartbeat` | Sent periodically or in response to `TestRequest <1>` to confirm liveness. |
-| `1` | `TestRequest` | Triggers a heartbeat response when the peer is silent for one heartbeat interval. |
-| `3` | `Reject` | Returned for syntactic errors, invalid fields, or exceeded connection limits. Details appear in `Text (58)` and `ErrorCode (25016)`. |
-| `5` | `Logout` | Initiates or acknowledges session termination. |
-| `B` | `News` | Announces maintenance windows and instructs clients to reconnect. |
+- **Heartbeat `<0>`:** Sent by either party when the link is otherwise idle or responding to `TestRequest <1>`. Echo `TestReqID (112)` when responding.
+- **TestRequest `<1>`:** Confirms liveness when no messages arrive within one heartbeat interval. The receiver must reply with `Heartbeat <0>` containing the provided `TestReqID`.
+- **Reject `<3>`:** Returned for malformed messages, unknown symbols, unsupported tags, or when connection limits are exceeded. Diagnostic data appears in `Text (58)` and `ErrorCode (25016)`. `SessionRejectReason (373)` further qualifies the issue.
+- **Logout `<5>`:** Initiates or acknowledges orderly shutdowns. Include optional human-readable `Text (58)`.
+- **News `<B>`:** Broadcasts maintenance countdowns ("You'll be disconnected in %d seconds" / "Your connection is about to be closed. Please reconnect.").
 
-Resend requests (`MsgType 2`) are not supported.
+## 10. Limits and Usage Monitoring
 
-## 10. Order Entry Workflow
+### 10.1 Message Limits
 
-### 10.1 Placing Orders (`NewOrderSingle <D>`)
+| Session | Limit |
+|---------|-------|
+| Order Entry | 10,000 messages per 10 seconds |
+| Drop Copy | 60 messages per 60 seconds |
+| Market Data | 2,000 messages per 60 seconds |
 
-Supported order types align with Binance Spot semantics: market, limit, stop, stop-limit, take-profit, trailing, pegged, and limit-maker orders. Required fields vary by type:
+Exceeding a limit triggers `Logout <5>` and disconnection.
 
-| Order Type | Required Tags |
-|------------|---------------|
-| `LIMIT` | `OrdType=2`, `OrderQty (38)`, `Price (44)`, `TimeInForce (59)` |
-| `MARKET` | `OrdType=1`, **either** `OrderQty (38)` **or** `CashOrderQty (152)` |
-| `STOP_LOSS` / `TAKE_PROFIT` | `OrdType=3`, `OrderQty (38)`, trigger configuration (`TriggerPrice (1102)` or `TriggerTrailingDeltaBips (25009)`), plus `Trigger` fields (`1100`, `1101`, `1107`, `1109`) |
-| `STOP_LOSS_LIMIT` / `TAKE_PROFIT_LIMIT` | `OrdType=4`, `OrderQty (38)`, `Price (44)`, `TimeInForce (59)`, trigger configuration |
-| `LIMIT_MAKER` | `OrdType=2`, `ExecInst=6`, `OrderQty (38)`, `Price (44)` |
+### 10.2 Connection Limits
 
-A successful placement returns an `ExecutionReport <8>` with `ExecType=0 (NEW)`; rejections use `ExecType=8 (REJECTED)` and may include `ErrorCode (25016)`.
+| Session | Concurrent TCP Connections | Connection Attempts |
+|---------|---------------------------|---------------------|
+| Order Entry | 10 | 15 attempts / 30 seconds |
+| Drop Copy | 10 | 15 attempts / 30 seconds |
+| Market Data | 100 | 300 attempts / 300 seconds |
 
-### 10.2 Canceling Orders (`OrderCancelRequest <F>`)
+Wait up to twice the heartbeat interval after closing a socket for the limit counters to decrease.
 
-Supply a new `ClOrdID (11)` alongside either `OrderID (37)` or `OrigClOrdID (41)`. If both identifiers are present, the server validates them in that order. Canceling any member of an order list cancels the entire list. The response is an `ExecutionReport <8>` (`ExecType=4`) or an `OrderCancelReject <9>` with details.
+### 10.3 Unfilled Order Count
 
-### 10.3 Cancel/Replace (`OrderCancelRequestAndNewOrderSingle <XCN>`)
+Binance enforces unfilled order limits per account. Query `LimitQuery <XLQ>` to inspect both message usage and unfilled order counts. Orders consistently filled by trades can continue to recycle capacity; rejected requests include the relevant error messaging.
 
-Execute a cancel and immediate re-entry in a single request. Set `OrderCancelRequestAndNewOrderSingleMode (25033)` to:
+## 11. Order Entry Workflow
 
-- `STOP_ON_FAILURE (1)`: Abort if the cancel fails.
-- `ALLOW_FAILURE (2)`: Attempt the new order even if cancellation is rejected.
+### 11.1 `NewOrderSingle <D>`
 
-`OrderRateLimitExceededMode (25038)` can instruct the server to cancel only when rate limits are exceeded. Responses include cancellation and new order `ExecutionReport <8>` messages.
+Supported Binance order semantics and required FIX fields:
 
-### 10.4 Mass Cancel (`OrderMassCancelRequest <q>`)
+| Order name | Binance Type | Side(s) | Required FIX tags |
+|------------|--------------|---------|-------------------|
+| Market | `MARKET` | Buy/Sell | `40=1`, `38` **or** `152` |
+| Limit | `LIMIT` | Buy/Sell | `40=2`, `38`, `44`, `59` |
+| Limit maker | `LIMIT_MAKER` | Buy/Sell | `40=2`, `18=6`, `38`, `44` |
+| Stop-loss / Take-profit | `STOP_LOSS` / `TAKE_PROFIT` | Buy/Sell | `40=3`, `38`, trigger configuration (`1100=4`, `1101=1`, `1107=2`, `1109` depending on side, plus `1102` and/or `25009`) |
+| Stop-loss-limit / Take-profit-limit | `STOP_LOSS_LIMIT` / `TAKE_PROFIT_LIMIT` | Buy/Sell | `40=4`, `38`, `44`, `59`, trigger configuration (`1100=4`, `1101=1`, `1107=2`, `1109`, plus `1102` and/or `25009`) |
+| Trailing stop / take-profit | Variants above | Buy/Sell | Include `25009` (trailing delta bips) along with the applicable trigger tags |
+| Pegged | `PEGGED` | Buy/Sell | `40=P`, `835=1`, `836=3`, `1094` (`4` or `5`), and optional `211` |
 
-Use `ClOrdID (11)`, `Symbol (55)`, and `MassCancelRequestType=1` to remove all open orders for a symbol. Each cancellation yields an `ExecutionReport <8>` with `ExecType=4`, and the aggregate result arrives in an `OrderMassCancelReport <r>`.
+`CashOrderQty (152)` expresses quote-quantity market orders. Iceberg orders require `MaxFloor (111)`.
 
-### 10.5 Order Lists (`NewOrderList <E>`)
+Responses:
 
-Submit contingent OCO, OTO, or OTOCO structures with up to three legs. Define the list with `ClListID (25014)`, `NoOrders (73)`, and optional `ContingencyType (1385)`. Trigger relationships are expressed through the `ListTrigger` repeating group (`25010`–`25013`). The exchange acknowledges list state changes with `ListStatus <N>`.
+- `ExecutionReport <8>` with `ExecType=0 (NEW)` for acceptance.
+- `ExecutionReport <8>` with `ExecType=8 (REJECTED)` when the request fails.
+- `Reject <3>` if the message itself is invalid.
 
-### 10.6 Reduce-Only Amendments (`OrderAmendKeepPriorityRequest <XAK>`)
+### 11.2 `OrderCancelRequest <F>`
 
-Reduce the working quantity without losing order priority by referencing the existing order via `OrderID (37)` or `OrigClOrdID (41)` and submitting the new `OrderQty (38)`. Failures are reported with `OrderAmendReject <XAR>`.
+Provide a fresh `ClOrdID (11)` plus one of `OrderID (37)` or `OrigClOrdID (41)` (both allowed; `OrderID` is checked first). Cancelling any leg of a list cancels the entire list. Successful cancellations emit `ExecutionReport <8>` with `ExecType=4`. Failures return `OrderCancelReject <9>` with `ErrorCode (25016)` and descriptive `Text (58)`.
 
-## 11. Execution Reports (`ExecutionReport <8>`)
+### 11.3 `OrderCancelRequestAndNewOrderSingle <XCN>`
 
-Execution reports communicate every order state transition, including acknowledgements, fills, cancels, expirations, and rejections. Key tags include:
+Combines cancel and re-entry. Always processes the cancel first, then submits the new order. Configure behaviour with:
 
-- `ExecType (150)` / `OrdStatus (39)` for the event type and aggregate status.
-- `CumQty (14)` and `LeavesQty (151)` for fill tracking.
-- `CumQuoteQty (25017)` for quote asset fills.
-- `TradeID (1003)`, `AggressorIndicator (1057)`, and `MatchType (574)` on fills.
-- Trigger and peg metadata when applicable.
+- `OrderCancelRequestAndNewOrderSingleMode (25033)`: `STOP_ON_FAILURE (1)` or `ALLOW_FAILURE (2)`.
+- `OrderRateLimitExceededMode (25038)`: optional, instructs whether to cancel only when unfilled order limits are exceeded.
 
-By default all active sessions receive these reports; switch to `ONLY_ACKS (2)` in the logon to limit broadcast volume.
+Results include cancellation and new-order `ExecutionReport <8>` messages. If the cancel fails you may also receive `OrderCancelReject <9>`.
 
-## 12. Market Data Interfaces
+### 11.4 `OrderMassCancelRequest <q>` / `OrderMassCancelReport <r>`
 
-### 12.1 Instrument Directory (`InstrumentListRequest <x>` / `InstrumentList <y>`)
+Send `ClOrdID (11)`, `Symbol (55)`, and `MassCancelRequestType=1` to cancel all open orders on a symbol. Every order generates an `ExecutionReport <8>` (`ExecType=4`); the aggregate summary arrives in `OrderMassCancelReport <r>` with `MassCancelResponse (531)` and optional `TotalAffectedOrders (533)`.
 
-Request metadata for either a single trading pair or the full active instrument universe. The response enumerates trading constraints such as minimum lot size, market lot size, price increments, and valid price ranges.
+### 11.5 `NewOrderList <E>` / `ListStatus <N>`
 
-### 12.2 Market Data Subscriptions (`MarketDataRequest <V>`)
+Define contingent structures (`OCO`, `OTO`, `OTOCO`) with `ClListID (25014)` and `NoOrders (73)` (only 2 or 3 orders). Configure relationships using the `ListTrigger` repeating group:
 
-Subscribe (`SubscriptionRequestType=1`) or unsubscribe (`=2`) using `MDReqID (262)` as a unique handle. Supported streams:
+- `ListTriggerType (25011)` ∈ {`1` activated, `2` partially filled, `3` filled}
+- `ListTriggerTriggerIndex (25012)`: zero-based order index the condition references
+- `ListTriggerAction (25013)` ∈ {`1` release, `2` cancel}
 
-- **Trade Stream:** `MDEntryType=TRADE (2)`.
-- **Book Ticker:** `MDEntryType=BID (0)` and `OFFER (1)` with `MarketDepth=1`.
-- **Diff Depth:** `MDEntryType=BID/OFFER`, `MarketDepth` between 2 and 5000 (controls snapshot depth). Updates arrive every 100 ms.
+`ListStatus <N>` reports progression, rejections, and completion for each leg along with trigger definitions.
 
-Initial snapshots arrive as `MarketDataSnapshot <W>` messages; incremental updates use `MarketDataIncrementalRefresh <X>`. Fields `FirstBookUpdateID (25043)` and `LastBookUpdateID (25044)` enable reconciliation with REST/WebSocket feeds.
+### 11.6 `OrderAmendKeepPriorityRequest <XAK>` / `OrderAmendReject <XAR>`
 
-### 12.3 Rejects (`MarketDataRequestReject <Y>`)
+Reduces the working quantity of an existing order without losing queue priority. Reference the order via `OrderID (37)` or `OrigClOrdID (41)` (both allowed). Supply the new `OrderQty (38)`—it must be lower than the original. Successful amendments emit `ExecutionReport <8>` (and `ListStatus <N>` if part of a list). Failures trigger `OrderAmendReject <XAR>`.
 
-Invalid subscriptions return a reject message detailing the issue through `MDReqRejReason (281)` and, when applicable, `ErrorCode (25016)`.
+## 12. Execution Reports (`ExecutionReport <8>`)
 
-## 13. Error Handling
+`ExecutionReport` messages track every order state change:
 
-The exchange rejects malformed or unsupported messages via `Reject <3>` or type-specific rejects (`OrderCancelReject <9>`, `OrderAmendReject <XAR>`, etc.). Inspect `Text (58)` and `ErrorCode (25016)` for actionable diagnostics. Refer to Binance Spot error code documentation for enumerations.
+- `ExecType (150)` / `OrdStatus (39)`: state transition and cumulative status (`NEW`, `PARTIALLY_FILLED`, `FILLED`, `CANCELED`, `REJECTED`, `EXPIRED`, `TRADE`, etc.).
+- `OrderID (37)`, `ClOrdID (11)`, `OrigClOrdID (41)`: identifiers for cross-referencing.
+- Fill metrics: `CumQty (14)`, `LeavesQty (151)`, `LastQty (32)`, `LastPx (31)`, `CumQuoteQty (25017)`.
+- Trade detail: `TradeID (1003)`, `AggressorIndicator (1057)`, `MatchType (574)`.
+- Trigger and peg metadata: `TriggerPrice (1102)`, `TriggerPriceDirection (1109)`, `TriggerTrailingDeltaBips (25009)`, `PeggedPrice (839)`, etc.
+- STP expirations: `PreventedMatchID (25024)` and related fields.
+- SOR indicator: `SOR (25032)`.
+
+## 13. Limit Monitoring Messages
+
+- **`LimitQuery <XLQ>`:** Supply `ReqID (6136)` to query current usage. Use this to poll message limits, order limits, and unfilled order counts.
+- **`LimitResponse <XLR>`:** Returns one or more `LimitIndicators` with `LimitType (25004)`, `LimitCount (25005)`, `LimitMax (25006)`, and optional reset cadence (`LimitResetInterval (25007)` plus unit `LimitResetIntervalResolution (25008)`).
+
+## 14. Market Data Interfaces
+
+### 14.1 Instrument Directory (`InstrumentListRequest <x>` / `InstrumentList <y>`)
+
+- `InstrumentListRequestType (559)`: `0` for a single symbol (requires `Symbol (55)`), `4` for all active instruments.
+- Responses detail quote assets, lot sizes, price filters, and market lot size boundaries.
+
+### 14.2 Market Data Subscriptions (`MarketDataRequest <V>`)
+
+Use `MDReqID (262)` as a unique subscription handle and set `SubscriptionRequestType (263)` to `1` (subscribe) or `2` (unsubscribe). Supported combinations:
+
+- **Trade Stream:** `MDEntryType=TRADE (2)`, `MarketDepth` optional (typically `1`). Updates are real-time.
+- **Individual Symbol Book Ticker:** `MDEntryType=BID (0)` and `OFFER (1)`, `MarketDepth=1`, optional `AggregatedBook=Y`.
+- **Diff. Depth Stream:** `MDEntryType=BID/OFFER`, `MarketDepth` between 2 and 5000 (sets initial snapshot depth). Incrementals arrive every 100 ms.
+
+Initial snapshots use `MarketDataSnapshot <W>` and include `LastBookUpdateID (25044)` for depth tracking. Incremental updates arrive via `MarketDataIncrementalRefresh <X>` with `MDUpdateAction (279)` (`NEW`, `CHANGE`, `DELETE`). Diff depth streams include `FirstBookUpdateID (25043)` / `LastBookUpdateID (25044)`. When a message would exceed 10,000 entries it is fragmented; fragments are sequential and flagged with `LastFragment (893)`.
+
+### 14.3 Market Data Rejects (`MarketDataRequestReject <Y>`)
+
+Invalid or duplicate subscriptions return `MarketDataRequestReject <Y>` detailing the issue through `MDReqRejReason (281)`, optional `ErrorCode (25016)`, and descriptive `Text (58)`.
+
+## 15. Error Handling
+
+The exchange rejects malformed messages via `Reject <3>` or the corresponding application-level reject (`OrderCancelReject <9>`, `OrderAmendReject <XAR>`, etc.). Inspect `Text (58)` and `ErrorCode (25016)` for actionable diagnostics and consult the published error code list for enumerations.
 
 ---
 
-**Reminder:** Always monitor the Limit Query interface and the User Data Stream (or REST fallbacks) to reconcile orders in the event of timeouts or disconnects.
+**Reminder:** Monitor User Data Streams or REST fallbacks to reconcile order status after timeouts or disconnects, and poll `LimitQuery <XLQ>` to track remaining capacity.

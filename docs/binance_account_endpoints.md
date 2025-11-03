@@ -7,9 +7,11 @@ Unless otherwise specified, responses originate from an in-memory cache backed b
 ---
 
 
+## Account Status — `GET /api/v3/account` / `method: "account.status"`
+
 Query high-level account information, including commission settings, flags indicating whether trading/withdrawals/deposits are enabled, and the current asset balances. When `omitZeroBalances` is set to `true`, only assets with a non-zero `free` or `locked` value are returned.
 
-- **Weight:** 20  
+- **Weight:** 20
 - **Data Source:** Memory ⇒ Database
 
 | Name | Type | Required | Description |

@@ -19,7 +19,7 @@ This document summarizes the key operational details for interacting with the Bi
 - Timestamp parameters (`startTime`, `endTime`, `timestamp`, etc.) may be supplied in milliseconds or microseconds.
 
 ## Security and Authentication
-- Supported API key algorithms: **HMAC**, **RSA**, and **Ed25519**. See the Binance API Key Types documentation for additional details.
+- Supported API key algorithms: **HMAC**, **RSA**, and **Ed25519**. See the [Binance API Key Types](binance_api_key_types.md) documentation for additional details.
 
 ## Request Behavior
 - API request timeout: **10 seconds**.

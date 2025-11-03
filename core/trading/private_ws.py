@@ -119,5 +119,99 @@ def build_request_frame(
     return frame
 
 
-__all__ = ["build_request_frame", "sign_params"]
+def _is_missing(value: Any) -> bool:
+    """Return ``True`` when ``value`` should be treated as unset."""
+
+    if value is None:
+        return True
+    if isinstance(value, str) and value.strip() == "":
+        return True
+    return False
+
+
+def _require(params: Mapping[str, Any], *, order_type: str, keys: tuple[str, ...]) -> None:
+    """Ensure ``keys`` are present for ``order_type`` or raise ``ValueError``."""
+
+    missing = [key for key in keys if _is_missing(params.get(key))]
+    if missing:
+        joined = ", ".join(missing)
+        raise ValueError(f"{order_type} order requires parameters: {joined}")
+
+
+def _require_any(params: Mapping[str, Any], *, order_type: str, options: tuple[str, ...]) -> None:
+    """Ensure at least one of ``options`` is present for ``order_type``."""
+
+    if not any(not _is_missing(params.get(option)) for option in options):
+        joined = " or ".join(options)
+        raise ValueError(f"{order_type} order requires at least one of: {joined}")
+
+
+def _validate_order_place_params(params: Mapping[str, Any]) -> None:
+    """Validate parameters for ``order.place`` requests."""
+
+    order_type = str(params.get("type", "")).upper()
+    if not order_type:
+        raise ValueError("order type is required for order.place requests")
+
+    _require(params, order_type=order_type, keys=("symbol", "side", "type"))
+
+    if order_type == "LIMIT":
+        _require(params, order_type=order_type, keys=("price", "quantity", "timeInForce"))
+    elif order_type == "LIMIT_MAKER":
+        _require(params, order_type=order_type, keys=("price", "quantity"))
+    elif order_type == "MARKET":
+        _require_any(params, order_type=order_type, options=("quantity", "quoteOrderQty"))
+    elif order_type in {"STOP_LOSS", "TAKE_PROFIT"}:
+        _require(params, order_type=order_type, keys=("quantity",))
+        _require_any(params, order_type=order_type, options=("stopPrice", "trailingDelta"))
+    elif order_type in {"STOP_LOSS_LIMIT", "TAKE_PROFIT_LIMIT"}:
+        _require(params, order_type=order_type, keys=("price", "quantity", "timeInForce"))
+        _require_any(params, order_type=order_type, options=("stopPrice", "trailingDelta"))
+    else:
+        raise ValueError(f"Unsupported order type: {order_type}")
+
+
+def build_order_place_request(
+    *,
+    symbol: str,
+    side: str,
+    order_type: str,
+    api_key: str,
+    api_secret: str,
+    request_id: str | int | None = None,
+    timestamp_ms: int | None = None,
+    as_text: bool = False,
+    **extra_params: Any,
+) -> dict[str, Any] | str:
+    """Build a signed ``order.place`` WebSocket request frame.
+
+    The helper enforces Binance's mandatory parameter rules for the most common
+    order types before delegating to :func:`build_request_frame`.
+    """
+
+    if _is_missing(symbol):
+        raise ValueError("symbol is required for order.place requests")
+
+    normalized_side = side.upper()
+    if normalized_side not in {"BUY", "SELL"}:
+        raise ValueError("side must be either 'BUY' or 'SELL'")
+
+    normalized_type = order_type.upper()
+    params: dict[str, Any] = {"symbol": symbol, "side": normalized_side, "type": normalized_type}
+    params.update(extra_params)
+
+    _validate_order_place_params(params)
+
+    return build_request_frame(
+        "order.place",
+        params,
+        api_key=api_key,
+        api_secret=api_secret,
+        request_id=request_id,
+        timestamp_ms=timestamp_ms,
+        as_text=as_text,
+    )
+
+
+__all__ = ["build_order_place_request", "build_request_frame", "sign_params"]
 

@@ -16,6 +16,22 @@ const TermsOfUsePage: React.FC = () => (
         </p>
       </header>
 
+      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 text-sm leading-relaxed text-emerald-100">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-200/90">
+          Spot Testnet Terms of Use
+        </h2>
+        <p className="mt-3 text-emerald-100/90">
+          The Binance Spot Testnet and Futures Testnet are each governed by the official{' '}
+          <a
+            className="text-emerald-200 underline decoration-emerald-400/70 underline-offset-4"
+            href="https://www.binance.com/en/testnet/terms"
+          >
+            Testnet Terms of Use
+          </a>
+          . Please review these terms carefully before proceeding with any simulated trading activity.
+        </p>
+      </div>
+
       <div className="grid gap-5 rounded-2xl border border-white/10 bg-white/5 p-6 text-slate-200/90">
         <h2 className="text-sm font-semibold uppercase tracking-[0.28em] text-white/95">Key Points</h2>
         <ul className="space-y-3 text-sm leading-relaxed">

@@ -3,13 +3,14 @@
 This document summarizes the publicly available Binance SBE market data WebSocket streams and their operational requirements.
 
 ## Base Endpoint
-- `stream-sbe.binance.com`
-- `stream-sbe.binance.com:9443`
+- **Production:** `stream-sbe.binance.com` or `stream-sbe.binance.com:9443`
+- **Spot Testnet:** `stream-sbe.testnet.binance.vision` or `stream-sbe.testnet.binance.vision:9443`
 
 You can subscribe to one stream via `/ws/<streamName>` or to multiple streams via `/stream?streams=<streamName1>/<streamName2>/<streamName3>`.
 
 ## General Usage
 - Streams deliver market data in SBE (Simple Binary Encoding) format. Use the [official schema](https://github.com/binance/binance-futures-connector-python/blob/master/binance/websockets/sbe_schema) to decode payloads.
+- For JSON payloads, fall back to the [Binance WebSocket market data documentation](https://binance-docs.github.io/apidocs/spot/en/#websocket-market-streams).
 - All stream names use lowercase symbols.
 - Connections are valid for up to 24 hours; expect a disconnect at that point.
 - All time and timestamp fields are reported in microseconds.

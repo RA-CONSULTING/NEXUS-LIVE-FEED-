@@ -36,7 +36,7 @@ surface that is guaranteed to work for REST callers when only public market data
 **Sample REST request**
 
 ```bash
-curl -s "https://data-api.binance.vision/api/v3/exchangeInfo?symbol=BTCUSDT"
+curl -sX GET "https://data-api.binance.vision/api/v3/exchangeInfo?symbol=BTCUSDT"
 ```
 
 For realtime delivery, pair the REST snapshot with the WebSocket market data gateway at

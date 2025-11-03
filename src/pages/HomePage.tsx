@@ -20,6 +20,11 @@ import CelestialCalendarTab from '../components/CelestialCalendarTab';
 import ForecastTabs from '../components/ForecastTabs';
 import OutputCommandTab from '../components/OutputCommandTab';
 import ProcessingCoreTab from '../components/ProcessingCoreTab';
+import BlockchainMiningTab, {
+  type EnergyChannel,
+  type MiningMetric,
+  type MiningNode,
+} from '../components/BlockchainMiningTab';
 import RecordingSystemsTab, { type RecordingChannel } from '../components/RecordingSystemsTab';
 import SensoryLayerTab from '../components/SensoryLayerTab';
 import DimensionalDialerTab from '../components/DimensionalDialerTab';
@@ -73,7 +78,86 @@ type MetricSummary = {
 type HomePageProps = {
   renderFullConsole?: boolean;
 };
+ 
+const BLOCKCHAIN_MINING_METRICS: MiningMetric[] = [
+  {
+    id: 'hashrate',
+    label: 'Global Hashrate',
+    value: '3.82 PH/s',
+    delta: '6.4%',
+    trend: 'up',
+    description: 'Aggregate plasma rigs bonded across 12 sanctum vaults.',
+  },
+  {
+    id: 'block-height',
+    label: 'Block Height',
+    value: '1,204,553',
+    delta: '12 blocks',
+    trend: 'up',
+    description: 'Last 24 minutes include 2 auric governance checkpoints.',
+  },
+  {
+    id: 'validation-latency',
+    label: 'Validation Latency',
+    value: '1.8 s',
+    delta: '0.2 s',
+    trend: 'down',
+    description: 'Median confirmation round-trip across entangled relays.',
+  },
+  {
+    id: 'pool-efficiency',
+    label: 'Pool Efficiency',
+    value: '98.6%',
+    delta: '0.4%',
+    trend: 'stable',
+    description: 'Share fidelity after spirit-proof consensus reconciliation.',
+  },
+];
 
+const BLOCKCHAIN_MINING_NODES: MiningNode[] = [
+  {
+    id: 'node-aurora',
+    name: 'Aurora-Theta Rig',
+    location: 'Arctic Sky Temple',
+    hashRate: '1.28 PH/s',
+    status: 'Online',
+    uptime: '99.982%',
+    energy: 'Hydro · Aurora Flux',
+    consensusRole: 'Block Forger',
+  },
+  {
+    id: 'node-solstice',
+    name: 'Solstice Core',
+    location: 'Solaris Desert Array',
+    hashRate: '0.97 PH/s',
+    status: 'Syncing',
+    uptime: '99.421%',
+    energy: 'Solar Spiral Farms',
+    consensusRole: 'Finality Anchor',
+  },
+  {
+    id: 'node-lumina',
+    name: 'Lumina Sanctuary',
+    location: 'Subterranean Crystal Vault',
+    hashRate: '1.57 PH/s',
+    status: 'Online',
+    uptime: '100%',
+    energy: 'Geothermal Resonance',
+    consensusRole: 'Oracle Steward',
+  },
+];
+
+const BLOCKCHAIN_LEDGER_HIGHLIGHTS: string[] = [
+  'Cross-chain attestation finalized for Eden Scroll channel 72 without variance.',
+  'Guardian quorum signed zero-knowledge audit digest · no covenant breaches detected.',
+  'Entangled witness mesh reports 0 orphan blocks in the last 18-hour cycle.',
+];
+
+const BLOCKCHAIN_ENERGY_MIX: EnergyChannel[] = [
+  { id: 'hydro', source: 'Hydro Plasmic Falls', percentage: 46, status: 'Primary' },
+  { id: 'solar', source: 'Solar Spiral Arrays', percentage: 32, status: 'Supplemental' },
+  { id: 'geothermal', source: 'Geothermal Resonance Wells', percentage: 22, status: 'Reserve' },
+];
 
 const RECORDING_CHANNELS: RecordingChannel[] = [
   {
@@ -1151,6 +1235,12 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
                 Processing &amp; Analysis
               </TabsTrigger>
               <TabsTrigger
+                value="blockchain-mining"
+                className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500/40 data-[state=active]:via-cyan-500/30 data-[state=active]:to-emerald-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(20,184,166,0.45)]"
+              >
+                Blockchain Mining
+              </TabsTrigger>
+              <TabsTrigger
                 value="live-visualization"
                 className="group relative flex-1 min-w-[160px] overflow-hidden rounded-xl border border-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200 transition duration-300 hover:text-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] data-[state=active]:border-transparent data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500/40 data-[state=active]:via-pink-500/30 data-[state=active]:to-amber-400/40 data-[state=active]:text-white data-[state=active]:shadow-[0_0_35px_rgba(236,72,153,0.45)]"
               >
@@ -1265,6 +1355,20 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/15 via-transparent to-sky-500/15 opacity-70" />
               <div className="relative z-10">
                 <ProcessingCoreTab processing={processing} />
+              </div>
+            </TabsContent>
+            <TabsContent
+              value="blockchain-mining"
+              className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_0_50px_rgba(20,184,166,0.22)] backdrop-blur"
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-teal-500/20 via-transparent to-cyan-500/15 opacity-70" />
+              <div className="relative z-10">
+                <BlockchainMiningTab
+                  metrics={BLOCKCHAIN_MINING_METRICS}
+                  nodes={BLOCKCHAIN_MINING_NODES}
+                  ledgerHighlights={BLOCKCHAIN_LEDGER_HIGHLIGHTS}
+                  energyMix={BLOCKCHAIN_ENERGY_MIX}
+                />
               </div>
             </TabsContent>
             <TabsContent

@@ -4,35 +4,17 @@ _Last updated: 2025-10-24_
 
 This reference summarizes the realtime account-level events that Binance pushes over a User Data Stream subscription. The stream is accessed via the WebSocket API using an API key. Both SBE and JSON payloads are supported and all JSON timestamps are expressed in milliseconds.
 
-## Event Envelope
 
-Every User Data Stream message is wrapped in an envelope that identifies the originating subscription and contains the event payload.
-
-* **JSON sessions.** Non-SBE connections send one JSON object per text frame.
-* **SBE sessions.** Binary frames carry SBE-encoded payloads.
 
 ```json
 {
   "subscriptionId": 0,
-  "event": {
-    "e": "outboundAccountPosition",
-    "E": 1728972148778,
-    "u": 1728972148778,
-    "B": [
-      {
-        "a": "BTC",
-        "f": "11818.00000000",
-        "l": "182.00000000"
-      }
-    ]
-  }
+in
 }
 ```
 
 | Field | Description |
 |-------|-------------|
-| `subscriptionId` | Identifier for the WebSocket subscription that produced the event. Present when the connection multiplexes multiple subscriptions. |
-| `event` | The event payload. See the sections below for event-specific fields. |
 
 
 ## Account Update (`outboundAccountPosition`)
@@ -83,6 +65,8 @@ Every User Data Stream message is wrapped in an envelope that identifies the ori
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`balanceUpdate`). |
+| `E` | Event time. |
 | `a` | Asset. |
 | `d` | Balance delta. |
 | `T` | Clear time. |
@@ -225,10 +209,15 @@ An additional `listStatus` event accompanies `executionReport` events for order 
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`listStatus`). |
+| `E` | Event time. |
 | `g` | Order list ID. |
 | `c` | Contingency type (for example, `OCO`). |
 | `l` | List status type. |
 | `L` | List order status. |
+| `r` | List reject reason. |
+| `C` | List client order ID. |
+| `T` | Transaction time. |
 | `O` | Orders in the list, each with symbol (`s`), order ID (`i`), and client order ID (`c`). |
 
 ## Session Lifecycle Events
@@ -266,6 +255,8 @@ Emitted when an external system locks or unlocks a portion of the spot wallet ba
 
 | Field | Description |
 |-------|-------------|
+| `e` | Event type (`externalLockUpdate`). |
+| `E` | Event time. |
 | `a` | Asset affected by the external lock. |
 | `d` | Delta applied to the lock. |
 | `T` | Transaction time. |
@@ -275,4 +266,3 @@ Emitted when an external system locks or unlocks a portion of the spot wallet ba
 - Subscribe to the user data stream via the WebSocket API after creating a listen key with a signed REST request.
 - Keep the listen key alive by calling the keep-alive endpoint every 30 minutes.
 - Close the stream explicitly when logging out or switching sessions to receive the `eventStreamTerminated` confirmation.
-

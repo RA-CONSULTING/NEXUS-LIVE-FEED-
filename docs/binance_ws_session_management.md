@@ -6,6 +6,41 @@ interacting with the Binance-style session layer used by the Nexus tooling. Only
 canonical request envelope, response shape, request weight, and parameter
 contract.
 
+## Request format
+
+All WebSocket requests **must** be sent as JSON text frames. Every frame follows
+the same envelope regardless of the method that you invoke.
+
+```json
+{
+  "id": "e2a85d9f-07a5-4f94-8d5f-789dc3deb097",
+  "method": "order.place",
+  "params": {
+    "symbol": "BTCUSDT",
+    "side": "BUY",
+    "type": "LIMIT",
+    "price": "0.1",
+    "quantity": "10",
+    "timeInForce": "GTC",
+    "timestamp": 1655716096498,
+    "apiKey": "T59MTDLWlpRW16JVeZ2Nju5A5C98WkMm8CSzWC4oqynUlTm1zXOxyauT8LmwXEv9",
+    "signature": "5942ad337e6779f2f4c62cd1c26dba71c91514400a24990a3e7f5edec9323f90"
+  }
+}
+```
+
+| Field | Type | Mandatory | Description |
+| ----- | ---- | --------- | ----------- |
+| `id` | string / integer / null | Yes | Correlates responses with the originating request. You may reuse identifiers so long as no two in-flight frames share the same value. |
+| `method` | string | Yes | Name of the API operation. Version prefixes such as `"v3/order.place"` are accepted. |
+| `params` | object | No | Method parameters. Omit the field when the call does not require inputs. |
+
+The server does not interpret the `id` beyond echoing it in the response. Use any
+format that suits your client (UUIDs, incrementing integers, timestamps, etc.).
+Order of keys inside `params` is insignificant, but signatures are generated over
+the canonical, alphabetically sorted representation as documented in the request
+security guide.
+
 ## Log in with API key — `session.logon`
 
 Authenticate the current WebSocket connection with an API key signed request.

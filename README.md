@@ -16,6 +16,8 @@ For the experiential design that turns planetary-scale quantum data into living 
 
 Need a quick reference for Binance SPOT trading terminology? Consult the [SPOT API Glossary](docs/spot_api_glossary.md) for definitions covering order states, response fields, and data source semantics used throughout the integration layer.
 
+For a list of Binance public market data endpoints that can be accessed without authentication, review the [Binance Public Market Data Endpoints](docs/binance_market_data_endpoints.md) guide. It outlines the REST and WebSocket URLs exposed on the `data-api.binance.vision` and `data-stream.binance.vision` hosts along with sample requests.
+
 To understand how the command center actually conducts those layers moment by moment, review the [Nexus Orchestrator AI blueprint](docs/nexus_ai_orchestrator_blueprint.md). It defines the coordinating services, control loops, deployment phases, and partnership playbook that allow every data stream to stay in harmonic alignment.
 
 For a technical inventory of the full data pipeline—from field sensors and network transport to AI services, rendering engines, and display surfaces—consult the [Nexus Live Visuals Architecture](docs/nexus_live_visuals_architecture.md). It captures the definitive sensor taxonomy, transmission budgets, AI stack, visualization toolkit, and signature live experiences now powering NEXUS-LIVE.

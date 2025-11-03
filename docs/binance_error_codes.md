@@ -305,6 +305,223 @@ The following messages can accompany error codes `-1010`, `-2010`, `-2011`, and 
 - "This price peg cannot be used with this order type." – You are using `pegPriceType=MARKET_PEG` for a `LIMIT_MAKER` order.
 - "Order book liquidity is too low for this pegged order." – The order book doesn’t have the best price level to peg the price to.
 
+### 30xx – Margin & SAPI Issues
+
+- **-3000 INNER_FAILURE** – Internal server error.
+- **-3001 NEED_ENABLE_2FA** – Please enable 2FA first.
+- **-3002 ASSET_DEFICIENCY** – The requested asset is unavailable.
+- **-3003 NO_OPENED_MARGIN_ACCOUNT** – Margin account does not exist.
+- **-3004 TRADE_NOT_ALLOWED** – Trading is not allowed.
+- **-3005 TRANSFER_OUT_NOT_ALLOWED** – Transferring out is not allowed.
+- **-3006 EXCEED_MAX_BORROWABLE** – Borrow amount exceeds the maximum borrowable amount.
+- **-3007 HAS_PENDING_TRANSACTION** – Pending transaction detected; try again later.
+- **-3008 BORROW_NOT_ALLOWED** – Borrow action is not allowed.
+- **-3009 ASSET_NOT_MORTGAGEABLE** – Asset cannot be transferred into margin account currently.
+- **-3010 REPAY_NOT_ALLOWED** – Repay is not allowed.
+- **-3011 BAD_DATE_RANGE** – Input date is invalid.
+- **-3012 ASSET_ADMIN_BAN_BORROW** – Borrowing is banned for this asset.
+- **-3013 LT_MIN_BORROWABLE** – Borrow amount is less than the minimum borrowable amount.
+- **-3014 ACCOUNT_BAN_BORROW** – Borrowing is banned for this account.
+- **-3015 REPAY_EXCEED_LIABILITY** – Repay amount exceeds borrow amount.
+- **-3016 LT_MIN_REPAY** – Repay amount is less than the minimum repay amount.
+- **-3017 ASSET_ADMIN_BAN_MORTGAGE** – Asset cannot be transferred into margin account currently.
+- **-3018 ACCOUNT_BAN_MORTGAGE** – Transferring in has been banned for this account.
+- **-3019 ACCOUNT_BAN_ROLLOUT** – Transferring out has been banned for this account.
+- **-3020 EXCEED_MAX_ROLLOUT** – Transfer-out amount exceeds the maximum allowed.
+- **-3021 PAIR_ADMIN_BAN_TRADE** – Margin account cannot trade this trading pair.
+- **-3022 ACCOUNT_BAN_TRADE** – Account trading is banned.
+- **-3023 WARNING_MARGIN_LEVEL** – Cannot transfer out/place order under current margin level.
+- **-3024 FEW_LIABILITY_LEFT** – Unpaid debt would be too small after this repayment.
+- **-3025 INVALID_EFFECTIVE_TIME** – Input date is invalid.
+- **-3026 VALIDATION_FAILED** – Parameter validation failed.
+- **-3027 NOT_VALID_MARGIN_ASSET** – Not a valid margin asset.
+- **-3028 NOT_VALID_MARGIN_PAIR** – Not a valid margin pair.
+- **-3029 TRANSFER_FAILED** – Transfer failed.
+- **-3036 ACCOUNT_BAN_REPAY** – Account is not allowed to repay.
+- **-3037 PNL_CLEARING** – PNL is clearing; wait a moment.
+- **-3038 LISTEN_KEY_NOT_FOUND** – Listen key not found.
+- **-3041 BALANCE_NOT_CLEARED** – Insufficient balance.
+- **-3042 PRICE_INDEX_NOT_FOUND** – Price index not available for this margin pair.
+- **-3043 TRANSFER_IN_NOT_ALLOWED** – Transferring in not allowed.
+- **-3044 SYSTEM_BUSY** – System busy; retry later.
+- **-3045 SYSTEM** – System lacks sufficient asset.
+- **-3999 NOT_WHITELIST_USER** – Function is available only for invited users.
+- **-4001 CAPITAL_INVALID** – Invalid capital operation.
+- **-4002 CAPITAL_IG** – Invalid capital get request.
+- **-4003 CAPITAL_IEV** – Input email is invalid.
+- **-4004 CAPITAL_UA** – User not logged in or authenticated.
+- **-4005 CAPAITAL_TOO_MANY_REQUEST** – Too many new requests.
+- **-4006 CAPITAL_ONLY_SUPPORT_PRIMARY_ACCOUNT** – Operation supports main account only.
+- **-4007 CAPITAL_ADDRESS_VERIFICATION_NOT_PASS** – Address validation failed.
+- **-4008 CAPITAL_ADDRESS_TAG_VERIFICATION_NOT_PASS** – Address tag validation failed.
+- **-4010 CAPITAL_WHITELIST_EMAIL_CONFIRM** – Whitelist email already confirmed.
+- **-4011 CAPITAL_WHITELIST_EMAIL_EXPIRED** – Whitelist email is invalid or expired.
+- **-4012 CAPITAL_WHITELIST_CLOSE** – Whitelist is not open.
+- **-4013 CAPITAL_WITHDRAW_2FA_VERIFY** – 2FA not enabled for withdrawal.
+- **-4014 CAPITAL_WITHDRAW_LOGIN_DELAY** – Withdrawals blocked within two minutes of login.
+- **-4015 CAPITAL_WITHDRAW_RESTRICTED_MINUTE** – Withdrawal temporarily limited.
+- **-4016 CAPITAL_WITHDRAW_RESTRICTED_PASSWORD** – Withdrawal prohibited within 24 hours of password change.
+- **-4017 CAPITAL_WITHDRAW_RESTRICTED_UNBIND_2FA** – Withdrawal prohibited within 24 hours of removing 2FA.
+- **-4018 CAPITAL_WITHDRAW_ASSET_NOT_EXIST** – Asset does not exist.
+- **-4019 CAPITAL_WITHDRAW_ASSET_PROHIBIT** – Asset withdrawal not open.
+- **-4021 CAPITAL_WITHDRAW_AMOUNT_MULTIPLE** – Withdrawal must be an `%s` multiple of `%s`.
+- **-4022 CAPITAL_WITHDRAW_MIN_AMOUNT** – Withdrawal less than minimum amount `%s`.
+- **-4023 CAPITAL_WITHDRAW_MAX_AMOUNT** – Withdrawal exceeds 24-hour maximum.
+- **-4024 CAPITAL_WITHDRAW_USER_NO_ASSET** – User does not hold this asset.
+- **-4025 CAPITAL_WITHDRAW_USER_ASSET_LESS_THAN_ZERO** – Held asset quantity is less than zero.
+- **-4026 CAPITAL_WITHDRAW_USER_ASSET_NOT_ENOUGH** – Insufficient balance for withdrawal.
+- **-4027 CAPITAL_WITHDRAW_GET_TRAN_ID_FAILURE** – Failed to obtain `tranId`.
+- **-4028 CAPITAL_WITHDRAW_MORE_THAN_FEE** – Withdrawal amount must exceed the fee.
+- **-4029 CAPITAL_WITHDRAW_NOT_EXIST** – Withdrawal record does not exist.
+- **-4030 CAPITAL_WITHDRAW_CONFIRM_SUCCESS** – Withdrawal confirmation succeeded.
+- **-4031 CAPITAL_WITHDRAW_CANCEL_FAILURE** – Withdrawal cancellation failed.
+- **-4032 CAPITAL_WITHDRAW_CHECKSUM_VERIFY_FAILURE** – Withdrawal verification exception.
+- **-4033 CAPITAL_WITHDRAW_ILLEGAL_ADDRESS** – Illegal address detected.
+- **-4034 CAPITAL_WITHDRAW_ADDRESS_CHEAT** – Address suspected of being fake.
+- **-4035 CAPITAL_WITHDRAW_NOT_WHITE_ADDRESS** – Address not on whitelist.
+- **-4036 CAPITAL_WITHDRAW_NEW_ADDRESS** – New address requires waiting `{0}` hours before withdrawal.
+- **-4037 CAPITAL_WITHDRAW_RESEND_EMAIL_FAIL** – Failed to resend confirmation email.
+- **-4038 CAPITAL_WITHDRAW_RESEND_EMAIL_TIME_OUT** – Please retry in five minutes.
+- **-4039 CAPITAL_USER_EMPTY** – User does not exist.
+- **-4040 CAPITAL_NO_CHARGE** – Address has no deposit history.
+- **-4041 CAPITAL_MINUTE_TOO_SMALL** – Please retry in one minute.
+- **-4042 CAPITAL_CHARGE_NOT_RESET** – Cannot reissue deposit address for this asset.
+- **-4043 CAPITAL_ADDRESS_TOO_MUCH** – More than 100 recharge addresses used in 24 hours.
+- **-4044 CAPITAL_BLACKLIST_COUNTRY_GET_ADDRESS** – Address request denied for blacklist country.
+- **-4045 CAPITAL_GET_ASSET_ERROR** – Failed to acquire asset data.
+- **-4046 CAPITAL_AGREEMENT_NOT_CONFIRMED** – Agreement not confirmed.
+- **-4047 CAPITAL_DATE_INTERVAL_LIMIT** – Time interval must be within 0–90 days.
+- **-4060 CAPITAL_WITHDRAW_USER_ASSET_LOCK_DEPOSIT** – Deposit awaiting confirmations; `{0}` asset temporarily locked.
+
+### 50xx – Asset Conversion & Transfers
+
+- **-5001 ASSET_DRIBBLET_CONVERT_SWITCH_OFF** – Transfer to micro assets disabled.
+- **-5002 ASSET_ASSET_NOT_ENOUGH** – Insufficient balance.
+- **-5003 ASSET_USER_HAVE_NO_ASSET** – User does not hold this asset.
+- **-5004 USER_OUT_OF_TRANSFER_FLOAT** – Residual balances exceed `0.001 BTC`; reselect assets.
+- **-5005 USER_ASSET_AMOUNT_IS_TOO_LOW** – Residual balance is too low.
+- **-5006 USER_CAN_NOT_REQUEST_IN_24_HOURS** – Only one transfer allowed per 24 hours.
+- **-5007 AMOUNT_OVER_ZERO** – Quantity must be greater than zero.
+- **-5008 ASSET_WITHDRAW_WITHDRAWING_NOT_ENOUGH** – Insufficient amount of returnable assets.
+- **-5009 PRODUCT_NOT_EXIST** – Product does not exist.
+- **-5010 TRANSFER_FAIL** – Asset transfer failed.
+- **-5011 FUTURE_ACCT_NOT_EXIST** – Futures account does not exist.
+- **-5012 TRANSFER_PENDING** – Asset transfer pending.
+- **-5021 PARENT_SUB_HAVE_NO_RELATION** – Parent and sub-account have no relationship.
+- **-5012 FUTURE_ACCT_OR_SUBRELATION_NOT_EXIST** – Futures account or sub-account relationship does not exist.
+
+### 60xx – Savings Issues
+
+- **-6001 DAILY_PRODUCT_NOT_EXIST** – Daily product does not exist.
+- **-6003 DAILY_PRODUCT_NOT_ACCESSIBLE** – Product unavailable or permission denied.
+- **-6004 DAILY_PRODUCT_NOT_PURCHASABLE** – Product not purchasable.
+- **-6005 DAILY_LOWER_THAN_MIN_PURCHASE_LIMIT** – Purchase amount below minimum limit.
+- **-6006 DAILY_REDEEM_AMOUNT_ERROR** – Redeem amount error.
+- **-6007 DAILY_REDEEM_TIME_ERROR** – Not within redeem time.
+- **-6008 DAILY_PRODUCT_NOT_REDEEMABLE** – Product not in redeem status.
+- **-6009 REQUEST_FREQUENCY_TOO_HIGH** – Request frequency too high.
+- **-6011 EXCEEDED_USER_PURCHASE_LIMIT** – Exceeded user purchase limit.
+- **-6012 BALANCE_NOT_ENOUGH** – Balance insufficient.
+- **-6013 PURCHASING_FAILED** – Purchase failed.
+- **-6014 UPDATE_FAILED** – Exceeded maximum allowed purchase quantity.
+- **-6015 EMPTY_REQUEST_BODY** – Request body is empty.
+- **-6016 PARAMS_ERR** – Parameter error.
+- **-6017 NOT_IN_WHITELIST** – User not in whitelist.
+- **-6018 ASSET_NOT_ENOUGH** – Asset amount insufficient.
+- **-6019 PENDING** – Request pending confirmation.
+- **-6020 PROJECT_NOT_EXISTS** – Project does not exist.
+
+### 70xx – Futures Issues
+
+- **-7001 FUTURES_BAD_DATE_RANGE** – Unsupported date range.
+- **-7002 FUTURES_BAD_TYPE** – Unsupported data request type.
+
+### 20xxx – Futures & Spot Algo
+
+- **-20121** – Invalid symbol.
+- **-20124** – Invalid algo ID or already completed.
+- **-20130** – Invalid data sent for a parameter.
+- **-20132** – Client algo ID is duplicated.
+- **-20194** – Duration too short to execute required quantity.
+- **-20195** – Total size too small.
+- **-20196** – Total size too large.
+- **-20198** – Maximum open orders reached.
+- **-20204** – USD notional outside permitted limit.
+
+### 10xxx – Crypto Loans
+
+- **-10001 SYSTEM_MAINTENANCE** – System under maintenance.
+- **-10002 INVALID_INPUT** – Invalid input parameters.
+- **-10005 NO_RECORDS** – No records found.
+- **-10007 COIN_NOT_LOANABLE** – Coin is not loanable.
+- **-10008 COIN_NOT_LOANABLE** – Coin is not loanable.
+- **-10009 COIN_NOT_COLLATERAL** – Coin cannot be used as collateral.
+- **-10010 COIN_NOT_COLLATERAL** – Coin cannot be used as collateral.
+- **-10011 INSUFFICIENT_ASSET** – Insufficient spot assets.
+- **-10012 INVALID_AMOUNT** – Invalid repayment amount.
+- **-10013 INSUFFICIENT_AMOUNT** – Insufficient collateral amount.
+- **-10015 DEDUCTION_FAILED** – Collateral deduction failed.
+- **-10016 LOAN_FAILED** – Failed to provide loan.
+- **-10017 REPAY_EXCEED_DEBT** – Repayment exceeds debt.
+- **-10018 INVALID_AMOUNT** – Invalid repayment amount.
+- **-10019 CONFIG_NOT_EXIST** – Configuration does not exist.
+- **-10020 UID_NOT_EXIST** – User ID does not exist.
+- **-10021 ORDER_NOT_EXIST** – Order does not exist.
+- **-10022 INVALID_AMOUNT** – Invalid adjustment amount.
+- **-10023 ADJUST_LTV_FAILED** – Failed to adjust LTV.
+- **-10024 ADJUST_LTV_NOT_SUPPORTED** – LTV adjustment not supported.
+- **-10025 REPAY_FAILED** – Repayment failed.
+- **-10026 INVALID_PARAMETER** – Invalid parameter.
+- **-10028 INVALID_PARAMETER** – Invalid parameter.
+- **-10029 AMOUNT_TOO_SMALL** – Loan amount too small.
+- **-10030 AMOUNT_TOO_LARGE** – Loan amount too large.
+- **-10031 QUOTA_REACHED** – Individual loan quota reached.
+- **-10032 REPAY_NOT_AVAILABLE** – Repayment temporarily unavailable.
+- **-10034 REPAY_NOT_AVAILABLE** – Collateral repayment unavailable; try using borrowed coin.
+- **-10039 AMOUNT_TOO_SMALL** – Repayment amount too small.
+- **-10040 AMOUNT_TOO_LARGE** – Repayment amount too large.
+- **-10041 INSUFFICIENT_AMOUNT** – Insufficient loanable assets for `{0}`; adjust amount or retry later.
+- **-10042 ASSET_NOT_SUPPORTED** – Asset `%s` not supported.
+- **-10043 ASSET_NOT_SUPPORTED** – Borrowing not supported for `{0}`.
+- **-10044 QUOTA_REACHED** – Collateral amount reached limit.
+- **-10045 COLLTERAL_REPAY_NOT_SUPPORTED** – Collateral repayment not supported for the loan coin.
+- **-10046 EXCEED_MAX_ADJUSTMENT** – Collateral adjustment exceeds maximum.
+- **-10047 REGION_NOT_SUPPORTED** – Coin not supported in user region due to regulations.
+
+### 12xxx – Liquid Swap
+
+- **-12014 TOO_MANY_REQUESTS** – More than one request in two seconds.
+
+### 13xxx – BLVT (Leveraged Tokens)
+
+- **-13000 BLVT_FORBID_REDEEM** – Redemption of the token is forbidden.
+- **-13001 BLVT_EXCEED_DAILY_LIMIT** – Exceeds individual 24-hour redemption limit.
+- **-13002 BLVT_EXCEED_TOKEN_DAILY_LIMIT** – Exceeds total 24-hour redemption limit for the token.
+- **-13003 BLVT_FORBID_PURCHASE** – Subscription of the token is forbidden.
+- **-13004 BLVT_EXCEED_DAILY_PURCHASE_LIMIT** – Exceeds individual 24-hour subscription limit.
+- **-13005 BLVT_EXCEED_TOKEN_DAILY_PURCHASE_LIMIT** – Exceeds total 24-hour subscription limit.
+- **-13006 BLVT_PURCHASE_LESS_MIN_AMOUNT** – Subscription amount too small.
+- **-13007 BLVT_PURCHASE_AGREEMENT_NOT_SIGN** – Agreement not signed.
+
+### 18xxx – Binance Code
+
+- **-18002** – Total amount of codes created exceeds 24-hour limit; try again after UTC 0.
+- **-18003** – Too many codes created in 24 hours; retry after UTC 0.
+- **-18004** – Too many invalid redeem attempts in 24 hours; retry after UTC 0.
+- **-18005** – Too many invalid verify attempts; try again later.
+- **-18006** – Amount too small; re-enter value.
+- **-18007** – Token not supported; re-enter value.
+
+### 21xxx – Portfolio Margin Account
+
+- **-21001 USER_IS_NOT_UNIACCOUNT** – Request ID is not a Portfolio Margin Account.
+- **-21002 UNI_ACCOUNT_CANT_TRANSFER_FUTURE** – Portfolio Margin Account cannot transfer from margin to futures.
+- **-21003 NET_ASSET_MUST_LTE_RATIO** – Failed to retrieve margin assets.
+- **-21004 USER_NO_LIABILITY** – User has no portfolio margin bankruptcy loan.
+- **-21005 NO_ENOUGH_ASSET** – Spot wallet lacks sufficient BUSD to repay bankruptcy loan.
+- **-21006 HAD_IN_PROCESS_REPAY** – Repayment already in process.
+- **-21007 IN_FORCE_LIQUIDATION** – Repayment failed because liquidation is in process.
+
 ### Filter Failures
 
 - "Filter failure: PRICE_FILTER" – Price is too high, too low, and/or not following the tick size rule for the symbol.
@@ -325,4 +542,5 @@ The following messages can accompany error codes `-1010`, `-2010`, `-2011`, and 
 - "Filter failure: EXCHANGE_MAX_NUM_ALGO_ORDERS" – Account has too many open stop loss and/or take profit orders on the exchange.
 - "Filter failure: EXCHANGE_MAX_NUM_ICEBERG_ORDERS" – Account has too many open iceberg orders on the exchange.
 - "Filter failure: EXCHANGE_MAX_NUM_ORDER_LISTS" – Account has too many open order lists on the exchange.
+
 

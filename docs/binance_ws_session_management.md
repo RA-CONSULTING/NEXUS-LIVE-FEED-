@@ -6,6 +6,13 @@ interacting with the Binance-style session layer used by the Nexus tooling. Only
 canonical request envelope, response shape, request weight, and parameter
 contract.
 
+## Authentication requests
+
+Only Ed25519 keys are supported for this feature. Once a connection is
+authenticated you may omit the `apiKey` and `signature` fields from subsequent
+signed calls until the session is cleared or replaced. The requests below mirror
+the behaviour exposed by the production WebSocket API.
+
 ## Request format
 
 All WebSocket requests **must** be sent as JSON text frames. Every frame follows
@@ -80,7 +87,7 @@ replaced or explicitly cleared.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649729878630,
-    "userDataStream": false
+    "userDataStream": false // is User Data Stream subscription active?
   }
 }
 ```
@@ -111,7 +118,7 @@ and `authorizedSince` fields return `null` when the socket is unauthenticated.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649730611671,
-    "userDataStream": true
+    "userDataStream": true // is User Data Stream subscription active?
   }
 }
 ```
@@ -143,7 +150,7 @@ parameters.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649730611671,
-    "userDataStream": false
+    "userDataStream": false // is User Data Stream subscription active?
   }
 }
 ```

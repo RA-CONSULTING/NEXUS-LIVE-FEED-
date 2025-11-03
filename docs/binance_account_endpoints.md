@@ -1057,3 +1057,104 @@ Return the exchange, symbol, and asset-level filters applied to the account. Thi
   }
 }
 ```
+
+---
+
+## Mining Account Hashrate Statistics — `GET /sapi/v1/mining/statistics/user/list` / `method: "mining.statistics.user.list"`
+
+Query hourly and daily hashrate metrics for a specific mining account. Results are grouped by
+`type`, with `H_hashrate` buckets representing hourly aggregates and `D_hashrate` representing
+daily aggregates. Each bucket includes the `time` (millisecond epoch), reported `hashrate`, and
+`reject` rate. Because this is a mining User Data endpoint the request must be signed and include
+the `X-MBX-APIKEY` header.
+
+- **Weight:** 5
+- **Data Source:** Upstream Mining Service
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `apiKey` | STRING | ✅ | API key issued by Binance. Sent via `X-MBX-APIKEY` header. |
+| `algo` | STRING | ✅ | Hashing algorithm (e.g., `sha256`, `ethash`). |
+| `userName` | STRING | ✅ | Mining account name. |
+| `recvWindow` | LONG |  | Optional window in milliseconds (≤ 60000). |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature using the API secret. |
+| `timestamp` | LONG | ✅ | Millisecond UNIX timestamp. |
+
+**Example REST request**
+
+```bash
+curl -H "X-MBX-APIKEY: <api-key>" \
+  "https://api.binance.com/sapi/v1/mining/statistics/user/list?algo=sha256&userName=test&timestamp=1587909600000&signature=<sig>"
+```
+
+**Example JSON-RPC request**
+
+```json
+{
+  "id": "4b3ae1f7-470d-4460-b573-a37bd5641c77",
+  "method": "mining.statistics.user.list",
+  "params": {
+    "apiKey": "vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A",
+    "algo": "sha256",
+    "userName": "test",
+    "timestamp": 1587909600000,
+    "signature": "1e72058b58d4f4a9d44ca9f2f8823e0d3d17a585d8cc7f3b6a3d6045559a1d15"
+  }
+}
+```
+
+**Example Response**
+
+```json
+{
+  "id": "4b3ae1f7-470d-4460-b573-a37bd5641c77",
+  "status": 200,
+  "result": {
+    "code": 0,
+    "msg": "",
+    "data": [
+      {
+        "type": "H_hashrate",
+        "userName": "test",
+        "list": [
+          {
+            "time": 1585267200000,
+            "hashrate": "0.00000000",
+            "reject": "0.00000000"
+          },
+          {
+            "time": 1585353600000,
+            "hashrate": "0.00000000",
+            "reject": "0.00000000"
+          }
+        ]
+      },
+      {
+        "type": "D_hashrate",
+        "userName": "test",
+        "list": [
+          {
+            "time": 1587906000000,
+            "hashrate": "0.00000000",
+            "reject": "0.00000000"
+          },
+          {
+            "time": 1587909600000,
+            "hashrate": "0.00000000",
+            "reject": "0.00000000"
+          }
+        ]
+      }
+    ]
+  },
+  "rateLimits": [
+    {
+      "rateLimitType": "REQUEST_WEIGHT",
+      "interval": "MINUTE",
+      "intervalNum": 1,
+      "limit": 1200,
+      "count": 5
+    }
+  ]
+}
+```

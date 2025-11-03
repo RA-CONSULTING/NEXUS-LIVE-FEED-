@@ -4,6 +4,35 @@ _Last updated: 2025-10-24_
 
 This reference summarizes the realtime account-level events that Binance pushes over a User Data Stream subscription. The stream is accessed via the WebSocket API using an API key. Both SBE and JSON payloads are supported and all JSON timestamps are expressed in milliseconds.
 
+## Event Envelope
+
+Every User Data Stream message is wrapped in an envelope that identifies the originating subscription and contains the event payload.
+
+* **JSON sessions.** Non-SBE connections send one JSON object per text frame.
+* **SBE sessions.** Binary frames carry SBE-encoded payloads.
+
+```json
+{
+  "subscriptionId": 0,
+  "event": {
+    "e": "outboundAccountPosition",
+    "E": 1728972148778,
+    "u": 1728972148778,
+    "B": [
+      {
+        "a": "BTC",
+        "f": "11818.00000000",
+        "l": "182.00000000"
+      }
+    ]
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `subscriptionId` | Identifier for the WebSocket subscription that produced the event. Present when the connection multiplexes multiple subscriptions. |
+| `event` | The event payload. See the sections below for event-specific fields. |
 
 
 ## Account Update (`outboundAccountPosition`)

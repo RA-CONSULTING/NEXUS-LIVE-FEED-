@@ -6,7 +6,7 @@ Unless otherwise specified, responses originate from an in-memory cache backed b
 
 ---
 
-## Account Status — `account.status`
+## Account Status — `GET /api/v3/account` / `method: "account.status"`
 
 Query high-level account information, including commission settings, flags indicating whether trading/withdrawals/deposits are enabled, and the current asset balances. When `omitZeroBalances` is set to `true`, only assets with a non-zero `free` or `locked` value are returned.
 
@@ -96,7 +96,7 @@ Query high-level account information, including commission settings, flags indic
 
 ---
 
-## Order Status — `order.status`
+## Order Status — `GET /api/v3/order` / `method: "order.status"`
 
 Check the execution status of an individual order. If both `orderId` and `origClientOrderId` are supplied, Binance first looks up the `orderId` and verifies that the `origClientOrderId` matches that record. Some historical orders may omit `cummulativeQuoteQty` (or return it as a negative value) when the data is unavailable.
 
@@ -177,7 +177,7 @@ Check the execution status of an individual order. If both `orderId` and `origCl
 
 ---
 
-## Open Orders — `openOrders.status`
+## Open Orders — `GET /api/v3/openOrders` / `method: "openOrders.status"`
 
 Fetch the execution status of all open orders. Passing a `symbol` restricts the results to that market; omitting it returns every open order at a cost of 80 weight units.
 
@@ -252,7 +252,7 @@ Fetch the execution status of all open orders. Passing a `symbol` restricts the 
 
 ---
 
-## Order History — `allOrders`
+## Order History — `GET /api/v3/allOrders` / `method: "allOrders"`
 
 Return active, canceled, and filled orders for a symbol over a limited time range (≤ 24 hours) or starting from a specific `orderId`. When `startTime`/`endTime` are supplied, `orderId` is ignored.
 
@@ -335,7 +335,7 @@ Return active, canceled, and filled orders for a symbol over a limited time rang
 
 ---
 
-## Order List Status — `orderList.status`
+## Order List Status — `GET /api/v3/orderList` / `method: "orderList.status"`
 
 Retrieve the execution state of an OCO order list by `orderListId` or `origClientOrderId`. When both are provided, Binance uses `origClientOrderId` and ignores `orderListId`.
 
@@ -407,7 +407,7 @@ Retrieve the execution state of an OCO order list by `orderListId` or `origClien
 
 ---
 
-## Open Order Lists — `openOrderLists.status`
+## Open Order Lists — `GET /api/v3/openOrderList` / `method: "openOrderLists.status"`
 
 Return the currently executing OCO order lists for the account.
 
@@ -478,7 +478,7 @@ Return the currently executing OCO order lists for the account.
 
 ---
 
-## Order List History — `allOrderLists`
+## Order List History — `GET /api/v3/allOrderList` / `method: "allOrderLists"`
 
 List historical OCO order lists. Time windows must not exceed 24 hours. If `startTime`/`endTime` are supplied, `fromId` is ignored.
 
@@ -556,7 +556,7 @@ List historical OCO order lists. Time windows must not exceed 24 hours. If `star
 
 ---
 
-## Trade History — `myTrades`
+## Trade History — `GET /api/v3/myTrades` / `method: "myTrades"`
 
 Retrieve fills for a symbol. Provide `orderId` to reduce the weight from 20 to 5. Supported combinations include `symbol + orderId`, `symbol + startTime + endTime`, and `symbol + fromId`.
 
@@ -645,7 +645,7 @@ Retrieve fills for a symbol. Provide `orderId` to reduce the weight from 20 to 5
 
 ---
 
-## Unfilled Order Count — `account.rateLimits.orders`
+## Unfilled Order Count — `GET /api/v3/rateLimit/order` / `method: "account.rateLimits.orders"`
 
 Return the current unfilled order usage for each throttle window. Helpful for proactive rate limiting within automation.
 
@@ -709,11 +709,11 @@ Return the current unfilled order usage for each throttle window. Helpful for pr
 
 ---
 
-## Prevented Matches — `myPreventedMatches`
+## Prevented Matches — `GET /api/v3/myPreventedMatches` / `method: "myPreventedMatches"`
 
 Show orders that expired due to self-trade prevention (STP). Supported lookup combinations include `symbol + preventedMatchId`, `symbol + orderId`, and `symbol + orderId + fromPreventedMatchId (+ limit)`.
 
-- **Weight:** 2 for invalid `symbol`/`preventedMatchId`; 20 when querying by `orderId`  
+- **Weight:** 2 when the `symbol` is invalid or when querying by `preventedMatchId`; 20 when querying by `orderId`
 - **Data Source:** Database
 
 | Name | Type | Required | Description |
@@ -723,7 +723,9 @@ Show orders that expired due to self-trade prevention (STP). Supported lookup co
 | `orderId` | LONG |  | Filter prevented matches for an order |
 | `fromPreventedMatchId` | LONG |  | Pagination cursor |
 | `limit` | INT |  | Defaults to 500; max 1000 |
+| `apiKey` | STRING | ✅ | API key |
 | `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
 | `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
 
 **Example Request**
@@ -776,7 +778,7 @@ Show orders that expired due to self-trade prevention (STP). Supported lookup co
 
 ---
 
-## Allocations — `myAllocations`
+## Allocations — `GET /api/v3/myAllocations` / `method: "myAllocations"`
 
 Retrieve allocations generated by Smart Order Routing (SOR). Results can be filtered by `orderId`, `fromAllocationId`, or time range (≤ 24 hours).
 
@@ -791,8 +793,10 @@ Retrieve allocations generated by Smart Order Routing (SOR). Results can be filt
 | `fromAllocationId` | INT |  | Pagination cursor |
 | `limit` | INT |  | Defaults to 500; max 1000 |
 | `orderId` | LONG |  | Filter allocations for an order |
+| `apiKey` | STRING | ✅ | API key |
 | `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
-| `timestamp` | LONG |  | Millisecond UNIX timestamp |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
+| `timestamp` | LONG |  | Millisecond UNIX timestamp (optional but recommended) |
 
 **Example Request**
 
@@ -848,7 +852,7 @@ Retrieve allocations generated by Smart Order Routing (SOR). Results can be filt
 
 ---
 
-## Commission Rates — `account.commission`
+## Commission Rates — `GET /api/v3/account/commission` / `method: "account.commission"`
 
 Return the current commission configuration for a symbol, including standard, special, and tax rates as well as the BNB discount settings.
 
@@ -925,7 +929,7 @@ Return the current commission configuration for a symbol, including standard, sp
 
 ---
 
-## Order Amendments — `order.amendments`
+## Order Amendments — `GET /api/v3/order/amendments` / `method: "order.amendments"`
 
 List amendments performed on a single order. Use `fromExecutionId` to paginate older amendments.
 
@@ -938,7 +942,9 @@ List amendments performed on a single order. Use `fromExecutionId` to paginate o
 | `orderId` | LONG | ✅ | Binance order ID |
 | `fromExecutionId` | LONG |  | Return amendments with execution ID ≥ value |
 | `limit` | INT |  | Defaults to 500; max 1000 |
+| `apiKey` | STRING | ✅ | API key |
 | `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
 | `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
 
 **Example Request**
@@ -990,7 +996,7 @@ List amendments performed on a single order. Use `fromExecutionId` to paginate o
 
 ---
 
-## Relevant Filters — `myFilters`
+## Relevant Filters — `GET /api/v3/myFilters` / `method: "myFilters"`
 
 Return the exchange, symbol, and asset-level filters applied to the account. This endpoint is the only way to surface `MAX_ASSET` filter assignments.
 
@@ -1000,7 +1006,9 @@ Return the exchange, symbol, and asset-level filters applied to the account. Thi
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | `symbol` | STRING | ✅ | Trading pair |
+| `apiKey` | STRING | ✅ | API key |
 | `recvWindow` | DECIMAL |  | Must be ≤ 60000 |
+| `signature` | STRING | ✅ | HMAC SHA-256 signature |
 | `timestamp` | LONG | ✅ | Millisecond UNIX timestamp |
 
 **Example Request**

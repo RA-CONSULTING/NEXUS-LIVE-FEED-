@@ -35,4 +35,5 @@ This document summarizes the key operational details for interacting with the Bi
 ## Additional References
 - For clarifications on enums and terminology, consult the **SPOT Glossary**.
 - Refer to the **Binance Spot Testnet Changelog** for API updates.
+- Consult the [Binance Spot Testnet FAQ](binance_spot_testnet_faq.md) for endpoint mappings, reset cadence, and authentication examples.
 

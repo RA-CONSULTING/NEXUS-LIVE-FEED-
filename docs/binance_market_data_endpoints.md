@@ -22,6 +22,7 @@ gateway.
 - **Notes:** Requests asking for more than 5000 levels are silently capped. A symbol/status
   mismatch raises `-1220 SYMBOL_DOES_NOT_MATCH_STATUS`. Bid levels are sorted highest-first,
   ask levels lowest-first.
+- **Data source:** Memory
 - **RPC request:**
 
   ```json
@@ -212,6 +213,9 @@ gateway.
   - omit `symbol` (all symbols) or `symbols` query: 80
   - `symbols` array: 2 (≤20), 40 (21–100), 80 (>100)
 - **Parameters:** `symbol`, `symbols`, `type` (`FULL` or `MINI`), `symbolStatus`
+- **Notes:** `symbol` and `symbols` are mutually exclusive. A status mismatch returns
+  `-1220 SYMBOL_DOES_NOT_MATCH_STATUS` when a single symbol is requested; mismatched symbols are
+  omitted from multi-symbol responses.
 - **Data source:** Memory
 - **RPC request:**
 
@@ -225,12 +229,61 @@ gateway.
   }
   ```
 
-- **Response:** returns either a single ticker object or an array, matching the selected `type`.
+- **Response:**
+
+  FULL payload:
+
+  ```json
+  {
+    "symbol": "BNBBTC",
+    "priceChange": "-94.99999800",
+    "priceChangePercent": "-95.960",
+    "weightedAvgPrice": "0.29628482",
+    "prevClosePrice": "0.10002000",
+    "lastPrice": "4.00000200",
+    "lastQty": "200.00000000",
+    "bidPrice": "4.00000000",
+    "bidQty": "100.00000000",
+    "askPrice": "4.00000200",
+    "askQty": "100.00000000",
+    "openPrice": "99.00000000",
+    "highPrice": "100.00000000",
+    "lowPrice": "0.10000000",
+    "volume": "8913.30000000",
+    "quoteVolume": "15.30000000",
+    "openTime": 1499783499040,
+    "closeTime": 1499869899040,
+    "firstId": 28385,
+    "lastId": 28460,
+    "count": 76
+  }
+  ```
+
+  MINI payload:
+
+  ```json
+  {
+    "symbol": "BNBBTC",
+    "openPrice": "99.00000000",
+    "highPrice": "100.00000000",
+    "lowPrice": "0.10000000",
+    "lastPrice": "4.00000200",
+    "volume": "8913.30000000",
+    "quoteVolume": "15.30000000",
+    "openTime": 1499783499040,
+    "closeTime": 1499869899040,
+    "firstId": 28385,
+    "lastId": 28460,
+    "count": 76
+  }
+  ```
 
 ## Trading Day Ticker – `GET /api/v3/ticker/tradingDay` / `method: "ticker.tradingDay"`
 
 - **Weight:** 4 per symbol, capped at 200 for >50 symbols
 - **Parameters:** `symbol` **or** `symbols` (max 100), optional `timeZone`, `type`, `symbolStatus`
+- **Notes:** `symbol`/`symbols` are mutually exclusive; status mismatches behave like the 24 h
+  ticker. `timeZone` accepts hour/minute offsets in the range `-12:00` to `+14:00`.
 - **Data source:** Database
 - **RPC request:**
 
@@ -245,7 +298,50 @@ gateway.
   }
   ```
 
-- **Response:** same shapes as the 24h ticker in `FULL` or `MINI` modes.
+- **Response:**
+
+  FULL payload (single symbol):
+
+  ```json
+  {
+    "symbol": "BTCUSDT",
+    "priceChange": "-83.13000000",
+    "priceChangePercent": "-0.317",
+    "weightedAvgPrice": "26234.58803036",
+    "openPrice": "26304.80000000",
+    "highPrice": "26397.46000000",
+    "lowPrice": "26088.34000000",
+    "lastPrice": "26221.67000000",
+    "volume": "18495.35066000",
+    "quoteVolume": "485217905.04210480",
+    "openTime": 1695686400000,
+    "closeTime": 1695772799999,
+    "firstId": 3220151555,
+    "lastId": 3220849281,
+    "count": 697727
+  }
+  ```
+
+  MINI payload (array response):
+
+  ```json
+  [
+    {
+      "symbol": "BTCUSDT",
+      "openPrice": "26304.80000000",
+      "highPrice": "26397.46000000",
+      "lowPrice": "26088.34000000",
+      "lastPrice": "26221.67000000",
+      "volume": "18495.35066000",
+      "quoteVolume": "485217905.04210480",
+      "openTime": 1695686400000,
+      "closeTime": 1695772799999,
+      "firstId": 3220151555,
+      "lastId": 3220849281,
+      "count": 697727
+    }
+  ]
+  ```
 
 ## Symbol Price Ticker – `GET /api/v3/ticker/price` / `method: "ticker.price"`
 
@@ -267,7 +363,21 @@ gateway.
   }
   ```
 
-- **Response:** `{ "symbol": "LTCBTC", "price": "4.00000200" }` or an array of such objects.
+- **Response:**
+
+  ```json
+  {
+    "symbol": "LTCBTC",
+    "price": "4.00000200"
+  }
+  ```
+
+  ```json
+  [
+    { "symbol": "LTCBTC", "price": "4.00000200" },
+    { "symbol": "ETHBTC", "price": "0.07946600" }
+  ]
+  ```
 
 ## Order Book Ticker – `GET /api/v3/ticker/bookTicker` / `method: "ticker.book"`
 
@@ -286,7 +396,36 @@ gateway.
   }
   ```
 
-- **Response:** best bid/ask levels per symbol.
+- **Response:**
+
+  ```json
+  {
+    "symbol": "LTCBTC",
+    "bidPrice": "4.00000000",
+    "bidQty": "431.00000000",
+    "askPrice": "4.00000200",
+    "askQty": "9.00000000"
+  }
+  ```
+
+  ```json
+  [
+    {
+      "symbol": "LTCBTC",
+      "bidPrice": "4.00000000",
+      "bidQty": "431.00000000",
+      "askPrice": "4.00000200",
+      "askQty": "9.00000000"
+    },
+    {
+      "symbol": "ETHBTC",
+      "bidPrice": "0.07946700",
+      "bidQty": "9.00000000",
+      "askPrice": "100000.00000000",
+      "askQty": "1000.00000000"
+    }
+  ]
+  ```
 
 ## Rolling Window Ticker – `GET /api/v3/ticker` / `method: "ticker"`
 
@@ -309,4 +448,47 @@ gateway.
   }
   ```
 
-- **Response:** `FULL` and `MINI` ticker shapes, similar to `/api/v3/ticker/24hr`.
+- **Response:**
+
+  FULL payload:
+
+  ```json
+  {
+    "symbol": "BNBBTC",
+    "priceChange": "-8.00000000",
+    "priceChangePercent": "-88.889",
+    "weightedAvgPrice": "2.60427807",
+    "openPrice": "9.00000000",
+    "highPrice": "9.00000000",
+    "lowPrice": "1.00000000",
+    "lastPrice": "1.00000000",
+    "volume": "187.00000000",
+    "quoteVolume": "487.00000000",
+    "openTime": 1641859200000,
+    "closeTime": 1642031999999,
+    "firstId": 0,
+    "lastId": 60,
+    "count": 61
+  }
+  ```
+
+  MINI payload (array response):
+
+  ```json
+  [
+    {
+      "symbol": "BNBBTC",
+      "openPrice": "0.10000000",
+      "highPrice": "2.00000000",
+      "lowPrice": "0.10000000",
+      "lastPrice": "2.00000000",
+      "volume": "39.00000000",
+      "quoteVolume": "13.40000000",
+      "openTime": 1656986880000,
+      "closeTime": 1657001297799,
+      "firstId": 0,
+      "lastId": 34,
+      "count": 35
+    }
+  ]
+  ```

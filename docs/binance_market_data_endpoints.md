@@ -11,6 +11,40 @@ When continuous updates are required (book deltas, live trades, ticker rolls, et
 local cache with the REST call, then subscribe to the matching WebSocket stream referenced in each
 section.
 
+## Unauthenticated Market Data Surface
+
+Binance exposes a dedicated domain—`https://data-api.binance.vision`—that mirrors the production
+market data endpoints without requiring an API key. The table below captures the unauthenticated
+surface that is guaranteed to work for REST callers when only public market data is required.
+
+| HTTP Method | Endpoint | Description |
+|-------------|----------|-------------|
+| `GET` | `/api/v3/aggTrades` | Aggregated trades with price/quantity buckets. Supports `fromId`, `startTime`, `endTime`, and `limit`. |
+| `GET` | `/api/v3/avgPrice` | 5-minute rolling average price for the symbol provided. |
+| `GET` | `/api/v3/depth` | Order book snapshot. Respect the documented request weights per `limit`. |
+| `GET` | `/api/v3/exchangeInfo` | Instrument metadata, rate limits, and trading rules. |
+| `GET` | `/api/v3/klines` | Candlestick data. Requires `symbol` and `interval`; accepts optional pagination parameters. |
+| `GET` | `/api/v3/ping` | Liveness probe that returns `{}` on success. |
+| `GET` | `/api/v3/ticker` | Rolling 24hr ticker statistics across symbols. |
+| `GET` | `/api/v3/ticker/24hr` | 24-hour ticker statistics per symbol. Accepts `symbol` or `symbols`. |
+| `GET` | `/api/v3/ticker/bookTicker` | Best bid/ask for all symbols or a specific symbol. |
+| `GET` | `/api/v3/ticker/price` | Latest price for all symbols or a specific symbol. |
+| `GET` | `/api/v3/time` | Server time in milliseconds. |
+| `GET` | `/api/v3/trades` | Recent trades (up to 1,000). |
+| `GET` | `/api/v3/uiKlines` | UI-optimised candlesticks with additional stat fields. |
+
+**Sample REST request**
+
+```bash
+curl -s "https://data-api.binance.vision/api/v3/exchangeInfo?symbol=BTCUSDT"
+```
+
+For realtime delivery, pair the REST snapshot with the WebSocket market data gateway at
+`wss://data-stream.binance.vision:443`. Any public stream documented in the Binance WebSocket
+Market Streams guide can be retrieved from this host (e.g., `wss://data-stream.binance.vision:443/ws/btcusdt@kline_1m`).
+User Data Streams remain exclusive to the authenticated production domains and cannot be accessed
+through the public data mirror.
+
 ## Order Book – `GET /api/v3/depth` · `method: "depth"`
 
 - **Weight:** depends on `limit`

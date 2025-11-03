@@ -4,17 +4,93 @@ _Last updated: 2025-10-24_
 
 This reference summarizes the realtime account-level events that Binance pushes over a User Data Stream subscription. The stream is accessed via the WebSocket API using an API key. Both SBE and JSON payloads are supported and all JSON timestamps are expressed in milliseconds.
 
-
+Each event is wrapped in an envelope that includes the `subscriptionId` returned when the subscription was created. This allows multiple simultaneous subscriptions to be multiplexed over the same WebSocket connection.
 
 ```json
 {
   "subscriptionId": 0,
-in
+  "event": {
+    "e": "balanceUpdate",
+    "E": 1573200697110,
+    "a": "BTC",
+    "d": "100.00000000",
+    "T": 1573200697068
+  }
 }
 ```
 
-| Field | Description |
-|-------|-------------|
+| Field             | Description |
+|-------------------|-------------|
+| `subscriptionId`  | Identifier returned when the stream subscription was created. |
+| `event`           | Stream payload containing the event-specific fields. |
+
+## Subscription management
+
+User Data Stream subscriptions can be created on any authenticated WebSocket connection and, with a valid signature, on unauthenticated connections. Key properties of the subscription lifecycle are:
+
+* Only one active subscription per account is permitted on a single connection.
+* A session supports up to 1,000 concurrently active subscriptions and 65,535 total subscriptions over its lifetime.
+* Check the `userDataStream` flag inside `session.status` to confirm whether any subscriptions are active (`true`), inactive (`false`), or unavailable (`null`).
+
+### Subscribe using the authenticated session
+
+```json
+{
+  "id": "d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7",
+  "method": "userDataStream.subscribe"
+}
+```
+
+| Response field  | Description |
+|-----------------|-------------|
+| `subscriptionId` | Identifier assigned to the subscription. Use this value to match incoming events to the originating account. |
+
+This call requires an authenticated WebSocket connection established with Ed25519 credentials (`session.logon`).
+
+### Subscribe using an API key signature
+
+```json
+{
+  "id": "d3df8a22-98ea-4fe0-9f4e-0fcea5d418b7",
+  "method": "userDataStream.subscribe.signature",
+  "params": {
+    "apiKey": "<key>",
+    "timestamp": 1747385641636,
+    "signature": "<signature>"
+  }
+}
+```
+
+| Parameter   | Type    | Description |
+|-------------|---------|-------------|
+| `apiKey`    | String  | API key identifying the account whose data stream will be subscribed. |
+| `timestamp` | Long    | Current timestamp in milliseconds used for request validation. |
+| `signature` | String  | HMAC signature generated with the API secret. |
+
+The response mirrors the authenticated subscription response and returns a `subscriptionId`.
+
+### Unsubscribe from the User Data Stream
+
+```json
+{
+  "id": "d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7",
+  "method": "userDataStream.unsubscribe"
+}
+```
+
+Provide the optional `subscriptionId` parameter to terminate a specific subscription; omit it to cancel all active subscriptions on the connection.
+
+### List active subscriptions
+
+```json
+{
+  "id": "d3df5a22-88ea-4fe0-9f4e-0fcea5d418b7",
+  "method": "session.subscriptions",
+  "params": {}
+}
+```
+
+The response enumerates every active subscription in the session. Track subscription-to-account mappings on the client side.
 
 
 ## Account Update (`outboundAccountPosition`)

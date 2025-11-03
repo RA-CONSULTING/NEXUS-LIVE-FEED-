@@ -62,7 +62,7 @@ Order placement is throttled separately from request weight:
 - Successful order responses include `X-MBX-ORDER-COUNT-(intervalNum)(intervalLetter)` headers that report how many orders were acknowledged within the interval.
 - Rejected or otherwise unsuccessful orders are not guaranteed to contain the order-count headers.
 - If the unfilled order quota is exceeded, the server returns **429** without a `Retry-After` header. Monitor the limit by polling `GET /api/v3/rateLimit/order`.
-- Accounts whose orders consistently fill via trades can continue submitting new orders because the unfilled order count resets as fills occur. See the Spot Unfilled Order Count rules for full details.
+- Accounts whose orders consistently fill via trades can continue submitting new orders because the unfilled order count resets as fills occur. Refer to the dedicated [Spot Unfilled Order Count rules](./binance_spot_unfilled_order_count.md) for full details on how fills, cancellations, and interval resets are applied.
 
 ## Backoff Guidance
 

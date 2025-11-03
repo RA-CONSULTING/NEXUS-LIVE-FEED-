@@ -1,7 +1,6 @@
 # Binance Request Security Overview
 
-Binance assigns every REST and WebSocket method a **security type**. The type describes the permissions an API key must have and
-whether the request must include a signature. Unless a method explicitly states `NONE`, treat it as a signed endpoint.
+>> main
 
 ## Security Types and Permissions
 
@@ -17,7 +16,7 @@ API keys are permission scoped. You might keep one key with `TRADE` enabled for 
 Keys can be created (and safely tested) on the Spot Test Network after logging in with your GitHub account. Rotate credentials
 regularly and immediately revoke any key that shows suspicious activity.
 
-## Signed Endpoints
+
 
 Secure methods (anything other than `NONE`, with the exception of listen key management) require:
 
@@ -49,7 +48,7 @@ if (timestamp < (serverTime + 1 second) && (serverTime - timestamp) <= recvWindo
 }
 ```
 
-Keep client clocks synchronized via `/api/v3/time` or an NTP source, and prefer a conservative `recvWindow` (≤ `5000`).
+
 
 ## HMAC (API Secret) Signatures
 

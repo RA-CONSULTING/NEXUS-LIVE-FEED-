@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer';
 
-const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'DELETE']);
+const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 const normalizeContentType = (header = '') => header.split(';')[0].trim().toLowerCase();
 

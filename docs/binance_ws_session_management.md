@@ -6,6 +6,13 @@ interacting with the Binance-style session layer used by the Nexus tooling. Only
 canonical request envelope, response shape, request weight, and parameter
 contract.
 
+## Authentication requests
+
+Only Ed25519 keys are supported for this feature. Once a connection is
+authenticated you may omit the `apiKey` and `signature` fields from subsequent
+signed calls until the session is cleared or replaced. The requests below mirror
+the behaviour exposed by the production WebSocket API.
+
 ## Request format
 
 All WebSocket requests **must** be sent as JSON text frames. Every frame follows
@@ -46,7 +53,8 @@ security guide.
 Authenticate the current WebSocket connection with an API key signed request.
 After a successful login subsequent signed calls may omit the `apiKey` and
 `signature` fields; the session stays bound to the authenticated key until it is
-replaced or explicitly cleared.
+replaced or explicitly cleared. You must still provide the `timestamp` parameter
+for every SIGNED request even when the session is authenticated.
 
 - **Weight:** 2
 - **Data source:** Memory
@@ -80,7 +88,7 @@ replaced or explicitly cleared.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649729878630,
-    "userDataStream": false
+    "userDataStream": false // is User Data Stream subscription active?
   }
 }
 ```
@@ -111,7 +119,7 @@ and `authorizedSince` fields return `null` when the socket is unauthenticated.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649730611671,
-    "userDataStream": true
+    "userDataStream": true // is User Data Stream subscription active?
   }
 }
 ```
@@ -143,7 +151,7 @@ parameters.
     "connectedSince": 1649729873021,
     "returnRateLimits": false,
     "serverTime": 1649730611671,
-    "userDataStream": false
+    "userDataStream": false // is User Data Stream subscription active?
   }
 }
 ```
@@ -151,3 +159,33 @@ parameters.
 Multiple `session.logon` calls on the same connection replace the active API key.
 A subsequent `session.logout` only clears the binding; the socket itself remains
 open for continued use.
+
+## Session revocation
+
+If the authenticated API key becomes invalid (for example, its IP whitelist no
+longer matches, it is deleted, or its permissions change), the next authorized
+request fails and the socket automatically revokes the session. The server
+returns an HTTP-like 401 status with the following payload:
+
+```json
+{
+  "id": null,
+  "status": 401,
+  "error": {
+    "code": -2015,
+    "msg": "Invalid API-key, IP, or permissions for action."
+  }
+}
+```
+
+Once revoked, you must call `session.logon` again before sending additional
+SIGNED requests.
+
+## Authorize ad hoc requests
+
+An authenticated connection can only track one active API key at a time. When a
+request explicitly includes `apiKey` and `signature`, those values override the
+authenticated key for that single call. This allows you to keep a USER_DATA key
+bound to the connection while submitting specific signed requests with a TRADE
+key. Each request still needs its own signature regardless of the active
+session.

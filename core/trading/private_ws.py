@@ -1,19 +1,11 @@
-"""Utilities for building signed private WebSocket requests.
+"""Utilities for constructing Binance WebSocket API request frames.
 
-The Binance private WebSocket API (and other exchange JSON-RPC endpoints)
-expect each request frame to carry an ``id``, a method name and a ``params``
-object that already embeds both the API key and the HMAC signature of the
-parameters. This mirrors the JSON-RPC examples in the trading documentation
-where credentials live alongside the business fields such as ``symbol`` or
-``price``.
 
-This module provides a small helper that normalises the request parameters,
-computes the signature deterministically, injects the credentials into the
-``params`` mapping, and optionally returns the payload as a JSON encoded
-string ready to be sent as a text frame.
 
-The implementation is intentionally dependency free so it can be imported
-from both production code and tests without pulling in third‑party modules.
+This module streamlines both flows by normalising parameters, performing light
+validation, and optionally serialising the payload to JSON. The helpers remain
+dependency-free so they can be imported from tests or utility scripts without
+pulling in heavy third-party modules.
 """
 
 from __future__ import annotations
@@ -23,7 +15,160 @@ import hmac
 import json
 import time
 import uuid
-from typing import Any, Mapping, MutableMapping
+from typing import Any, Mapping, MutableMapping, Sequence
+
+
+def _validate_method(method: str) -> str:
+    if not isinstance(method, str) or not method:
+        raise ValueError("method must be a non-empty string")
+    return method
+
+
+def _ensure_mapping(params: Mapping[str, Any] | None) -> MutableMapping[str, Any]:
+    if params is None:
+        return {}
+    if not isinstance(params, Mapping):
+        raise TypeError("params must be a mapping or None")
+    return dict(params)
+
+
+def _apply_return_rate_limits(
+    params: MutableMapping[str, Any],
+    return_rate_limits: bool | None,
+) -> None:
+    if return_rate_limits is None:
+        return
+    if not isinstance(return_rate_limits, bool):
+        raise TypeError("return_rate_limits must be a boolean or None")
+    params["returnRateLimits"] = return_rate_limits
+
+
+def build_public_request(
+    method: str,
+    params: Mapping[str, Any] | None = None,
+    *,
+    request_id: str | int | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Construct a JSON-RPC frame for public WebSocket API requests."""
+
+    _validate_method(method)
+
+    payload = _ensure_mapping(params)
+    frame: MutableMapping[str, Any] = {
+        "id": request_id if request_id is not None else str(uuid.uuid4()),
+        "method": method,
+    }
+    if payload:
+        frame["params"] = dict(payload)
+    if as_text:
+        return json.dumps(frame, separators=(",", ":"))
+    return dict(frame)
+
+
+def ping_request(
+    *,
+    request_id: str | int | None = None,
+    return_rate_limits: bool | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return a ``ping`` request frame used to test connection health."""
+
+    params: MutableMapping[str, Any] = {}
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "ping",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
+
+
+def server_time_request(
+    *,
+    request_id: str | int | None = None,
+    return_rate_limits: bool | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return a ``time`` request frame to query the server timestamp."""
+
+    params: MutableMapping[str, Any] = {}
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "time",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
+
+
+_VALID_SYMBOL_STATUSES = {"TRADING", "HALT", "BREAK"}
+
+
+def exchange_info_request(
+    *,
+    symbol: str | None = None,
+    symbols: Sequence[str] | None = None,
+    permissions: Sequence[str] | str | None = None,
+    show_permission_sets: bool | None = None,
+    symbol_status: str | None = None,
+    return_rate_limits: bool | None = None,
+    request_id: str | int | None = None,
+    as_text: bool = False,
+) -> dict[str, Any] | str:
+    """Return an ``exchangeInfo`` request frame with validation applied."""
+
+    filters = [value is not None for value in (symbol, symbols, permissions)]
+    if sum(filters) > 1:
+        raise ValueError("Specify only one of symbol, symbols, or permissions")
+
+    if symbol_status is not None:
+        if not isinstance(symbol_status, str):
+            raise TypeError("symbol_status must be a string or None")
+        if symbol_status not in _VALID_SYMBOL_STATUSES:
+            valid = ", ".join(sorted(_VALID_SYMBOL_STATUSES))
+            raise ValueError(f"symbol_status must be one of: {valid}")
+        if symbol is not None or symbols is not None:
+            raise ValueError("symbol_status cannot be combined with symbol or symbols")
+
+    params: MutableMapping[str, Any] = {}
+    if symbol is not None:
+        if not isinstance(symbol, str) or not symbol:
+            raise ValueError("symbol must be a non-empty string when provided")
+        params["symbol"] = symbol
+
+    if symbols is not None:
+        if isinstance(symbols, (str, bytes)):
+            raise TypeError("symbols must be a sequence of symbol strings")
+        materialised = list(symbols)
+        if not materialised:
+            raise ValueError("symbols must contain at least one symbol when provided")
+        params["symbols"] = materialised
+
+    if permissions is not None:
+        if isinstance(permissions, (str, bytes)):
+            params["permissions"] = permissions
+        else:
+            materialised = list(permissions)
+            if not materialised:
+                raise ValueError("permissions must contain at least one permission when provided")
+            params["permissions"] = materialised
+
+    if show_permission_sets is not None:
+        if not isinstance(show_permission_sets, bool):
+            raise TypeError("show_permission_sets must be a boolean or None")
+        params["showPermissionSets"] = show_permission_sets
+
+    if symbol_status is not None:
+        params["symbolStatus"] = symbol_status
+
+    _apply_return_rate_limits(params, return_rate_limits)
+    return build_public_request(
+        "exchangeInfo",
+        params if params else None,
+        request_id=request_id,
+        as_text=as_text,
+    )
 
 
 def _stringify(value: Any) -> str:
@@ -100,12 +245,8 @@ def build_request_frame(
 
     if not api_key:
         raise ValueError("API key is required for private WebSocket requests")
-    if params is None:
-        params = {}
-    if not isinstance(params, Mapping):
-        raise TypeError("params must be a mapping or None")
 
-    payload: MutableMapping[str, Any] = dict(params)
+    payload = _ensure_mapping(params)
     if timestamp_ms is None:
         timestamp_ms = int(time.time() * 1000)
     payload.setdefault("timestamp", timestamp_ms)
@@ -132,5 +273,12 @@ def build_request_frame(
     return frame
 
 
-__all__ = ["build_request_frame", "sign_params"]
+__all__ = [
+    "build_public_request",
+    "ping_request",
+    "server_time_request",
+    "exchange_info_request",
+    "build_request_frame",
+    "sign_params",
+]
 

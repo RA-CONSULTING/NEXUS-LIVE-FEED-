@@ -1,6 +1,6 @@
 # Binance Request Security Overview
 
-Binance groups every API method under a specific security type. The security type dictates the permissions an API key must have and whether the request must be signed. Unless a method is labeled `NONE`, assume the request must be signed.
+Binance groups every API method under a specific security type. The label appears alongside the method name in the reference (for example, `Place new order (TRADE)`). When no label is shown the security type defaults to `NONE`. With the exception of listen key lifecycle endpoints, every method that carries a security type other than `NONE` must be treated as a **signed** request.
 
 ## Security Types
 
@@ -12,6 +12,13 @@ Binance groups every API method under a specific security type. The security typ
 | `USER_STREAM` | Managing User Data Stream subscriptions. | Creating, keeping alive, and closing listen keys. |
 
 API keys are permission-scoped. For example, you can provision one key with `TRADE` enabled for order placement, and another with only `USER_DATA` to monitor orders. Trading permissions are disabled by default and must be enabled explicitly in the API Management console. Rotate keys regularly and revoke any that exhibit unusual activity.
+
+## API Key Management and Permissions
+
+- **Where to create keys.** You can generate Spot Testnet keys after signing in with a GitHub account. Production keys live under the Binance API Management console.
+- **Granular access control.** Keys can be limited to specific secure method families (for example one key with `TRADE` scope for execution and a separate `USER_DATA` key for monitoring).
+- **Default posture.** Newly issued keys cannot place trades until the `Enable Spot & Margin Trading` toggle is activated.
+- **Credential hygiene.** Both the API key and the secret/private key are sensitive. Never share them, and immediately revoke keys if you detect unusual activity.
 
 ## Signed Request Requirements
 
@@ -42,7 +49,7 @@ if (timestamp < (serverTime + 1 second) && (serverTime - timestamp) <= recvWindo
 }
 ```
 
-Network latency can introduce jitter, so prefer a conservative `recvWindow` (≤ `5000`) and keep client clocks in sync with the `/api/v3/time` endpoint or an NTP source.
+Network latency can introduce jitter, so prefer a conservative `recvWindow` (≤ `5000`) and keep client clocks in sync with the `/api/v3/time` endpoint or an NTP source. The matching engine rejects any request that falls outside the window, so accurate timing is essential for serious trading operations.
 
 ## HMAC Signature Workflow
 

@@ -1,11 +1,6 @@
 """Utilities for constructing Binance WebSocket API request frames.
 
-The Binance WebSocket API exposes two request classes:
 
-* **General requests** such as ``ping`` or ``exchangeInfo`` that do not
-  require authentication.
-* **Private requests** like ``order.place`` that must include an API key and
-  HMAC signature.
 
 This module streamlines both flows by normalising parameters, performing light
 validation, and optionally serialising the payload to JSON. The helpers remain
@@ -256,12 +251,21 @@ def build_request_frame(
         timestamp_ms = int(time.time() * 1000)
     payload.setdefault("timestamp", timestamp_ms)
 
+    if "signature" in payload:
+        raise ValueError("Signature must not be pre-populated in params")
+
+    if "apiKey" in payload and payload["apiKey"] != api_key:
+        raise ValueError("API key in params does not match provided api_key")
+    payload.setdefault("apiKey", api_key)
+
+    signature = sign_params(payload, api_secret)
+    payload_with_signature = dict(payload)
+    payload_with_signature["signature"] = signature
+
     frame = {
         "id": request_id if request_id is not None else str(uuid.uuid4()),
         "method": method,
-        "params": dict(payload),
-        "apiKey": api_key,
-        "signature": sign_params(payload, api_secret),
+        "params": payload_with_signature,
     }
 
     if as_text:

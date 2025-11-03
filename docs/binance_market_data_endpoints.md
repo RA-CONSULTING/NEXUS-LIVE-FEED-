@@ -1,16 +1,19 @@
 # Binance Market Data REST Endpoints
 
 This reference condenses the Binance REST market data surface that the Nexus trading tooling
-interacts with most frequently. Each section summarizes the request weight, parameters, and
-canonical response structure so you can design cache lifetimes, polling cadence, and
-fallback behaviour without leaving the repo. The Spot JSON-RPC gateway mirrors the REST
+interacts with most frequently. Each section summarises request weight, parameters, notable
+behaviour, and canonical response envelopes so you can design cache lifetimes, polling cadence,
+and fallback flows without leaving the repo. The Spot JSON-RPC gateway mirrors the REST
 contracts; example payloads below show both the HTTPS route and the corresponding `method`
-name, along with the envelope (`id`, `status`, `result`, `rateLimits`) returned by the
-gateway.
+name alongside the JSON-RPC wrapper (`id`, `status`, `result`, `rateLimits`).
 
-## Order Book – `GET /api/v3/depth` / `method: "depth"`
+When continuous updates are required (book deltas, live trades, ticker rolls, etc.) initialise the
+local cache with the REST call, then subscribe to the matching WebSocket stream referenced in each
+section.
 
-- **Weight:** 5–250 depending on the `limit` request parameter.
+## Order Book – `GET /api/v3/depth` · `method: "depth"`
+
+- **Weight:** depends on `limit`
   - `1–100` → 5
   - `101–500` → 25
   - `501–1000` → 50
@@ -19,15 +22,16 @@ gateway.
   - `symbol` (string, required)
   - `limit` (int, optional, default `100`, maximum `5000`)
   - `symbolStatus` (enum, optional: `TRADING`, `HALT`, `BREAK`)
-- **Notes:** Requests asking for more than 5000 levels are silently capped. A symbol/status
-  mismatch raises `-1220 SYMBOL_DOES_NOT_MATCH_STATUS`. Bid levels are sorted highest-first,
-  ask levels lowest-first.
+- **Notes:** Snapshot depth is limited; combine with `<symbol>@depth<levels>` or `<symbol>@depth`
+  streams to maintain a local order book. Requests above 5000 levels are capped. A symbol/status
+  mismatch raises `-1220 SYMBOL_DOES_NOT_MATCH_STATUS`. Bid levels are sorted high→low, ask levels
+  low→high.
 - **Data source:** Memory
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "51e2affb-0aba-4821-ba75-f2625006eb43",
     "method": "depth",
     "params": {
       "symbol": "BNBBTC",
@@ -36,16 +40,28 @@ gateway.
   }
   ```
 
-- **Response payload:**
+- **Response:**
 
   ```json
   {
-    "id": "…",
+    "id": "51e2affb-0aba-4821-ba75-f2625006eb43",
     "status": 200,
     "result": {
       "lastUpdateId": 2731179239,
-      "bids": [["0.01379900", "3.43200000"]],
-      "asks": [["0.01380000", "5.91700000"]]
+      "bids": [
+        ["0.01379900", "3.43200000"],
+        ["0.01379800", "3.24300000"],
+        ["0.01379700", "10.45500000"],
+        ["0.01379600", "3.82100000"],
+        ["0.01379500", "10.26200000"]
+      ],
+      "asks": [
+        ["0.01380000", "5.91700000"],
+        ["0.01380100", "6.01400000"],
+        ["0.01380200", "0.26800000"],
+        ["0.01380300", "0.33800000"],
+        ["0.01380400", "0.26800000"]
+      ]
     },
     "rateLimits": [
       {
@@ -59,18 +75,19 @@ gateway.
   }
   ```
 
-## Recent Trades – `GET /api/v3/trades` / `method: "trades.recent"`
+## Recent Trades – `GET /api/v3/trades` · `method: "trades.recent"`
 
 - **Weight:** 25
 - **Parameters:**
   - `symbol` (string, required)
   - `limit` (int, optional, default `500`, maximum `1000`)
+- **Notes:** Use `<symbol>@trade` to stream fills; REST assists with cache warm-up or recovery.
 - **Data source:** Memory
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "409a20bd-253d-41db-a6dd-687862a5882f",
     "method": "trades.recent",
     "params": {
       "symbol": "BNBBTC",
@@ -79,11 +96,11 @@ gateway.
   }
   ```
 
-- **Response payload:** array of trade objects matching the REST schema. Sample:
+- **Response:**
 
   ```json
   {
-    "id": "…",
+    "id": "409a20bd-253d-41db-a6dd-687862a5882f",
     "status": 200,
     "result": [
       {
@@ -95,23 +112,34 @@ gateway.
         "isBuyerMaker": true,
         "isBestMatch": true
       }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
     ]
   }
   ```
 
-## Historical Trades – `GET /api/v3/historicalTrades` / `method: "trades.historical"`
+## Historical Trades – `GET /api/v3/historicalTrades` · `method: "trades.historical"`
 
 - **Weight:** 25
 - **Parameters:**
   - `symbol` (string, required)
+  - `fromId` (long, optional) – trade ID to begin at
   - `limit` (int, optional, default `500`, maximum `1000`)
-  - `fromId` (long, optional) – start trade ID, inclusive
+- **Notes:** When `fromId` is omitted the server returns the most recent trades. Use the endpoint to
+  backfill deeper history; for live updates rely on the trade WebSocket.
 - **Data source:** Database
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "cffc9c7d-4efc-4ce0-b587-6b87448f052a",
     "method": "trades.historical",
     "params": {
       "symbol": "BNBBTC",
@@ -121,23 +149,52 @@ gateway.
   }
   ```
 
-- **Response:** matches the recent trades schema with historical ordering.
+- **Response:**
 
-## Aggregate Trades – `GET /api/v3/aggTrades` / `method: "trades.aggregate"`
+  ```json
+  {
+    "id": "cffc9c7d-4efc-4ce0-b587-6b87448f052a",
+    "status": 200,
+    "result": [
+      {
+        "id": 0,
+        "price": "0.00005000",
+        "qty": "40.00000000",
+        "quoteQty": "0.00200000",
+        "time": 1500004800376,
+        "isBuyerMaker": true,
+        "isBestMatch": true
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 10
+      }
+    ]
+  }
+  ```
+
+## Aggregate Trades – `GET /api/v3/aggTrades` · `method: "trades.aggregate"`
 
 - **Weight:** 4
 - **Parameters:**
   - `symbol` (string, required)
-  - `fromId` (long, optional) – aggregate trade ID, inclusive
-  - `startTime`/`endTime` (long, optional, milliseconds, inclusive)
+  - `fromId` (long, optional) – aggregate trade ID to begin at (inclusive)
+  - `startTime` / `endTime` (long, optional)
   - `limit` (int, optional, default `500`, maximum `1000`)
-- **Notes:** If no pagination parameters are supplied the latest aggregate trades are returned.
+- **Notes:** When `fromId` is supplied the response includes aggregate IDs ≥ the provided value. You
+  cannot combine `fromId` with the time filters. Omitting pagination parameters yields the latest
+  aggregate trades. Use `<symbol>@aggTrade` for realtime updates.
 - **Data source:** Database
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "189da436-d4bd-48ca-9f95-9f613d621717",
     "method": "trades.aggregate",
     "params": {
       "symbol": "BNBBTC",
@@ -147,26 +204,55 @@ gateway.
   }
   ```
 
-- **Response:** array of aggregate trade objects identical to the REST shape.
+- **Response:**
 
-## Kline & UIKline Candles – `GET /api/v3/klines`, `GET /api/v3/uiKlines` / `method: "klines"`, `"uiKlines"`
+  ```json
+  {
+    "id": "189da436-d4bd-48ca-9f95-9f613d621717",
+    "status": 200,
+    "result": [
+      {
+        "a": 50000000,
+        "p": "0.00274100",
+        "q": "57.19000000",
+        "f": 59120167,
+        "l": 59120170,
+        "T": 1565877971222,
+        "m": true,
+        "M": true
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+## Kline Candles – `GET /api/v3/klines` · `method: "klines"`
 
 - **Weight:** 2
 - **Parameters:**
   - `symbol` (string, required)
   - `interval` (enum, required) – `1s`, `1m`, `3m`, `5m`, `15m`, `30m`, `1h`, `2h`, `4h`, `6h`,
     `8h`, `12h`, `1d`, `3d`, `1w`, `1M`
-  - `startTime`/`endTime` (long, optional)
+  - `startTime` / `endTime` (long, optional)
   - `timeZone` (string, optional, default `0` for UTC)
   - `limit` (int, optional, default `500`, maximum `1000`)
-- **Notes:** `uiKlines` mirror the `klines` contract but return pre-smoothed payloads for charting.
-  Time zone offsets apply only to candle bucketing; start/end time filters remain UTC.
+- **Notes:** Without explicit start/end times the most recent candles are returned. `timeZone`
+  adjusts bucket alignment but filters remain in UTC. For realtime candles use
+  `<symbol>@kline_<interval>`.
 - **Data source:** Database
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b",
     "method": "klines",
     "params": {
       "symbol": "BNBBTC",
@@ -177,52 +263,95 @@ gateway.
   }
   ```
 
-- **Response:** array `[openTime, open, high, low, close, volume, closeTime, quoteVolume,
-  numTrades, takerBuyBaseVolume, takerBuyQuoteVolume, unused]`. `uiKlines` use the same contract
-  but with presentation-smoothed values.
-
-## Current Average Price – `GET /api/v3/avgPrice` / `method: "avgPrice"`
-
-- **Weight:** 2
-- **Parameters:** `symbol` (string, required)
-- **Data source:** Memory
-- **RPC request:**
-
-  ```json
-  { "id": "<uuid>", "method": "avgPrice", "params": { "symbol": "BNBBTC" } }
-  ```
-
 - **Response:**
 
   ```json
   {
-    "id": "…",
+    "id": "1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b",
     "status": 200,
-    "result": {
-      "mins": 5,
-      "price": "9.35751834",
-      "closeTime": 1694061154503
-    }
+    "result": [
+      [
+        1655971200000,
+        "0.01086000",
+        "0.01086600",
+        "0.01083600",
+        "0.01083800",
+        "2290.53800000",
+        1655974799999,
+        "24.85074442",
+        2283,
+        "1171.64000000",
+        "12.71225884",
+        "0"
+      ]
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
   }
   ```
 
-## 24h Ticker Statistics – `GET /api/v3/ticker/24hr` / `method: "ticker.24hr"`
+## UI Kline Candles – `GET /api/v3/uiKlines` · `method: "uiKlines"`
 
-- **Weight:** depends on payload type:
-  - single `symbol`: 2
-  - omit `symbol` (all symbols) or `symbols` query: 80
-  - `symbols` array: 2 (≤20), 40 (21–100), 80 (>100)
-- **Parameters:** `symbol`, `symbols`, `type` (`FULL` or `MINI`), `symbolStatus`
-- **Notes:** `symbol` and `symbols` are mutually exclusive. A status mismatch returns
-  `-1220 SYMBOL_DOES_NOT_MATCH_STATUS` when a single symbol is requested; mismatched symbols are
-  omitted from multi-symbol responses.
+- **Weight:** 2
+- **Parameters:** identical to `klines`
+- **Notes:** Returns presentation-optimised candlesticks for charting. Start/end filters operate in
+  UTC even when a `timeZone` offset is specified.
+- **Data source:** Database
+- **RPC request:** mirrors `klines`
+- **Response:**
+
+  ```json
+  {
+    "id": "b137468a-fb20-4c06-bd6b-625148eec958",
+    "status": 200,
+    "result": [
+      [
+        1655971200000,
+        "0.01086000",
+        "0.01086600",
+        "0.01083600",
+        "0.01083800",
+        "2290.53800000",
+        1655974799999,
+        "24.85074442",
+        2283,
+        "1171.64000000",
+        "12.71225884",
+        "0"
+      ]
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+## Current Average Price – `GET /api/v3/avgPrice` · `method: "avgPrice"`
+
+- **Weight:** 2
+- **Parameters:**
+  - `symbol` (string, required)
+- **Notes:** Returns the average price calculated over the last 5 minutes of trades.
 - **Data source:** Memory
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
-    "method": "ticker.24hr",
+    "id": "ddbfb65f-9ebf-42ec-8240-8f0f91de0867",
+    "method": "avgPrice",
     "params": {
       "symbol": "BNBBTC"
     }
@@ -231,65 +360,209 @@ gateway.
 
 - **Response:**
 
-  FULL payload:
-
   ```json
   {
-    "symbol": "BNBBTC",
-    "priceChange": "-94.99999800",
-    "priceChangePercent": "-95.960",
-    "weightedAvgPrice": "0.29628482",
-    "prevClosePrice": "0.10002000",
-    "lastPrice": "4.00000200",
-    "lastQty": "200.00000000",
-    "bidPrice": "4.00000000",
-    "bidQty": "100.00000000",
-    "askPrice": "4.00000200",
-    "askQty": "100.00000000",
-    "openPrice": "99.00000000",
-    "highPrice": "100.00000000",
-    "lowPrice": "0.10000000",
-    "volume": "8913.30000000",
-    "quoteVolume": "15.30000000",
-    "openTime": 1499783499040,
-    "closeTime": 1499869899040,
-    "firstId": 28385,
-    "lastId": 28460,
-    "count": 76
+    "id": "ddbfb65f-9ebf-42ec-8240-8f0f91de0867",
+    "status": 200,
+    "result": {
+      "mins": 5,
+      "price": "9.35751834",
+      "closeTime": 1694061154503
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
   }
   ```
 
-  MINI payload:
+## 24h Ticker Statistics – `GET /api/v3/ticker/24hr` · `method: "ticker.24hr"`
+
+- **Weight:** depends on payload size
+  - single `symbol`: 2
+  - `symbols` array (1–20): 2, (21–100): 40, (>100): 80
+  - omit `symbol`/`symbols` (all symbols): 80
+- **Parameters:**
+  - `symbol` (string) **or** `symbols` (array of strings)
+  - `type` (enum, optional: `FULL`, `MINI`)
+  - `symbolStatus` (enum, optional: `TRADING`, `HALT`, `BREAK`)
+- **Notes:** `symbol` and `symbols` are mutually exclusive. Status mismatches throw
+  `-1220 SYMBOL_DOES_NOT_MATCH_STATUS` for single-symbol requests; non-matching symbols are omitted
+  from array responses. Prefer `<symbol>@ticker` / `<symbol>@miniTicker` streams for realtime stats.
+- **Data source:** Memory
+- **RPC request:**
 
   ```json
   {
-    "symbol": "BNBBTC",
-    "openPrice": "99.00000000",
-    "highPrice": "100.00000000",
-    "lowPrice": "0.10000000",
-    "lastPrice": "4.00000200",
-    "volume": "8913.30000000",
-    "quoteVolume": "15.30000000",
-    "openTime": 1499783499040,
-    "closeTime": 1499869899040,
-    "firstId": 28385,
-    "lastId": 28460,
-    "count": 76
+    "id": "93fb61ef-89f8-4d6e-b022-4f035a3fadad",
+    "method": "ticker.24hr",
+    "params": {
+      "symbol": "BNBBTC"
+    }
   }
   ```
 
-## Trading Day Ticker – `GET /api/v3/ticker/tradingDay` / `method: "ticker.tradingDay"`
+- **Response (FULL, single symbol):**
 
-- **Weight:** 4 per symbol, capped at 200 for >50 symbols
-- **Parameters:** `symbol` **or** `symbols` (max 100), optional `timeZone`, `type`, `symbolStatus`
-- **Notes:** `symbol`/`symbols` are mutually exclusive; status mismatches behave like the 24 h
-  ticker. `timeZone` accepts hour/minute offsets in the range `-12:00` to `+14:00`.
+  ```json
+  {
+    "id": "93fb61ef-89f8-4d6e-b022-4f035a3fadad",
+    "status": 200,
+    "result": {
+      "symbol": "BNBBTC",
+      "priceChange": "0.00013900",
+      "priceChangePercent": "1.020",
+      "weightedAvgPrice": "0.01382453",
+      "prevClosePrice": "0.01362800",
+      "lastPrice": "0.01376700",
+      "lastQty": "1.78800000",
+      "bidPrice": "0.01376700",
+      "bidQty": "4.64600000",
+      "askPrice": "0.01376800",
+      "askQty": "14.31400000",
+      "openPrice": "0.01362800",
+      "highPrice": "0.01414900",
+      "lowPrice": "0.01346600",
+      "volume": "69412.40500000",
+      "quoteVolume": "959.59411487",
+      "openTime": 1660014164909,
+      "closeTime": 1660100564909,
+      "firstId": 194696115,
+      "lastId": 194968287,
+      "count": 272173
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+- **Response (MINI, single symbol):**
+
+  ```json
+  {
+    "id": "9fa2a91b-3fca-4ed7-a9ad-58e3b67483de",
+    "status": 200,
+    "result": {
+      "symbol": "BNBBTC",
+      "openPrice": "0.01362800",
+      "highPrice": "0.01414900",
+      "lowPrice": "0.01346600",
+      "lastPrice": "0.01376700",
+      "volume": "69412.40500000",
+      "quoteVolume": "959.59411487",
+      "openTime": 1660014164909,
+      "closeTime": 1660100564909,
+      "firstId": 194696115,
+      "lastId": 194968287,
+      "count": 272173
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+- **Response (array):**
+
+  ```json
+  {
+    "id": "901be0d9-fd3b-45e4-acd6-10c580d03430",
+    "status": 200,
+    "result": [
+      {
+        "symbol": "BNBBTC",
+        "priceChange": "0.00016500",
+        "priceChangePercent": "1.213",
+        "weightedAvgPrice": "0.01382508",
+        "prevClosePrice": "0.01360800",
+        "lastPrice": "0.01377200",
+        "lastQty": "1.01400000",
+        "bidPrice": "0.01377100",
+        "bidQty": "7.55700000",
+        "askPrice": "0.01377200",
+        "askQty": "4.37900000",
+        "openPrice": "0.01360700",
+        "highPrice": "0.01414900",
+        "lowPrice": "0.01346600",
+        "volume": "69376.27900000",
+        "quoteVolume": "959.13277091",
+        "openTime": 1660014615517,
+        "closeTime": 1660101015517,
+        "firstId": 194697254,
+        "lastId": 194969483,
+        "count": 272230
+      },
+      {
+        "symbol": "BTCUSDT",
+        "priceChange": "-938.06000000",
+        "priceChangePercent": "-3.938",
+        "weightedAvgPrice": "23265.34432003",
+        "prevClosePrice": "23819.17000000",
+        "lastPrice": "22880.91000000",
+        "lastQty": "0.00536000",
+        "bidPrice": "22880.40000000",
+        "bidQty": "0.00424000",
+        "askPrice": "22880.91000000",
+        "askQty": "0.04276000",
+        "openPrice": "23818.97000000",
+        "highPrice": "23933.25000000",
+        "lowPrice": "22664.69000000",
+        "volume": "153508.37606000",
+        "quoteVolume": "3571425225.04441220",
+        "openTime": 1660014615977,
+        "closeTime": 1660101015977,
+        "firstId": 1592019902,
+        "lastId": 1597301762,
+        "count": 5281861
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+## Trading Day Ticker – `GET /api/v3/ticker/tradingDay` · `method: "ticker.tradingDay"`
+
+- **Weight:** 4 per requested symbol (caps at 200 once `symbols` length > 50)
+- **Parameters:**
+  - `symbol` (string) **or** `symbols` (array of strings, max 100)
+  - `timeZone` (string, optional, default `0` / UTC)
+  - `type` (enum, optional: `FULL`, `MINI`)
+  - `symbolStatus` (enum, optional)
+- **Notes:** `symbol`/`symbols` are mutually exclusive. Status mismatches mirror the 24 h ticker
+  behaviour. `timeZone` accepts offsets between `-12:00` and `+14:00`. For rolling-window updates use
+  `<symbol>@ticker_<window>` streams.
 - **Data source:** Database
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
     "method": "ticker.tradingDay",
     "params": {
       "symbols": ["BNBBTC", "BTCUSDT"],
@@ -298,35 +571,102 @@ gateway.
   }
   ```
 
-- **Response:**
-
-  FULL payload (single symbol):
+- **Response (FULL, single symbol):**
 
   ```json
   {
-    "symbol": "BTCUSDT",
-    "priceChange": "-83.13000000",
-    "priceChangePercent": "-0.317",
-    "weightedAvgPrice": "26234.58803036",
-    "openPrice": "26304.80000000",
-    "highPrice": "26397.46000000",
-    "lowPrice": "26088.34000000",
-    "lastPrice": "26221.67000000",
-    "volume": "18495.35066000",
-    "quoteVolume": "485217905.04210480",
-    "openTime": 1695686400000,
-    "closeTime": 1695772799999,
-    "firstId": 3220151555,
-    "lastId": 3220849281,
-    "count": 697727
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": {
+      "symbol": "BTCUSDT",
+      "priceChange": "-83.13000000",
+      "priceChangePercent": "-0.317",
+      "weightedAvgPrice": "26234.58803036",
+      "openPrice": "26304.80000000",
+      "highPrice": "26397.46000000",
+      "lowPrice": "26088.34000000",
+      "lastPrice": "26221.67000000",
+      "volume": "18495.35066000",
+      "quoteVolume": "485217905.04210480",
+      "openTime": 1695686400000,
+      "closeTime": 1695772799999,
+      "firstId": 3220151555,
+      "lastId": 3220849281,
+      "count": 697727
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
   }
   ```
 
-  MINI payload (array response):
+- **Response (FULL, array):**
 
   ```json
-  [
-    {
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": [
+      {
+        "symbol": "BTCUSDT",
+        "priceChange": "-83.13000000",
+        "priceChangePercent": "-0.317",
+        "weightedAvgPrice": "26234.58803036",
+        "openPrice": "26304.80000000",
+        "highPrice": "26397.46000000",
+        "lowPrice": "26088.34000000",
+        "lastPrice": "26221.67000000",
+        "volume": "18495.35066000",
+        "quoteVolume": "485217905.04210480",
+        "openTime": 1695686400000,
+        "closeTime": 1695772799999,
+        "firstId": 3220151555,
+        "lastId": 3220849281,
+        "count": 697727
+      },
+      {
+        "symbol": "BNBUSDT",
+        "priceChange": "2.60000000",
+        "priceChangePercent": "1.238",
+        "weightedAvgPrice": "211.92276958",
+        "openPrice": "210.00000000",
+        "highPrice": "213.70000000",
+        "lowPrice": "209.70000000",
+        "lastPrice": "212.60000000",
+        "volume": "280709.58900000",
+        "quoteVolume": "59488753.54750000",
+        "openTime": 1695686400000,
+        "closeTime": 1695772799999,
+        "firstId": 672397461,
+        "lastId": 672496158,
+        "count": 98698
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 8
+      }
+    ]
+  }
+  ```
+
+- **Response (MINI, single symbol):**
+
+  ```json
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": {
       "symbol": "BTCUSDT",
       "openPrice": "26304.80000000",
       "highPrice": "26397.46000000",
@@ -339,23 +679,232 @@ gateway.
       "firstId": 3220151555,
       "lastId": 3220849281,
       "count": 697727
-    }
-  ]
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
+  }
   ```
 
-## Symbol Price Ticker – `GET /api/v3/ticker/price` / `method: "ticker.price"`
+- **Response (MINI, array):**
+
+  ```json
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": [
+      {
+        "symbol": "BTCUSDT",
+        "openPrice": "26304.80000000",
+        "highPrice": "26397.46000000",
+        "lowPrice": "26088.34000000",
+        "lastPrice": "26221.67000000",
+        "volume": "18495.35066000",
+        "quoteVolume": "485217905.04210480",
+        "openTime": 1695686400000,
+        "closeTime": 1695772799999,
+        "firstId": 3220151555,
+        "lastId": 3220849281,
+        "count": 697727
+      },
+      {
+        "symbol": "BNBUSDT",
+        "openPrice": "210.00000000",
+        "highPrice": "213.70000000",
+        "lowPrice": "209.70000000",
+        "lastPrice": "212.60000000",
+        "volume": "280709.58900000",
+        "quoteVolume": "59488753.54750000",
+        "openTime": 1695686400000,
+        "closeTime": 1695772799999,
+        "firstId": 672397461,
+        "lastId": 672496158,
+        "count": 98698
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 8
+      }
+    ]
+  }
+  ```
+
+## Rolling Window Price Statistics – `GET /api/v3/ticker` · `method: "ticker"`
+
+- **Weight:** depends on symbol count
+  - up to 50 symbols → 4 weight each (capped at 200 beyond 50)
+  - 51–100 symbols → 200
+- **Parameters:**
+  - `symbol` (string) **or** `symbols` (array of strings, max 200)
+  - `windowSize` (enum, optional, default `1d` – supports `1m`…`59m`, `1h`…`23h`, `1d`…`7d`)
+  - `type` (enum, optional: `FULL`, `MINI`)
+  - `symbolStatus` (enum, optional)
+- **Notes:** Window start always aligns to a minute boundary. The effective window can be up to
+  59 999 ms wider than requested because `closeTime` is the request timestamp. For streaming stats
+  use `<symbol>@ticker_<window_size>`.
+- **Data source:** Database
+- **RPC request:**
+
+  ```json
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "method": "ticker",
+    "params": {
+      "symbols": ["BNBBTC", "BTCUSDT"],
+      "windowSize": "7d"
+    }
+  }
+  ```
+
+- **Response (FULL, single symbol):**
+
+  ```json
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": {
+      "symbol": "BNBBTC",
+      "priceChange": "0.00061500",
+      "priceChangePercent": "4.735",
+      "weightedAvgPrice": "0.01368242",
+      "openPrice": "0.01298900",
+      "highPrice": "0.01418800",
+      "lowPrice": "0.01296000",
+      "lastPrice": "0.01360400",
+      "volume": "587179.23900000",
+      "quoteVolume": "8034.03382165",
+      "openTime": 1659580020000,
+      "closeTime": 1660184865291,
+      "firstId": 192977765,
+      "lastId": 195365758,
+      "count": 2387994
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
+  }
+  ```
+
+- **Response (MINI, single symbol):**
+
+  ```json
+  {
+    "id": "bdb7c503-542c-495c-b797-4d2ee2e91173",
+    "status": 200,
+    "result": {
+      "symbol": "BNBBTC",
+      "openPrice": "0.01298900",
+      "highPrice": "0.01418800",
+      "lowPrice": "0.01296000",
+      "lastPrice": "0.01360400",
+      "volume": "587179.23900000",
+      "quoteVolume": "8034.03382165",
+      "openTime": 1659580020000,
+      "closeTime": 1660184865291,
+      "firstId": 192977765,
+      "lastId": 195365758,
+      "count": 2387994
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
+  }
+  ```
+
+- **Response (FULL, array):**
+
+  ```json
+  {
+    "id": "f4b3b507-c8f2-442a-81a6-b2f12daa030f",
+    "status": 200,
+    "result": [
+      {
+        "symbol": "BNBBTC",
+        "priceChange": "0.00061500",
+        "priceChangePercent": "4.735",
+        "weightedAvgPrice": "0.01368242",
+        "openPrice": "0.01298900",
+        "highPrice": "0.01418800",
+        "lowPrice": "0.01296000",
+        "lastPrice": "0.01360400",
+        "volume": "587169.48600000",
+        "quoteVolume": "8033.90114517",
+        "openTime": 1659580020000,
+        "closeTime": 1660184820927,
+        "firstId": 192977765,
+        "lastId": 195365700,
+        "count": 2387936
+      },
+      {
+        "symbol": "BTCUSDT",
+        "priceChange": "1182.92000000",
+        "priceChangePercent": "5.113",
+        "weightedAvgPrice": "23349.27074846",
+        "openPrice": "23135.33000000",
+        "highPrice": "24491.22000000",
+        "lowPrice": "22400.00000000",
+        "lastPrice": "24318.25000000",
+        "volume": "1039498.10978000",
+        "quoteVolume": "24271522807.76838630",
+        "openTime": 1659580020000,
+        "closeTime": 1660184820927,
+        "firstId": 1568787779,
+        "lastId": 1604337406,
+        "count": 35549628
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 8
+      }
+    ]
+  }
+  ```
+
+## Symbol Price Ticker – `GET /api/v3/ticker/price` · `method: "ticker.price"`
 
 - **Weight:**
   - single `symbol`: 2
-  - omit `symbol`/`symbols`: 4
-  - `symbols` array: 4
-- **Parameters:** `symbol`, `symbols`, optional `symbolStatus`
+  - `symbols` array or omit both `symbol`/`symbols`: 4
+- **Parameters:**
+  - `symbol` (string, optional)
+  - `symbols` (array of strings, optional)
+  - `symbolStatus` (enum, optional)
+- **Notes:** `symbol` and `symbols` cannot be combined. Use `<symbol>@aggTrade` or `<symbol>@trade`
+  to stream prices; REST provides last executed price snapshots.
 - **Data source:** Memory
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "043a7cf2-bde3-4888-9604-c8ac41fcba4d",
     "method": "ticker.price",
     "params": {
       "symbol": "BNBBTC"
@@ -367,28 +916,60 @@ gateway.
 
   ```json
   {
-    "symbol": "LTCBTC",
-    "price": "4.00000200"
+    "id": "043a7cf2-bde3-4888-9604-c8ac41fcba4d",
+    "status": 200,
+    "result": {
+      "symbol": "BNBBTC",
+      "price": "0.01361900"
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
   }
   ```
 
   ```json
-  [
-    { "symbol": "LTCBTC", "price": "4.00000200" },
-    { "symbol": "ETHBTC", "price": "0.07946600" }
-  ]
+  {
+    "id": "e739e673-24c8-4adf-9cfa-b81f30330b09",
+    "status": 200,
+    "result": [
+      { "symbol": "BNBBTC", "price": "0.01363700" },
+      { "symbol": "BTCUSDT", "price": "24267.15000000" },
+      { "symbol": "BNBBUSD", "price": "331.10000000" }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
+  }
   ```
 
-## Order Book Ticker – `GET /api/v3/ticker/bookTicker` / `method: "ticker.book"`
+## Order Book Ticker – `GET /api/v3/ticker/bookTicker` · `method: "ticker.book"`
 
-- **Weight:** follows the same rules as `/api/v3/ticker/price`
-- **Parameters:** `symbol`, `symbols`, optional `symbolStatus`
+- **Weight:** same as `/api/v3/ticker/price`
+- **Parameters:**
+  - `symbol` (string, optional)
+  - `symbols` (array of strings, optional)
+  - `symbolStatus` (enum, optional)
+- **Notes:** Streams `<symbol>@bookTicker` yield best bid/ask updates; REST returns the current top of
+  book snapshot.
 - **Data source:** Memory
 - **RPC request:**
 
   ```json
   {
-    "id": "<uuid>",
+    "id": "057deb3a-2990-41d1-b58b-98ea0f09e1b4",
     "method": "ticker.book",
     "params": {
       "symbols": ["BNBBTC", "BTCUSDT"]
@@ -400,95 +981,55 @@ gateway.
 
   ```json
   {
-    "symbol": "LTCBTC",
-    "bidPrice": "4.00000000",
-    "bidQty": "431.00000000",
-    "askPrice": "4.00000200",
-    "askQty": "9.00000000"
-  }
-  ```
-
-  ```json
-  [
-    {
-      "symbol": "LTCBTC",
-      "bidPrice": "4.00000000",
-      "bidQty": "431.00000000",
-      "askPrice": "4.00000200",
-      "askQty": "9.00000000"
-    },
-    {
-      "symbol": "ETHBTC",
-      "bidPrice": "0.07946700",
-      "bidQty": "9.00000000",
-      "askPrice": "100000.00000000",
-      "askQty": "1000.00000000"
-    }
-  ]
-  ```
-
-## Rolling Window Ticker – `GET /api/v3/ticker` / `method: "ticker"`
-
-- **Weight:** 4 per symbol, capped at 200 for >50 symbols
-- **Parameters:** `symbol` **or** `symbols` (max 100), optional `windowSize`, `type`, `symbolStatus`
-- **Notes:** Window start always aligns to the minute. `windowSize` accepts discrete minutes (`1m`…`59m`),
-  hours (`1h`…`23h`), or days (`1d`…`7d`). The effective window may extend up to 59 999 ms beyond
-  `windowSize` because the close time is the request timestamp.
-- **Data source:** Database
-- **RPC request:**
-
-  ```json
-  {
-    "id": "<uuid>",
-    "method": "ticker",
-    "params": {
-      "symbols": ["BNBBTC", "BTCUSDT"],
-      "windowSize": "7d"
-    }
-  }
-  ```
-
-- **Response:**
-
-  FULL payload:
-
-  ```json
-  {
-    "symbol": "BNBBTC",
-    "priceChange": "-8.00000000",
-    "priceChangePercent": "-88.889",
-    "weightedAvgPrice": "2.60427807",
-    "openPrice": "9.00000000",
-    "highPrice": "9.00000000",
-    "lowPrice": "1.00000000",
-    "lastPrice": "1.00000000",
-    "volume": "187.00000000",
-    "quoteVolume": "487.00000000",
-    "openTime": 1641859200000,
-    "closeTime": 1642031999999,
-    "firstId": 0,
-    "lastId": 60,
-    "count": 61
-  }
-  ```
-
-  MINI payload (array response):
-
-  ```json
-  [
-    {
+    "id": "9d32157c-a556-4d27-9866-66760a174b57",
+    "status": 200,
+    "result": {
       "symbol": "BNBBTC",
-      "openPrice": "0.10000000",
-      "highPrice": "2.00000000",
-      "lowPrice": "0.10000000",
-      "lastPrice": "2.00000000",
-      "volume": "39.00000000",
-      "quoteVolume": "13.40000000",
-      "openTime": 1656986880000,
-      "closeTime": 1657001297799,
-      "firstId": 0,
-      "lastId": 34,
-      "count": 35
-    }
-  ]
+      "bidPrice": "0.01358000",
+      "bidQty": "12.53400000",
+      "askPrice": "0.01358100",
+      "askQty": "17.83700000"
+    },
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 2
+      }
+    ]
+  }
+  ```
+
+  ```json
+  {
+    "id": "057deb3a-2990-41d1-b58b-98ea0f09e1b4",
+    "status": 200,
+    "result": [
+      {
+        "symbol": "BNBBTC",
+        "bidPrice": "0.01358000",
+        "bidQty": "12.53400000",
+        "askPrice": "0.01358100",
+        "askQty": "17.83700000"
+      },
+      {
+        "symbol": "BTCUSDT",
+        "bidPrice": "23980.49000000",
+        "bidQty": "0.01000000",
+        "askPrice": "23981.31000000",
+        "askQty": "0.01512000"
+      }
+    ],
+    "rateLimits": [
+      {
+        "rateLimitType": "REQUEST_WEIGHT",
+        "interval": "MINUTE",
+        "intervalNum": 1,
+        "limit": 6000,
+        "count": 4
+      }
+    ]
+  }
   ```

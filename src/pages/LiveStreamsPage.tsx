@@ -1,7 +1,7 @@
-import HomePage from './HomePage';
+import LiveTab from './LiveTab';
 
 const LiveStreamsPage = () => {
-  return <HomePage renderFullConsole />;
+  return <LiveTab />;
 };
 
 export default LiveStreamsPage;

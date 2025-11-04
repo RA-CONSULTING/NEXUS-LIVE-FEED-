@@ -1166,7 +1166,7 @@ const HomePage = ({ renderFullConsole = false }: HomePageProps) => {
                 Dive into per-stream dashboards, quantum telemetry, and stewardship controls in the dedicated console.
               </p>
               <Link
-                to="/streams"
+                to="/live"
                 className="inline-flex items-center justify-center rounded-full border border-sky-400/60 px-6 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100 transition hover:bg-sky-500/20"
               >
                 Open Live Streams
